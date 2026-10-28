@@ -1,266 +1,1910 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>XCross CLI - Easiest Flutter setup for Windows & Linux</title>
-<meta name="description" content="XCross CLI makes installing and running Flutter apps effortless on Windows and Linux. One-line install, interactive menu, xcross integration.">
+<title>XCross CLI — Easiest Flutter iOS setup for Windows & Linux</title>
+<meta name="description" content="XCross CLI makes installing, running, and hot reloading Flutter iOS apps effortless on Windows and Linux without a Mac. One-line install, interactive TUI, RSD tunnels, and xcross integration.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/animejs@4.0.2/lib/anime.iife.min.js"></script>
+
 <script>
   tailwind.config = {
+    darkMode: 'class',
     theme: {
       extend: {
-        fontFamily: { sans: ['Inter','-apple-system','BlinkMacSystemFont','Segoe UI','Roboto','sans-serif'] },
-        colors: { dark:{ bg:'#0a0a0a', card:'#141414', border:'rgba(255,255,255,.08)', fg:'#f5f5f7', gray:'#86868b', accent:'#2997ff' } },
-        borderRadius: { ios:'20px', pill:'999px' },
-        boxShadow: { card:'0 4px 24px rgba(0,0,0,.4)', cardHover:'0 16px 48px rgba(0,0,0,.5)', term:'0 24px 80px rgba(0,0,0,.6)' },
+        fontFamily: {
+          sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'Consolas', 'monospace']
+        },
+        colors: {
+          dark: {
+            bg: '#08080c',
+            soft: '#0d0d14',
+            surface: '#12121b',
+            elevated: '#181824',
+            line: 'rgba(255, 255, 255, 0.08)',
+            'line-strong': 'rgba(255, 255, 255, 0.18)',
+            fg: '#eeeef3',
+            muted: '#a2a2ae',
+            faint: '#71717e',
+            accent: '#4d9fff',
+            accentSoft: '#8dc0ff',
+            indigo: '#6366f1',
+            purple: '#a855f7'
+          }
+        },
+        boxShadow: {
+          card: '0 4px 24px rgba(0,0,0,0.4)',
+          term: '0 24px 80px rgba(0,0,0,0.65)',
+          glow: '0 0 40px -10px rgba(77, 159, 255, 0.35)',
+          aurora: '0 20px 50px -15px rgba(99, 102, 241, 0.4)',
+          liquid: '0 20px 50px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.08)'
+        }
       }
     }
   }
 </script>
+
 <style>
-  html { overflow-x:hidden; overflow-y:scroll; scrollbar-width:none; }
-  html::-webkit-scrollbar { display:none; }
+  :root {
+    color-scheme: dark;
+    --color-bg: #08080c;
+    --aurora-1: #8dc0ff;
+    --aurora-2: #4d9fff;
+    --aurora-3: #6366f1;
+    --aurora-4: #a855f7;
+    --grad-aurora: linear-gradient(135deg, #8dc0ff 0%, #4d9fff 30%, #6366f1 65%, #a855f7 100%);
+    --glass-line: rgba(255, 255, 255, 0.08);
+    --glass-line-strong: rgba(255, 255, 255, 0.18);
+  }
+
   body {
-    --sb-track-color: #000000;
-    --sb-thumb-color: #121212;
-    --sb-size: 0px;
+    background-color: var(--color-bg);
+    color: #eeeef3;
+    overflow-x: hidden;
   }
-  body::-webkit-scrollbar { width: var(--sb-size); height: var(--sb-size); }
-  body::-webkit-scrollbar-track { background: var(--sb-track-color); border-radius: 1px; }
-  body::-webkit-scrollbar-thumb { background: var(--sb-thumb-color); border-radius: 1px; }
-  @supports not selector(::-webkit-scrollbar) {
-    body { scrollbar-color: var(--sb-thumb-color) var(--sb-track-color); }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #08080c; }
+  ::-webkit-scrollbar-thumb { background: #1a1a24; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #282838; }
+
+  /* Background Grid & Accents */
+  .site-weave {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -2;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cpath d='M56 0H0V56' fill='none' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1' stroke-dasharray='4 7'/%3E%3C/svg%3E");
+    mask-image: radial-gradient(ellipse 90% 80% at 50% 20%, #000 30%, transparent 85%);
   }
-  .logo-pre { color:#2997ff; white-space:pre; font-family:Consolas,monospace; font-size:13px; line-height:1.2; }
-  .glass { background:rgba(20,20,20,.6); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%); border:1px solid rgba(255,255,255,.08); }
-  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } html { scroll-behavior:auto; } }
+
+  .site-accent {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 38rem;
+    pointer-events: none;
+    z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cpath d='M56 0H0V56' fill='none' stroke='%234d9fff' stroke-opacity='0.35' stroke-width='1' stroke-dasharray='4 7'/%3E%3C/svg%3E");
+    mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,0.4) 40%, transparent 90%);
+  }
+
+  /* Apple Liquid Glass Material (HIG Grounded) */
+  .liquid-glass {
+    position: relative;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(13, 13, 20, 0.65) 100%);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 20px 50px -15px rgba(0, 0, 0, 0.7);
+    transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .liquid-glass:hover {
+    border-color: rgba(141, 192, 255, 0.3);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(141, 192, 255, 0.15), 0 25px 60px -15px rgba(0, 0, 0, 0.85);
+  }
+
+  /* Liquid Sheen sweep animation */
+  .liquid-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+  .liquid-sheen::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(60deg, transparent 40%, rgba(255, 255, 255, 0.06) 50%, transparent 60%);
+    transform: rotate(25deg) translateY(-100%);
+    pointer-events: none;
+    transition: transform 0.8s ease-in-out;
+  }
+  .liquid-sheen:hover::after {
+    transform: rotate(25deg) translateY(100%);
+  }
+
+  /* Aurora Gradient Text */
+  .text-aurora {
+    background: var(--grad-aurora);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: aurora-pan 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes aurora-pan {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+
+  /* Hero Rotating Badge */
+  @property --badge-a {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+  }
+
+  .hero-badge {
+    position: relative;
+    isolation: isolate;
+    backdrop-filter: blur(14px);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+  }
+
+  .hero-badge::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(from var(--badge-a, 0deg), rgba(255,255,255,0.08), var(--aurora-2), var(--aurora-4), rgba(255,255,255,0.08) 40%, rgba(255,255,255,0.08));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: badge-spin 6s linear infinite;
+  }
+
+  @keyframes badge-spin {
+    to { --badge-a: 360deg; }
+  }
+
+  /* Word Swap */
+  .word-swap {
+    display: inline-block;
+    vertical-align: bottom;
+  }
+  .word-swap-track {
+    display: inline-grid;
+    grid-template-areas: "word";
+    vertical-align: bottom;
+    overflow: hidden;
+    transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .word-swap-word {
+    grid-area: word;
+    opacity: 0;
+    transform: translateY(100%);
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+    white-space: nowrap;
+    background: var(--grad-aurora);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+  .word-swap-word[data-active] {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .word-swap-word[data-leaving] {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+
+  /* Ambient Aurora Blobs */
+  .aurora-blob {
+    position: absolute;
+    filter: blur(100px);
+    border-radius: 9999px;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.28;
+    mix-blend-mode: screen;
+    animation: blob-float 16s ease-in-out infinite alternate;
+  }
+
+  @keyframes blob-float {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -20px) scale(1.1); }
+    100% { transform: translate(-20px, 30px) scale(0.95); }
+  }
+
+  /* Spotlight Card Effect */
+  .spotlight {
+    position: relative;
+    overflow: hidden;
+  }
+  .spotlight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: radial-gradient(350px circle at var(--mouse-x, -500px) var(--mouse-y, -500px), rgba(141, 192, 255, 0.35), transparent 80%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .spotlight:hover::before {
+    opacity: 1;
+  }
+  .spotlight::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(400px circle at var(--mouse-x, -500px) var(--mouse-y, -500px), rgba(77, 159, 255, 0.07), transparent 80%);
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .spotlight:hover::after {
+    opacity: 1;
+  }
+
+  /* Hot Reload Demo Phone */
+  .hr-phone {
+    width: 240px;
+    height: 470px;
+    border-radius: 46px;
+    background: #09090f;
+    border: 4px solid #23232f;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1), 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 35px -10px rgba(77, 159, 255, 0.35);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .hr-phone-island {
+    width: 76px;
+    height: 20px;
+    background: #000;
+    border-radius: 20px;
+    margin: 10px auto 0;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+    position: relative;
+    z-index: 10;
+  }
+  .hr-phone-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    text-align: center;
+    position: relative;
+    background: radial-gradient(circle at 50% 30%, #151828, #09090f);
+  }
+  .hr-phone-flash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(77, 159, 255, 0.55), transparent 70%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease-out;
+  }
+  .hr-phone-flash.flash {
+    opacity: 1;
+  }
+
+  .hr-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: #4d9fff;
+    vertical-align: middle;
+    margin-left: 2px;
+    animation: cursor-blink 1s infinite;
+  }
+  @keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* Buttons */
+  .btn-aurora {
+    position: relative;
+    background: var(--grad-aurora);
+    background-size: 160% 100%;
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 10px 30px -10px rgba(77, 159, 255, 0.5);
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .btn-aurora:hover {
+    background-position: 100% 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 14px 40px -8px rgba(168, 85, 247, 0.6);
+    transform: translateY(-2px);
+  }
+  .btn-aurora:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 15px -4px rgba(77, 159, 255, 0.4);
+  }
+
+  /* Segmented tabs */
+  .seg-pill {
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .seg-pill.active {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  /* Tooltip animation */
+  .copied-tooltip {
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: translateY(6px);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .copied-tooltip.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* Deep Footer Styling */
+  footer[data-site-footer] {
+    position: relative;
+    border-top: 1px solid var(--glass-line);
+    background: linear-gradient(180deg, rgba(8, 8, 12, 0.4) 0%, rgba(99, 102, 241, 0.03) 100%);
+  }
+  footer[data-site-footer]::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    inset-inline: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--aurora-2), var(--aurora-4), transparent);
+    opacity: 0.7;
+  }
+
+  /* Accordion styles */
+  .faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    opacity: 0;
+  }
+  .faq-item.active .faq-answer {
+    max-height: 300px;
+    opacity: 1;
+  }
+  .faq-item.active .faq-chevron {
+    transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
 </style>
 </head>
-<body class="bg-dark-bg text-dark-fg font-sans antialiased selection:bg-dark-accent/30 overflow-x-hidden">
-<div class="max-w-[1120px] mx-auto px-8 lg:px-12">
-  <header class="flex items-center justify-between py-2  sticky top-0 z-20 glass rounded-2xl top-4 px-4">
+
+<body class="selection:bg-dark-accent/30 min-h-screen relative font-sans antialiased text-dark-fg">
+
+<!-- Background Grid & Aurora Mesh -->
+<div class="site-weave" aria-hidden="true"></div>
+<div class="site-accent" aria-hidden="true"></div>
+
+<!-- Ambient Blurred Glowing Spheres -->
+<div class="aurora-blob w-[550px] h-[550px] bg-blue-500/22 top-[-100px] left-[15%]"></div>
+<div class="aurora-blob w-[450px] h-[450px] bg-indigo-500/18 top-[300px] right-[10%]"></div>
+<div class="aurora-blob w-[600px] h-[600px] bg-purple-600/18 top-[1200px] left-[5%]"></div>
+<div class="aurora-blob w-[500px] h-[500px] bg-cyan-500/18 top-[2200px] right-[15%]"></div>
+
+<div class="max-w-[1240px] mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
+
+  <!-- Top Floating Liquid Glass Navigation -->
+  <header class="flex items-center justify-between py-2.5 px-5 sticky top-4 z-50 liquid-glass rounded-2xl my-4 transition-all duration-300">
     <div class="flex items-center gap-3">
-      <img src="logo.svg" alt="XCross CLI logo"  class="h-10 block">
+      <!-- Authentic Logo from logo.svg -->
+      <a href="#" class="group flex items-center gap-3" aria-label="XCross CLI Home">
+        <img src="logo.svg" alt="XCross CLI logo" class="h-8 sm:h-9 w-auto filter drop-shadow-[0_2px_14px_rgba(77,159,255,0.4)] transition-transform duration-300 group-hover:scale-105">
+      </a>
     </div>
-    <nav class="flex gap-8">
-      <a href="https://github.com/Ameth1208/xcross-cli" class="text-sm text-dark-gray hover:text-dark-fg transition-colors duration-300">GitHub</a>
-      <a href="#install" class="text-sm text-dark-gray hover:text-dark-fg transition-colors duration-300">Install</a>
-      <a href="#preview" class="text-sm text-dark-gray hover:text-dark-fg transition-colors duration-300">Preview</a>
+
+    <!-- Navigation links -->
+    <nav class="hidden md:flex items-center gap-7 text-[13px] font-medium text-dark-muted">
+      <a href="#features" class="hover:text-white transition-colors duration-200">Features</a>
+      <a href="#demo" class="hover:text-white transition-colors duration-200">Hot Reload</a>
+      <a href="#preview" class="hover:text-white transition-colors duration-200">Interactive TUI</a>
+      <a href="#workflow" class="hover:text-white transition-colors duration-200">Workflow</a>
+      <a href="#commands" class="hover:text-white transition-colors duration-200">Commands</a>
+      <a href="#faq" class="hover:text-white transition-colors duration-200">FAQ</a>
     </nav>
+
+    <!-- Header Actions: ONLY Rounded Star Button -->
+    <div class="flex items-center gap-3">
+      <a href="https://github.com/Ameth1208/xcross-cli" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-xs text-white bg-white/10 hover:bg-white/15 border border-white/15 hover:border-white/25 px-4 py-2 rounded-full shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 group">
+        <svg class="w-4 h-4 text-amber-400 fill-amber-400 transition-transform duration-300 group-hover:rotate-12" viewBox="0 0 24 24">
+          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+        </svg>
+        <span class="font-semibold tracking-tight">Star on GitHub</span>
+      </a>
+    </div>
   </header>
 
-  <section class="text-center pt-24 pb-20 relative">
-    <div class="absolute inset-0 -z-10 flex items-center justify-center">
-      <div class="w-[500px] h-[500px] rounded-full bg-dark-accent/10 blur-[120px]"></div>
+  <!-- Hero Section -->
+  <section class="text-center pt-16 pb-20 sm:pt-24 sm:pb-28 relative">
+    
+    <!-- Shimmering Pill Badge -->
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium hero-badge text-dark-accentSoft mb-3 cursor-default">
+      <span class="inline-block w-2 h-2 rounded-full bg-dark-accent animate-ping"></span>
+      <span>XCross CLI v1.2.0 • The Easiest Flutter iOS Companion</span>
     </div>
-    <p class="text-xs font-medium tracking-[0.2em] text-dark-gray uppercase mb-6">XCross CLI</p>
-    <h1 class="text-[clamp(2.6rem,6vw,4.2rem)] font-light tracking-tight leading-[1.05] mb-6">The easiest way to<br><span class="bg-gradient-to-r from-dark-accent to-cyan-300 bg-clip-text text-transparent">build Flutter apps.</span></h1>
-    <p class="text-dark-gray text-lg max-w-[620px] mx-auto mb-10 leading-relaxed">A beautiful, keyboard-driven terminal experience for Flutter development on Windows and Linux. One-line install, guided setup, xcross integration.</p>
-    <div class="flex gap-2 justify-center mb-6">
-      <button id="tabWin" onclick="setTab('win')" class="px-5 py-2.5 rounded-pill text-sm font-medium border border-white/10 text-dark-gray hover:text-dark-fg transition-all duration-300 active:bg-dark-fg active:text-dark-bg active:border-dark-fg">Windows</button>
-      <button id="tabLin" onclick="setTab('lin')" class="px-5 py-2.5 rounded-pill text-sm font-medium border border-white/10 text-dark-gray hover:text-dark-fg transition-all duration-300">Linux / macOS</button>
-    </div>
-    <div id="install" class="max-w-[760px] mx-auto flex items-center gap-3 glass rounded-2xl p-4 shadow-card hover:shadow-cardHover transition-all duration-400 overflow-hidden">
-      <code id="cmd" class="flex-1 min-w-0 font-mono text-sm text-dark-fg overflow-x-hidden whitespace-nowrap cursor-ew-resize outline-none" tabindex="0" role="region" aria-label="Install command">irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1 | iex</code>
-      <button onclick="copyCmd()" class="shrink-0 bg-dark-accent text-black rounded-pill px-5 py-2.5 text-sm font-semibold hover:opacity-90 active:scale-95 transition-all duration-200">Copy</button>
-    </div>
-  </section>
 
-  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-24">
-    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400">
-      <div class="w-10 h-10 rounded-xl bg-dark-accent/10 flex items-center justify-center mb-4">
-        <svg class="w-5 h-5 text-dark-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+    <!-- Acknowledgement to xcross.sh & Creator -->
+    <div class="flex items-center justify-center mb-8">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono bg-white/5 border border-white/10 text-dark-muted backdrop-blur-md">
+        <span>Powered by</span>
+        <a href="https://xcross.sh/" target="_blank" rel="noreferrer" class="text-sky-400 font-semibold hover:underline inline-flex items-center gap-1">
+          xcross.sh
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7m0 0H7m10 0v10"/></svg>
+        </a>
+        <span class="text-white/20">•</span>
+        <span>Interactive CLI wrapper by</span>
+        <a href="https://amethgm.com" target="_blank" rel="noreferrer" class="text-white hover:text-sky-300 hover:underline font-semibold">amethgm.com</a>
       </div>
-      <h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">One-line install</h3>
-      <p class="text-dark-gray text-sm leading-relaxed">Get up and running in seconds with a single command. No admin rights required.</p>
     </div>
-    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400">
-      <div class="w-10 h-10 rounded-xl bg-dark-accent/10 flex items-center justify-center mb-4">
-        <svg class="w-5 h-5 text-dark-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-      </div>
-      <h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">Interactive menu</h3>
-      <p class="text-dark-gray text-sm leading-relaxed">Navigate with arrows, execute with space. Command palette with / for quick access.</p>
-    </div>
-    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400">
-      <div class="w-10 h-10 rounded-xl bg-dark-accent/10 flex items-center justify-center mb-4">
-        <svg class="w-5 h-5 text-dark-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
-      </div>
-      <h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">Bilingual</h3>
-      <p class="text-dark-gray text-sm leading-relaxed">English and Spanish built in. Switch anytime with xcm language en|es.</p>
-    </div>
-    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400">
-      <div class="w-10 h-10 rounded-xl bg-dark-accent/10 flex items-center justify-center mb-4">
-        <svg class="w-5 h-5 text-dark-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-      </div>
-      <h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">xcross integration</h3>
-      <p class="text-dark-gray text-sm leading-relaxed">Guided installers for Swift, xcross, SDK import and Flutter precache.</p>
-    </div>
-    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400">
-      <div class="w-10 h-10 rounded-xl bg-dark-accent/10 flex items-center justify-center mb-4">
-        <svg class="w-5 h-5 text-dark-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg>
-      </div>
-      <h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">USB & Wi-Fi tunnels</h3>
-      <p class="text-dark-gray text-sm leading-relaxed">Open RSD tunnels for device debugging with one keystroke.</p>
-    </div>
-    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400">
-      <div class="w-10 h-10 rounded-xl bg-dark-accent/10 flex items-center justify-center mb-4">
-        <svg class="w-5 h-5 text-dark-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-      </div>
-      <h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">Open source</h3>
-      <p class="text-dark-gray text-sm leading-relaxed">MIT licensed. Contributions welcome on GitHub.</p>
-    </div>
-  </section>
 
-  <section class="my-24">
-    <p class="text-xs font-medium tracking-[0.2em] text-dark-gray uppercase mb-6 text-center">How it works</p>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="glass rounded-2xl p-8">
-        <div class="text-dark-accent text-sm font-mono mb-4">01</div>
-        <h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">Install</h3>
-        <pre class="text-xs text-dark-gray font-mono bg-black/30 rounded-xl p-4 overflow-x-auto">irm ... | iex</pre>
-      </div>
-      <div class="glass rounded-2xl p-8">
-        <div class="text-dark-accent text-sm font-mono mb-4">02</div>
-        <h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">Configure</h3>
-        <pre class="text-xs text-dark-gray font-mono bg-black/30 rounded-xl p-4 overflow-x-auto">xcm project set ./my-app</pre>
-      </div>
-      <div class="glass rounded-2xl p-8">
-        <div class="text-dark-accent text-sm font-mono mb-4">03</div>
-        <h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">Run</h3>
-        <pre class="text-xs text-dark-gray font-mono bg-black/30 rounded-xl p-4 overflow-x-auto">xcm run --usb</pre>
-      </div>
-    </div>
-  </section>
+    <!-- Main Title with Word Swap & Aurora Effect -->
+    <h1 class="text-[clamp(2.5rem,5.6vw,4.8rem)] font-light tracking-[-0.035em] leading-[1.08] mb-6 text-white max-w-4xl mx-auto">
+      The easiest way to build<br>
+      <span class="text-aurora font-medium">Flutter iOS apps</span> from
+      <span class="word-swap" data-word-swap data-interval="3000">
+        <span class="word-swap-track" id="swapTrack">
+          <span class="word-swap-word" data-active>Windows</span>
+          <span class="word-swap-word">Linux</span>
+        </span>
+      </span><br class="hidden sm:inline">
+      <span class="text-dark-fg/90">without a Mac.</span>
+    </h1>
 
-  <section class="my-24">
-    <p class="text-xs font-medium tracking-[0.2em] text-dark-gray uppercase mb-6 text-center">Commands</p>
-    <div class="glass rounded-2xl p-6 max-w-[760px] mx-auto">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-        <div><span class="text-dark-accent font-mono">xcm doctor</span><span class="text-dark-gray ml-3">Check tools</span></div>
-        <div><span class="text-dark-accent font-mono">xcm device</span><span class="text-dark-gray ml-3">Detect devices</span></div>
-        <div><span class="text-dark-accent font-mono">xcm project set</span><span class="text-dark-gray ml-3">Select project</span></div>
-        <div><span class="text-dark-accent font-mono">xcm run --usb</span><span class="text-dark-gray ml-3">Run on device</span></div>
-        <div><span class="text-dark-accent font-mono">xcm tunnel usb</span><span class="text-dark-gray ml-3">Open tunnel</span></div>
-        <div><span class="text-dark-accent font-mono">xcm sign</span><span class="text-dark-gray ml-3">Signing info</span></div>
-        <div><span class="text-dark-accent font-mono">xcm update</span><span class="text-dark-gray ml-3">Update tools</span></div>
-        <div><span class="text-dark-accent font-mono">xcm language</span><span class="text-dark-gray ml-3">Switch language</span></div>
+    <p class="text-dark-muted text-base sm:text-lg max-w-[660px] mx-auto mb-10 leading-relaxed font-light">
+      A beautiful, keyboard-driven terminal environment for Flutter developers.
+      Automated toolchain setup, fast RSD USB & Wi-Fi tunnels, zero Mac required, and instantaneous hot reload.
+    </p>
+
+    <!-- Quick Install Command Card (Liquid Glass styling) -->
+    <div class="max-w-[780px] mx-auto liquid-glass rounded-2xl p-5 shadow-term relative overflow-hidden text-left" id="install">
+      
+      <!-- Top header bar of install card -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-3 border-b border-white/10">
+        <!-- Segmented OS Tabs -->
+        <div class="flex items-center gap-1.5 p-1 rounded-full bg-white/5 border border-white/10">
+          <button id="tabWin" onclick="setTab('win')" class="seg-pill active px-4 py-1.5 rounded-full text-xs font-medium text-dark-fg flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-sky-400" fill="currentColor" viewBox="0 0 24 24"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.901-1.799"/></svg>
+            Windows (PowerShell)
+          </button>
+          <button id="tabLin" onclick="setTab('lin')" class="seg-pill px-4 py-1.5 rounded-full text-xs font-medium text-dark-muted hover:text-white flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.372 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+            Linux / macOS (Bash)
+          </button>
+        </div>
+
+        <div class="text-[11px] font-mono text-dark-faint flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+          No admin rights required
+        </div>
+      </div>
+
+      <!-- Command row -->
+      <div class="flex items-center gap-3 bg-[#060609]/80 backdrop-blur-md rounded-xl p-3 border border-white/5 relative">
+        <span class="text-dark-accent font-mono select-none pl-1 text-sm font-bold">&gt;</span>
+        <code id="cmd" class="flex-1 min-w-0 font-mono text-xs sm:text-sm text-sky-200 overflow-x-auto whitespace-nowrap py-1">irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1 | iex</code>
+        
+        <div class="relative">
+          <button id="copyBtn" onclick="copyCmd()" class="shrink-0 btn-aurora rounded-xl px-4 py-2 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-transform" aria-label="Copy install command">
+            <svg id="copyIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+            </svg>
+            <span id="copyText">Copy</span>
+          </button>
+          
+          <div id="copyTooltip" class="copied-tooltip absolute -top-9 right-0 bg-dark-accent text-black font-semibold text-[11px] px-2.5 py-1 rounded-md shadow-lg pointer-events-none whitespace-nowrap">
+            Copied to clipboard! ✓
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature pills under install command -->
+      <div class="flex flex-wrap items-center justify-between gap-4 mt-3 pt-2 text-[11px] text-dark-muted font-mono">
+        <span class="flex items-center gap-1">✓ Installs to %LOCALAPPDATA%</span>
+        <span class="flex items-center gap-1">✓ Automated user PATH</span>
+        <span class="flex items-center gap-1">✓ Swift & xcross guided setup</span>
+        <span class="flex items-center gap-1">✓ Bilingual EN / ES</span>
       </div>
     </div>
   </section>
 
-  <section id="preview" class="my-20">
-    <h2 class="text-3xl font-light tracking-tight text-center mb-8">Live preview</h2>
-    <div class="mb-6 text-center">
-      <img src="cli-demo.gif" alt="XCross CLI demo" class="mx-auto rounded-2xl shadow-term max-w-full">
-      <p class="text-dark-gray text-xs mt-3">CLI menu in action</p>
-    </div>
-    <div class="mb-6 text-center">
-      <img src="cli-screenshot.png" alt="XCross CLI menu screenshot" class="mx-auto rounded-2xl shadow-term max-w-full">
-      <p class="text-dark-gray text-xs mt-3">Actual CLI menu (Windows)</p>
-    </div>
-    <div class="glass rounded-2xl shadow-term overflow-hidden font-mono">
-      <div class="flex items-center gap-2 px-4 py-3 border-b border-white/8">
-        <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
-        <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
-        <span class="w-3 h-3 rounded-full bg-green-500/80"></span>
-        <span class="ml-3 text-xs text-dark-gray font-mono">xcm — XCross CLI</span>
-      </div>
-      <div class="p-6">
-        <div class="flex justify-end mb-3"><span onclick="toggleLang()" class="cursor-pointer text-dark-accent text-sm px-3 py-1 rounded-pill hover:bg-dark-accent/10 transition-colors duration-200">EN / ES</span></div>
-        <div class="mb-2"><img src="logo.svg" alt="XCross CLI logo" height="16" class="block"></div>
-        <div class="text-sm mb-1"><span class="text-dark-accent font-bold">xcm</span> <span class="text-dark-fg">/</span> <span id="t" class="text-dark-fg font-bold">Main menu</span> <span class="text-dark-gray float-right text-xs">v1.2.0</span></div>
-        <div class="text-xs text-dark-gray mb-2" id="s">Flutter iOS  /  Windows  /  developer toolkit</div>
-        <div class="flex gap-4 text-xs text-dark-gray mb-3 flex-wrap"><span>xcross: <b class="text-dark-accent">ready</b></span><span>swift: <b class="text-dark-accent">ready</b></span><span id="proj">Project: lumina-mobile</span></div>
-        <div id="menu" class="my-3 overflow-x-auto rounded-xl"></div>
-        <div id="f" class="text-dark-gray text-xs mt-3 pt-3 border-t border-white/8">↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back</div>
-      </div>
-    </div>
-  </section>
-
-  <div class="text-center py-6 text-dark-gray text-xs tracking-wider uppercase border-t border-white/8 mt-8">
-    Crafted for excellence · MIT License
+  <!-- Section Divider with Glow -->
+  <div class="relative py-12 flex items-center justify-center">
+    <div class="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+    <div class="absolute w-32 h-1 bg-gradient-to-r from-transparent via-dark-accent to-transparent blur-sm"></div>
   </div>
 
-  <footer class="text-center text-dark-gray text-sm py-8">
-    <a href="https://github.com/Ameth1208/xcross-cli" class="text-dark-accent hover:underline">github.com/Ameth1208/xcross-cli</a>
-  </footer>
+  <!-- Interactive Hot Reload & Device Simulator -->
+  <section id="demo" class="my-20">
+    <div class="text-center max-w-2xl mx-auto mb-14">
+      <p class="text-xs font-mono font-medium tracking-[0.2em] text-dark-accent uppercase mb-3">Live Simulation</p>
+      <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">
+        Hot reload on a real iPhone.<br><span class="text-aurora font-normal">Directly from Windows or Linux.</span>
+      </h2>
+      <p class="text-dark-muted text-sm sm:text-base leading-relaxed">
+        Watch how XCross CLI tunnels communication to your iPhone through Remote Service Discovery, delivering sub-second stateful hot reload without touching a Mac.
+      </p>
+    </div>
+
+    <!-- Simulator Showcase Card with Liquid Glass -->
+    <div class="liquid-glass rounded-3xl p-6 sm:p-10 shadow-term max-w-[960px] mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+        
+        <!-- Left: Code Editor Mockup -->
+        <div class="md:col-span-7 flex flex-col h-full justify-between">
+          <div>
+            <!-- Editor Titlebar -->
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-white/10">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+                <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+                <span class="w-3 h-3 rounded-full bg-green-500/80"></span>
+                <span class="ml-2 font-mono text-xs text-dark-muted">lib/main.dart</span>
+              </div>
+              <span id="hrStatus" class="font-mono text-xs text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
+                // live watching
+              </span>
+            </div>
+
+            <!-- Code Content -->
+            <div class="font-mono text-xs sm:text-sm leading-relaxed bg-[#07070b]/90 p-4 rounded-xl border border-white/5 space-y-1 text-gray-300">
+              <div><span class="text-purple-400">import</span> <span class="text-emerald-400">'package:flutter/material.dart'</span>;</div>
+              <div class="py-1"></div>
+              <div><span class="text-blue-400">Widget</span> <span class="text-yellow-300">build</span>(<span class="text-blue-400">BuildContext</span> context) {</div>
+              <div class="pl-4">  <span class="text-purple-400">return</span> <span class="text-blue-300">Center</span>(</div>
+              <div class="pl-8">    child: <span class="text-blue-300">Text</span>(</div>
+              <div class="pl-12 text-white bg-white/5 py-1 px-2 rounded border border-white/10 my-1 inline-block">
+                <span class="text-emerald-300">"<span id="hrCodeText">Hello from Windows!</span><span class="hr-cursor"></span>"</span>
+              </div>
+              <div class="pl-8">    ),</div>
+              <div class="pl-4">  );</div>
+              <div>}</div>
+            </div>
+          </div>
+
+          <!-- Interactive Reload Controls -->
+          <div class="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <button onclick="triggerHotReloadManual()" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                <span>Trigger Hot Reload (r)</span>
+              </button>
+              <button id="hrLoopBtn" onclick="toggleHrLoop()" class="px-3 py-1.5 rounded-xl text-xs font-mono text-dark-muted hover:text-white border border-white/5 transition-all">
+                Auto-loop: <span class="text-emerald-400 font-semibold">ON</span>
+              </button>
+            </div>
+            <span id="hrLog" class="text-[11px] font-mono text-dark-faint">Tunnel RSD: Port 58783 connected</span>
+          </div>
+        </div>
+
+        <!-- Right: Real iPhone Device Mockup -->
+        <div class="md:col-span-5 flex justify-center">
+          <div class="hr-phone">
+            <!-- Dynamic Island -->
+            <div class="hr-phone-island"></div>
+            
+            <!-- Phone Screen Content -->
+            <div class="hr-phone-screen">
+              <div class="hr-phone-flash" id="phoneFlash"></div>
+              
+              <!-- Simulated App Bar -->
+              <div class="absolute top-10 inset-x-0 px-4 flex items-center justify-between text-xs text-dark-muted border-b border-white/5 pb-2">
+                <div class="flex items-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                  <span class="font-mono text-[10px]">Flutter App</span>
+                </div>
+                <span class="text-[10px] text-emerald-400 font-mono">DEBUG</span>
+              </div>
+
+              <!-- Animated Flutter App Card Inside iPhone -->
+              <div class="w-full py-8 px-4 rounded-2xl bg-white/5 border border-white/10 shadow-lg flex flex-col items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-400 to-indigo-500 p-0.5 shadow-glow flex items-center justify-center">
+                  <div class="w-full h-full bg-[#0e101c] rounded-[14px] flex items-center justify-center">
+                    <svg class="w-6 h-6 text-sky-400" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M14.314 0L2.3 12 6 15.7 21.684 0h-7.37zm7.37 12.001L15.683 18.002l6 6h7.37l-6-6 6-6h-7.369z"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="text-[10px] uppercase font-mono tracking-wider text-dark-muted">Live UI State</div>
+                <div id="hrPhoneText" class="text-sm font-semibold text-white tracking-tight leading-snug">
+                  Hello from Windows!
+                </div>
+                <div class="text-[10px] text-dark-faint font-mono mt-1">Rendered on iPhone 16 Pro</div>
+              </div>
+
+              <!-- Reload toast inside phone -->
+              <div id="phoneToast" class="absolute bottom-6 bg-white/10 backdrop-blur-md border border-white/15 px-3 py-1 rounded-full text-[10px] font-mono text-emerald-300 opacity-0 transition-opacity duration-300">
+                ⚡ Hot Reloaded in 0.28s
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Terminal Simulator (xcm TUI) -->
+  <section id="preview" class="my-24">
+    <div class="text-center max-w-2xl mx-auto mb-12">
+      <p class="text-xs font-mono font-medium tracking-[0.2em] text-dark-accent uppercase mb-3">Interactive Terminal Experience</p>
+      <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">
+        Keyboard-first TUI for developers.
+      </h2>
+      <p class="text-dark-muted text-sm sm:text-base leading-relaxed">
+        Try the actual CLI menu right now. Use your <strong class="text-white">Arrow Up/Down</strong> keys, press <strong class="text-white">Space</strong> to execute, or click any row.
+      </p>
+    </div>
+
+    <!-- Terminal Window Box with Liquid Glass Frame -->
+    <div class="liquid-glass rounded-2xl shadow-term overflow-hidden font-mono max-w-[880px] mx-auto">
+      
+      <!-- Terminal Header / Traffic Lights -->
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-[#07070b]/90">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-red-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
+          <span class="w-3 h-3 rounded-full bg-yellow-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
+          <span class="w-3 h-3 rounded-full bg-green-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
+          <span class="ml-3 text-xs text-dark-muted font-mono">xcm — XCross CLI v1.2.0</span>
+        </div>
+
+        <!-- Language toggle button -->
+        <button onclick="toggleLang()" class="text-xs px-3 py-1 rounded-full border border-dark-accent/40 bg-dark-accent/10 text-dark-accentSoft hover:bg-dark-accent/20 transition-all font-semibold flex items-center gap-1.5">
+          <span>Language:</span>
+          <span id="langBadge" class="text-white font-bold">EN</span>
+        </button>
+      </div>
+
+      <!-- Terminal Body -->
+      <div class="p-6 sm:p-8 bg-[#09090f]/95">
+        
+        <!-- Header Info inside TUI -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-white/5">
+          <div class="text-sm">
+            <span class="text-dark-accent font-bold">xcm</span> 
+            <span class="text-dark-muted">/</span> 
+            <span id="tuiTitle" class="text-white font-semibold">Main menu</span>
+          </div>
+          <span class="text-xs text-dark-faint font-mono">Windows / Linux / iOS Developer Toolkit</span>
+        </div>
+
+        <!-- Status Badges -->
+        <div class="flex flex-wrap gap-4 text-xs font-mono text-dark-muted my-3 py-2 px-3 rounded-lg bg-black/40 border border-white/5">
+          <span>xcross: <b class="text-emerald-400">ready</b></span>
+          <span>swift: <b class="text-emerald-400">ready</b></span>
+          <span class="text-sky-300">Project: <b>lumina-mobile</b></span>
+          <span class="text-purple-300">Device: <b>iPhone 16 Pro (USB)</b></span>
+        </div>
+
+        <!-- Interactive ASCII Menu Box -->
+        <div id="menuContainer" class="my-4 overflow-x-auto rounded-xl border border-white/10 bg-[#050508] p-1">
+          <!-- Populated by JavaScript -->
+        </div>
+
+        <!-- Bottom Hotkey Instructions -->
+        <div id="tuiFooter" class="text-dark-muted text-xs pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+          <span>↑↓ move &nbsp; | &nbsp; →/SPACE execute &nbsp; | &nbsp; 1-9 direct &nbsp; | &nbsp; / commands</span>
+          <span class="text-sky-400 text-[11px]">Click any option to test!</span>
+        </div>
+
+        <!-- Interactive Execution Drawer -->
+        <div id="cliOutputDrawer" class="mt-4 pt-4 border-t border-dashed border-white/10 text-xs font-mono">
+          <div class="text-dark-faint mb-1.5 flex items-center justify-between">
+            <span>Terminal Output Console:</span>
+            <span class="text-[10px] text-emerald-400">Ready</span>
+          </div>
+          <div id="cliOutputLog" class="p-3 rounded-lg bg-black/60 border border-white/5 text-gray-300 leading-relaxed min-h-[48px] flex items-center">
+            <span class="text-dark-muted">&gt; Ready. Select a menu item above or press 1-9 to simulate command.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Real CLI Media Showcase (GIF + Screenshot) -->
+  <section class="my-24">
+    <div class="text-center max-w-xl mx-auto mb-10">
+      <p class="text-xs font-mono font-medium tracking-[0.2em] text-dark-accent uppercase mb-2">Visual Artifacts</p>
+      <h2 class="text-2xl sm:text-3xl font-light text-white tracking-tight">Real-World Terminal Action</h2>
+      <p class="text-dark-muted text-xs sm:text-sm mt-2">See how XCross CLI looks running in Windows Terminal and Linux shells.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-[1040px] mx-auto">
+      
+      <!-- GIF Demo Card -->
+      <div class="liquid-glass liquid-sheen rounded-2xl p-5 group transition-all duration-300">
+        <div class="flex items-center justify-between mb-3 text-xs font-mono text-dark-muted">
+          <span class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Live CLI Navigation Demo
+          </span>
+          <span class="text-[10px] bg-white/5 px-2 py-0.5 rounded">docs/cli-demo.gif</span>
+        </div>
+        <div class="rounded-xl overflow-hidden border border-white/5 bg-black/40 relative">
+          <img src="cli-demo.gif" alt="XCross CLI Interactive Demo" class="w-full h-auto object-cover group-hover:scale-[1.01] transition-transform duration-300">
+        </div>
+        <p class="text-xs text-dark-muted mt-3">Interactive terminal menu with instant arrow-key response.</p>
+      </div>
+
+      <!-- Screenshot Card -->
+      <div class="liquid-glass liquid-sheen rounded-2xl p-5 group transition-all duration-300">
+        <div class="flex items-center justify-between mb-3 text-xs font-mono text-dark-muted">
+          <span class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+            Windows Terminal (Actual Output)
+          </span>
+          <span class="text-[10px] bg-white/5 px-2 py-0.5 rounded">docs/cli-screenshot.png</span>
+        </div>
+        <div class="rounded-xl overflow-hidden border border-white/5 bg-black/40 relative">
+          <img src="cli-screenshot.png" alt="XCross CLI Screenshot" class="w-full h-auto object-cover group-hover:scale-[1.01] transition-transform duration-300">
+        </div>
+        <p class="text-xs text-dark-muted mt-3">Actual PowerShell 5.1+ execution with xcross iOS diagnostics.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Bento Features Grid with Spotlight Glow -->
+  <section id="features" class="my-28">
+    <div class="text-center max-w-2xl mx-auto mb-16">
+      <p class="text-xs font-mono font-medium tracking-[0.2em] text-dark-accent uppercase mb-3">Engineered for Performance</p>
+      <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">
+        Everything you need on your machine.
+      </h2>
+      <p class="text-dark-muted text-sm sm:text-base leading-relaxed">
+        No macOS virtual machines. No cloud remote builds. Complete local development right on Windows and Linux.
+      </p>
+    </div>
+
+    <!-- Spotlight Cards Bento Grid with Liquid Glass -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      
+      <!-- Card 1 -->
+      <div class="liquid-glass spotlight rounded-2xl p-8 flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-300">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mb-6 text-sky-400 shadow-glow">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          </div>
+          <h3 class="text-xl font-medium text-white mb-2 tracking-tight">One-line Install</h3>
+          <p class="text-dark-muted text-sm leading-relaxed">
+            Get up and running in seconds with a single PowerShell or Bash command. Installs to your user profile without administrator rights.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-white/5 font-mono text-xs text-sky-400">irm ... | iex</div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="liquid-glass spotlight rounded-2xl p-8 flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-300">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6 text-indigo-400 shadow-glow">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </div>
+          <h3 class="text-xl font-medium text-white mb-2 tracking-tight">Interactive TUI Menu</h3>
+          <p class="text-dark-muted text-sm leading-relaxed">
+            Fast keyboard-driven navigation. Arrow keys to browse, space to execute, number hotkeys (1-9), and a fuzzy command palette triggered with `/`.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-white/5 font-mono text-xs text-indigo-400">↑↓ + Space + Hotkeys</div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="liquid-glass spotlight rounded-2xl p-8 flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-300">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-6 text-purple-400 shadow-glow">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+          </div>
+          <h3 class="text-xl font-medium text-white mb-2 tracking-tight">Bilingual Experience</h3>
+          <p class="text-dark-muted text-sm leading-relaxed">
+            Full English and Spanish language support baked directly into the CLI. Switch anytime with <code class="text-white bg-white/5 px-1 py-0.5 rounded">xcm language en|es</code>.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-white/5 font-mono text-xs text-purple-400">English & Español</div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="liquid-glass spotlight rounded-2xl p-8 flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-300">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 text-emerald-400 shadow-glow">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+          <h3 class="text-xl font-medium text-white mb-2 tracking-tight">Complete Toolchain</h3>
+          <p class="text-dark-muted text-sm leading-relaxed">
+            Guided installers for the Swift Windows toolchain, xcross core, Xcode iOS SDK extraction, and automatic Flutter precaching.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-white/5 font-mono text-xs text-emerald-400">Zero manual SDK hassle</div>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="liquid-glass spotlight rounded-2xl p-8 flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-300">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center mb-6 text-pink-400 shadow-glow">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg>
+          </div>
+          <h3 class="text-xl font-medium text-white mb-2 tracking-tight">RSD USB & Wi-Fi Tunnels</h3>
+          <p class="text-dark-muted text-sm leading-relaxed">
+            Open secure Remote Service Discovery tunnels to connected iPhones over lightning/USB-C or wireless network with a single keystroke.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-white/5 font-mono text-xs text-pink-400">xcm tunnel usb</div>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="liquid-glass spotlight rounded-2xl p-8 flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-300">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-6 text-amber-400 shadow-glow">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          </div>
+          <h3 class="text-xl font-medium text-white mb-2 tracking-tight">100% Free & Open Source</h3>
+          <p class="text-dark-muted text-sm leading-relaxed">
+            MIT licensed. No telemetry, no cloud subscriptions, no lock-in. Offline signing support using your personal free Apple ID.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-white/5 font-mono text-xs text-amber-400">MIT License · Local First</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Workflow Section: 4 Steps to Running App -->
+  <section id="workflow" class="my-28">
+    <div class="text-center max-w-xl mx-auto mb-16">
+      <p class="text-xs font-mono font-medium tracking-[0.2em] text-dark-accent uppercase mb-3">Simple 4-Step Pipeline</p>
+      <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-3">How it works</h2>
+      <p class="text-dark-muted text-sm">Four clean commands from empty terminal to iPhone running your Flutter app.</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      <!-- Step 01 -->
+      <div class="liquid-glass spotlight rounded-2xl p-6 relative">
+        <div class="text-dark-accent font-mono text-2xl font-bold mb-3">01</div>
+        <h4 class="text-lg font-medium text-white mb-2">Install</h4>
+        <p class="text-xs text-dark-muted mb-4 leading-relaxed">One-line installer initializes the global xcm command in your user PATH.</p>
+        <div class="bg-black/50 rounded-xl p-3 font-mono text-[11px] text-sky-300 border border-white/5 flex items-center justify-between">
+          <span class="truncate">irm ... | iex</span>
+          <button onclick="navigator.clipboard.writeText('irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1 | iex')" class="text-dark-faint hover:text-white" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 02 -->
+      <div class="liquid-glass spotlight rounded-2xl p-6 relative">
+        <div class="text-indigo-400 font-mono text-2xl font-bold mb-3">02</div>
+        <h4 class="text-lg font-medium text-white mb-2">Doctor</h4>
+        <p class="text-xs text-dark-muted mb-4 leading-relaxed">Verify Swift, xcross, iTunes/RSD drivers, and Flutter environment health.</p>
+        <div class="bg-black/50 rounded-xl p-3 font-mono text-[11px] text-indigo-300 border border-white/5 flex items-center justify-between">
+          <span>xcm doctor</span>
+          <button onclick="navigator.clipboard.writeText('xcm doctor')" class="text-dark-faint hover:text-white" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 03 -->
+      <div class="liquid-glass spotlight rounded-2xl p-6 relative">
+        <div class="text-purple-400 font-mono text-2xl font-bold mb-3">03</div>
+        <h4 class="text-lg font-medium text-white mb-2">Link Project</h4>
+        <p class="text-xs text-dark-muted mb-4 leading-relaxed">Target your existing Flutter app folder and configure bundle identifier.</p>
+        <div class="bg-black/50 rounded-xl p-3 font-mono text-[11px] text-purple-300 border border-white/5 flex items-center justify-between">
+          <span class="truncate">xcm project set .</span>
+          <button onclick="navigator.clipboard.writeText('xcm project set .')" class="text-dark-faint hover:text-white" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 04 -->
+      <div class="liquid-glass spotlight rounded-2xl p-6 relative">
+        <div class="text-emerald-400 font-mono text-2xl font-bold mb-3">04</div>
+        <h4 class="text-lg font-medium text-white mb-2">Run on iPhone</h4>
+        <p class="text-xs text-dark-muted mb-4 leading-relaxed">Builds, signs, installs, and launches on your iPhone with live debugging.</p>
+        <div class="bg-black/50 rounded-xl p-3 font-mono text-[11px] text-emerald-300 border border-white/5 flex items-center justify-between">
+          <span>xcm run --usb</span>
+          <button onclick="navigator.clipboard.writeText('xcm run --usb')" class="text-dark-faint hover:text-white" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Complete Commands Explorer & Search (All 24 Commands Verified from CLI Source) -->
+  <section id="commands" class="my-28">
+    <div class="text-center max-w-xl mx-auto mb-10">
+      <p class="text-xs font-mono font-medium tracking-[0.2em] text-dark-accent uppercase mb-3">Complete CLI Command Matrix</p>
+      <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">Command Explorer</h2>
+      <p class="text-dark-muted text-sm">Every single command supported by the XCross CLI toolchain. Filter by category or search in real time.</p>
+    </div>
+
+    <!-- Category Filter Tabs -->
+    <div class="max-w-[960px] mx-auto mb-6 flex flex-wrap items-center justify-center gap-2">
+      <button onclick="filterCategory('all', this)" class="cmd-cat-btn active px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/10 bg-white/10 text-white transition-all shadow-sm">
+        Todos <span class="ml-1 text-[10px] text-sky-400 font-mono">24</span>
+      </button>
+      <button onclick="filterCategory('daily', this)" class="cmd-cat-btn px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/5 bg-white/5 text-dark-muted hover:text-white hover:bg-white/10 transition-all">
+        Flujo Diario
+      </button>
+      <button onclick="filterCategory('diag', this)" class="cmd-cat-btn px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/5 bg-white/5 text-dark-muted hover:text-white hover:bg-white/10 transition-all">
+        Diagnóstico & Dispositivo
+      </button>
+      <button onclick="filterCategory('signing', this)" class="cmd-cat-btn px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/5 bg-white/5 text-dark-muted hover:text-white hover:bg-white/10 transition-all">
+        Firma & iOS
+      </button>
+      <button onclick="filterCategory('toolchain', this)" class="cmd-cat-btn px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/5 bg-white/5 text-dark-muted hover:text-white hover:bg-white/10 transition-all">
+        SDK & Toolchain
+      </button>
+      <button onclick="filterCategory('system', this)" class="cmd-cat-btn px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/5 bg-white/5 text-dark-muted hover:text-white hover:bg-white/10 transition-all">
+        Sistema & Config
+      </button>
+    </div>
+
+    <!-- Live Search Filter Input -->
+    <div class="max-w-[960px] mx-auto mb-8">
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-dark-muted">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+        <input type="text" id="cmdSearch" oninput="filterCommands()" placeholder="Filter commands by keyword (e.g., doctor, run, tunnel, sign, devmode, precache)..." class="w-full pl-11 pr-4 py-3 rounded-xl bg-[#09090f]/90 border border-white/10 text-white placeholder-dark-faint text-sm focus:outline-none focus:border-dark-accent focus:ring-1 focus:ring-dark-accent transition-all font-mono backdrop-blur-md">
+      </div>
+    </div>
+
+    <!-- Commands Grid with All 24 Commands -->
+    <div class="liquid-glass rounded-3xl p-6 sm:p-8 max-w-[960px] mx-auto shadow-term">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5" id="commandsGrid">
+        
+        <!-- 1. xcm doctor -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily diag">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm doctor</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Verifica Flutter, Swift, xcross y drivers</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm doctor', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 2. xcm device -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily diag">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm device</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Detecta iPhone por USB o Wi-Fi con iOS</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm device', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 3. xcm run -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm run --usb</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Compila, firma y ejecuta con Hot Reload</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm run --usb', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 4. xcm tunnel usb -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm tunnel usb</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Abre túnel RSD por cable USB</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm tunnel usb', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 5. xcm tunnel wifi -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm tunnel wifi</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Abre túnel inalámbrico por red local</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm tunnel wifi', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 6. xcm project set -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm project set &lt;ruta&gt;</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Enlaza el directorio de tu app Flutter</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm project set .', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 7. xcm project show -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm project show</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Muestra el proyecto Flutter activo</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm project show', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 8. xcm sign -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="signing diag">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm sign</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Diagnóstico de certificados y provisioning</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm sign', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 9. xcm devmode status -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="signing diag">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm devmode status</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Consulta el Modo Desarrollador de iOS</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm devmode status', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 10. xcm devmode enable -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="signing">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm devmode enable</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Activa el Modo Desarrollador en el iPhone</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm devmode enable', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 11. xcm auth -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="signing">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm auth</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Autentica con Apple ID (personal gratuito)</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm auth', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 12. xcm bundle -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="signing system">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm bundle [mode]</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Configura App ID (default/original/prefixed)</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm bundle default', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 13. xcm trust -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="signing">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm trust</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Guía para confiar en certificados en iOS</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm trust', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 14. xcm vscode -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily system">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm vscode</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Configura y abre el proyecto en VS Code</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm vscode', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 15. xcm install -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="toolchain">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm install</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Asistente guiado de instalación paso a paso</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm install', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 16. xcm swift -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="toolchain">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm swift</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Instala toolchain oficial de Swift</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm swift', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 17. xcm xcross -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="toolchain">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm xcross</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Descarga e instala el motor xcross base</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm xcross', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 18. xcm sdk install -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="toolchain">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm sdk install &lt;xip&gt;</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Extrae e importa SDK iOS desde Xcode.xip</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm sdk install', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 19. xcm precache -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="toolchain">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm precache [mode]</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Descarga artefactos Flutter iOS (debug/all)</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm precache debug', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 20. xcm dependencies -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="toolchain">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm dependencies</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Instala herramientas auxiliares (pymobiledevice3)</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm dependencies', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 21. xcm update -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="system">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm update</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Actualiza CLI y herramientas desde GitHub</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm update', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 22. xcm language -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="system">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm language en|es</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Cambia idioma de la terminal (English/Español)</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm language es', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 23. xcm menu -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily system">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm menu</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Abre el menú interactivo TUI con teclado</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm menu', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- 24. xcm help -->
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="system">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate">xcm help</div>
+            <div class="text-[11px] text-dark-muted mt-0.5 truncate">Muestra resumen completo y sintaxis CLI</div>
+          </div>
+          <button onclick="copySpecificCmd('xcm help', this)" class="shrink-0 opacity-70 group-hover:opacity-100 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-opacity" title="Copy">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive FAQ Section -->
+  <section id="faq" class="my-28">
+    <div class="text-center max-w-xl mx-auto mb-14">
+      <p class="text-xs font-mono font-medium tracking-[0.2em] text-dark-accent uppercase mb-3">Frequently Asked Questions</p>
+      <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-3">Everything you need to know.</h2>
+      <p class="text-dark-muted text-sm">Common questions about running Flutter iOS apps from Windows & Linux.</p>
+    </div>
+
+    <div class="max-w-[760px] mx-auto space-y-4">
+      
+      <!-- FAQ 1 -->
+      <div class="faq-item liquid-glass rounded-2xl p-6 cursor-pointer transition-all duration-300" onclick="toggleFaq(this)">
+        <div class="flex items-center justify-between gap-4">
+          <h3 class="text-base font-medium text-white">Do I need a Mac, macOS virtual machine, or cloud build server?</h3>
+          <svg class="faq-chevron w-5 h-5 text-dark-muted transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">
+          No! XCross CLI and the underlying xcross engine compile, sign, and deploy directly on your host PC (Windows or Linux). There are no cloud subscriptions, no remote macOS instances, and zero virtual machines required.
+        </div>
+      </div>
+
+      <!-- FAQ 2 -->
+      <div class="faq-item liquid-glass rounded-2xl p-6 cursor-pointer transition-all duration-300" onclick="toggleFaq(this)">
+        <div class="flex items-center justify-between gap-4">
+          <h3 class="text-base font-medium text-white">Do I need a paid Apple Developer account ($99/yr)?</h3>
+          <svg class="faq-chevron w-5 h-5 text-dark-muted transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">
+          No. You can sign in using a regular, free personal Apple ID. Free developer provisioning allows you to deploy and debug your app directly on your physical iPhone with 7-day renewable profiles.
+        </div>
+      </div>
+
+      <!-- FAQ 3 -->
+      <div class="faq-item liquid-glass rounded-2xl p-6 cursor-pointer transition-all duration-300" onclick="toggleFaq(this)">
+        <div class="flex items-center justify-between gap-4">
+          <h3 class="text-base font-medium text-white">How does Stateful Hot Reload work without Xcode?</h3>
+          <svg class="faq-chevron w-5 h-5 text-dark-muted transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">
+          XCross CLI establishes a high-speed Remote Service Discovery (RSD) tunnel over USB or Wi-Fi. The standard Flutter toolchain connects to the Dart VM runtime directly over this localhost tunnel, allowing instant sub-second hot reload and debugging just like on macOS.
+        </div>
+      </div>
+
+      <!-- FAQ 4 -->
+      <div class="faq-item liquid-glass rounded-2xl p-6 cursor-pointer transition-all duration-300" onclick="toggleFaq(this)">
+        <div class="flex items-center justify-between gap-4">
+          <h3 class="text-base font-medium text-white">Does the global xcm command require Administrator privileges?</h3>
+          <svg class="faq-chevron w-5 h-5 text-dark-muted transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">
+          No. The one-line installer copies scripts to your user directory (%LOCALAPPDATA%\Programs\XCrossCLI on Windows or ~/.local/bin on Linux) and adjusts your user-level PATH without prompting for UAC or sudo rights.
+        </div>
+      </div>
+
+      <!-- FAQ 5 -->
+      <div class="faq-item liquid-glass rounded-2xl p-6 cursor-pointer transition-all duration-300" onclick="toggleFaq(this)">
+        <div class="flex items-center justify-between gap-4">
+          <h3 class="text-base font-medium text-white">Can I switch between English and Spanish?</h3>
+          <svg class="faq-chevron w-5 h-5 text-dark-muted transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">
+          Yes! XCross CLI is completely bilingual. You can switch anytime using <code class="text-sky-300">xcm language es</code> or <code class="text-sky-300">xcm language en</code>, or simply press `L` in the interactive menu.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA Banner Before Footer -->
+  <section class="my-28 text-center relative">
+    <div class="max-w-[800px] mx-auto liquid-glass rounded-3xl p-10 sm:p-14 relative overflow-hidden shadow-aurora">
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-dark-accent/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <h2 class="text-3xl sm:text-4xl font-light text-white tracking-tight mb-4">
+        Ready to build iOS Flutter apps<br><span class="text-aurora font-medium">on your machine?</span>
+      </h2>
+      <p class="text-dark-muted text-sm sm:text-base max-w-lg mx-auto mb-8 font-light">
+        Run one command in PowerShell or Bash. Get full TUI guidance, device pairing, and instant hot reload in minutes.
+      </p>
+      
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <a href="#install" class="btn-aurora px-6 py-3 rounded-full text-sm font-semibold inline-flex items-center gap-2">
+          <span>Get Started Now</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </a>
+        <a href="https://github.com/Ameth1208/xcross-cli" target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-full text-sm font-medium border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white transition-all">
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
 </div>
 
+<!-- COMPREHENSIVE 4-COLUMN FOOTER (With Fair Credits to xcross.sh and amethgm.com) -->
+<footer data-site-footer class="mt-20">
+  <div class="max-w-[1240px] mx-auto px-6 sm:px-8 lg:px-12 py-16">
+    
+    <!-- 4 Columns Grid -->
+    <div class="grid gap-12 md:grid-cols-[1.5fr_1fr_1fr_1fr] pb-12 border-b border-white/10">
+      
+      <!-- Col 1: Brand & Tagline with Real Logo -->
+      <div>
+        <div class="flex items-center gap-3">
+          <img src="logo.svg" alt="XCross CLI logo" class="h-8 w-auto filter drop-shadow-[0_2px_12px_rgba(77,159,255,0.4)]">
+        </div>
+        
+        <p class="mt-4 max-w-sm text-xs sm:text-[13px] leading-relaxed text-dark-muted font-light">
+          The easiest way to install, run, and hot reload Flutter iOS apps natively from Windows and Linux without a Mac.
+        </p>
+
+        <!-- GitHub star button & Status in footer -->
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+          <a href="https://github.com/Ameth1208/xcross-cli" target="_blank" rel="noreferrer" class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-white hover:border-white/20 hover:bg-white/10 transition-all shadow-md">
+            <svg class="w-3.5 h-3.5 text-amber-400 fill-amber-400" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            <span>Star on GitHub</span>
+          </a>
+          <span class="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+            ● Local first & Private
+          </span>
+        </div>
+      </div>
+
+      <!-- Col 2: Getting Started -->
+      <div>
+        <h3 class="text-[11px] font-mono font-medium uppercase tracking-[0.14em] text-dark-muted">Getting Started</h3>
+        <ul class="mt-4 space-y-2.5 text-[13px]">
+          <li>
+            <a href="#install" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              One-Line Installation
+            </a>
+          </li>
+          <li>
+            <a href="#workflow" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              Quick Start (4 Steps)
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/Ameth1208/xcross-cli/blob/main/linux/setup-flutter.sh" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              Flutter Setup Script
+              <svg class="w-3 h-3 text-dark-faint" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7m0 0H7m10 0v10"/></svg>
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/Ameth1208/xcross-cli/blob/main/linux/linux-cli.sh" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              Linux CLI (linux-cli.sh)
+              <svg class="w-3 h-3 text-dark-faint" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7m0 0H7m10 0v10"/></svg>
+            </a>
+          </li>
+          <li>
+            <a href="#faq" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              FAQ & Troubleshooting
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Col 3: CLI Reference -->
+      <div>
+        <h3 class="text-[11px] font-mono font-medium uppercase tracking-[0.14em] text-dark-muted">Reference</h3>
+        <ul class="mt-4 space-y-2.5 text-[13px] font-mono">
+          <li>
+            <a href="#commands" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              <span class="text-sky-400">xcm doctor</span>
+              <span class="text-dark-muted font-sans text-xs ml-1">(Diagnostics)</span>
+            </a>
+          </li>
+          <li>
+            <a href="#commands" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              <span class="text-sky-400">xcm device</span>
+              <span class="text-dark-muted font-sans text-xs ml-1">(iPhone detect)</span>
+            </a>
+          </li>
+          <li>
+            <a href="#commands" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              <span class="text-sky-400">xcm run</span>
+              <span class="text-dark-muted font-sans text-xs ml-1">(Hot reload)</span>
+            </a>
+          </li>
+          <li>
+            <a href="#commands" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              <span class="text-sky-400">xcm tunnel</span>
+              <span class="text-dark-muted font-sans text-xs ml-1">(RSD tunnels)</span>
+            </a>
+          </li>
+          <li>
+            <a href="#commands" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              <span class="text-sky-400">xcm language</span>
+              <span class="text-dark-muted font-sans text-xs ml-1">(EN / ES)</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Project & Credits -->
+      <div>
+        <h3 class="text-[11px] font-mono font-medium uppercase tracking-[0.14em] text-dark-muted">Project & Credits</h3>
+        <ul class="mt-4 space-y-2.5 text-[13px]">
+          <li>
+            <a href="https://github.com/Ameth1208/xcross-cli" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              GitHub Repository
+              <svg class="w-3 h-3 text-dark-faint" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7m0 0H7m10 0v10"/></svg>
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/Ameth1208/xcross-cli/releases" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              Releases (v1.2.0)
+              <svg class="w-3 h-3 text-dark-faint" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7m0 0H7m10 0v10"/></svg>
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/Ameth1208/xcross-cli/blob/main/LICENSE" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
+              MIT License
+              <svg class="w-3 h-3 text-dark-faint" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7m0 0H7m10 0v10"/></svg>
+            </a>
+          </li>
+          <!-- Explicit Credits to xcross.sh and amethgm.com -->
+          <li class="pt-3 border-t border-white/10">
+            <div class="text-[10px] font-mono uppercase tracking-wider text-dark-muted mb-1">Core Engine Credits</div>
+            <a href="https://xcross.sh/" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 font-semibold transition-all hover:translate-x-0.5">
+              xcross.sh (arxdeus)
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7m0 0H7m10 0v10"/></svg>
+            </a>
+            <p class="text-[11px] text-dark-faint leading-normal mt-0.5">Full credit to the xcross team for creating the underlying toolchain that makes iOS compilation on Windows/Linux possible.</p>
+          </li>
+          <li class="pt-2">
+            <div class="text-[10px] font-mono uppercase tracking-wider text-dark-muted mb-1">CLI Companion Creator</div>
+            <a href="https://amethgm.com" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 text-white hover:text-dark-accent font-semibold transition-all hover:translate-x-0.5 font-mono">
+              amethgm.com
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7m0 0H7m10 0v10"/></svg>
+            </a>
+            <p class="text-[11px] text-dark-faint leading-normal mt-0.5">Simplifying and wrapping xcross into a fast, keyboard-first interactive terminal for Flutter.</p>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Sub-footer Bar -->
+    <div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-dark-faint">
+      <div class="flex flex-wrap items-center gap-2">
+        <span>MIT License</span>
+        <span>·</span>
+        <span>Engine by <a href="https://xcross.sh/" target="_blank" rel="noreferrer" class="text-sky-400 hover:underline font-semibold">xcross.sh</a></span>
+        <span>·</span>
+        <span>Not affiliated with Apple or Google</span>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <span>XCross CLI created by</span>
+        <a href="https://amethgm.com" target="_blank" rel="noreferrer" class="text-white hover:text-dark-accent transition-colors font-semibold">
+          amethgm.com
+        </a>
+      </div>
+    </div>
+
+  </div>
+</footer>
+
+<!-- Interactive Scripts -->
 <script>
-const EN=[['1','Run Flutter on iPhone','build, sign, install, hot reload'],['2','Flutter diagnostics','xcross flutter doctor'],['3','Detect iPhone','USB and iOS version'],['4','Developer mode','status and activation'],['5','Open USB tunnel','opens PowerShell with permissions'],['6','Open Wi-Fi tunnel','wireless link'],['D','Downloads and SDK','Swift, xcross, Xcode, precache'],['F','Signing and App ID','Apple Development authorization'],['P','Flutter projects','change project, VS Code, run'],['I','Install xcm command','available from any folder'],['U','Update xcm','download latest version from GitHub'],['X','Uninstall xcm','remove global command'],['L','Language','switch English/Spanish'],['?','Commands and help','command list and examples']];
-const ES=[['1','Ejecutar Flutter en iPhone','compilar, firmar, instalar, hot reload'],['2','Diagnostico de Flutter','xcross flutter doctor'],['3','Detectar iPhone','USB y version de iOS'],['4','Modo desarrollador','estado y activacion'],['5','Abrir tunel USB','abre PowerShell con permisos'],['6','Abrir tunel Wi-Fi','enlace inalambrico'],['D','Descargas y SDK','Swift, xcross, Xcode, precache'],['F','Firma y App ID','autorizacion Apple Development'],['P','Proyectos Flutter','cambiar proyecto, VS Code, ejecutar'],['I','Instalar comando xcm','disponible desde cualquier carpeta'],['U','Actualizar xcm','descarga la ultima version desde GitHub'],['X','Desinstalar xcm','elimina el comando global'],['L','Idioma','cambiar ingles/espanol'],['?','Comandos y ayuda','lista de comandos y ejemplos']];
-let lang='en', sel=0;
-function render(){
-  const items=lang==='es'?ES:EN;
-  const m=document.getElementById('menu');
-  const w=60;
-  const top='╔'+ '═'.repeat(w-2) + '╗';
-  const bot='╚'+ '═'.repeat(w-2) + '╝';
-  let html='<pre class="m-0 text-[13px] leading-tight font-mono">';
-  html += top + '\n';
-  items.forEach((it,i)=>{
-    const key=it[0].padEnd(2);
-    const label=it[1].padEnd(28);
-    const desc=it[2].padEnd(22);
-    const line='║  ' + key + '  ' + label + '  ' + desc + '║';
-    if(i===sel){ html += '<span class="bg-[#2997ff] text-black">' + line + '</span>\n'; }
-    else { html += line + '\n'; }
+// --- TUI Menu Data (English & Spanish) ---
+const EN_MENU = [
+  ['1', 'Run Flutter on iPhone', 'build, sign, install, hot reload', 'Building bundle... Signing with Apple Development ID... Deploying to iPhone over RSD tunnel... [OK] App running! Press "r" for hot reload.'],
+  ['2', 'Flutter diagnostics', 'xcross flutter doctor', 'Checking Flutter SDK... Found 3.24.3. Swift toolchain: ready. iTunes USB driver: active. All checks passed.'],
+  ['3', 'Detect iPhone', 'USB and iOS version', 'Scanning bus... Detected iPhone 16 Pro (iOS 18.1, Model A3084). Pairing status: Verified.'],
+  ['4', 'Developer mode', 'status and activation', 'Querying iOS security profile... Developer Mode: ENABLED. Ready for debug payload injection.'],
+  ['5', 'Open USB tunnel', 'opens PowerShell with permissions', 'Spawning background RSD tunnel over port 58783... [OK] Tunnel operational. Listening for lldb / daps.'],
+  ['6', 'Open Wi-Fi tunnel', 'wireless link', 'Searching Bonjour mDNS for _apple-mobdev2._tcp... Found 192.168.1.140:5353. Wireless link ready.'],
+  ['D', 'Downloads and SDK', 'Swift, xcross, Xcode, precache', 'Checking cache... Swift 6.0: Cached. Xcode 16.0 SDK: Extracted. Precache engine: Up to date.'],
+  ['F', 'Signing and App ID', 'Apple Development authorization', 'Reading free Apple Developer profile... Active provisioning profile: 7 days remaining.'],
+  ['P', 'Flutter projects', 'change project, VS Code, run', 'Active project set to: ./lumina-mobile. VS Code configuration verified.'],
+  ['I', 'Install xcm command', 'available from any folder', 'Copying binaries to %LOCALAPPDATA%\\Programs\\XCrossCLI... User PATH updated. Ready globally.'],
+  ['U', 'Update xcm', 'download latest version from GitHub', 'Checking github.com/Ameth1208/xcross-cli... Current v1.2.0 is already the newest release.'],
+  ['X', 'Uninstall xcm', 'remove global command', 'Uninstaller ready. Run "powershell -File windows/uninstall.ps1" to remove cleanly.'],
+  ['L', 'Language', 'switch English/Spanish', 'Toggled language between English and Spanish.'],
+  ['?', 'Commands and help', 'command list and examples', 'Displaying command palette: xcm doctor, xcm device, xcm run, xcm tunnel, xcm sign.']
+];
+
+const ES_MENU = [
+  ['1', 'Ejecutar Flutter en iPhone', 'compilar, firmar, instalar, hot reload', 'Compilando paquete... Firmando con Apple Development ID... Instalando en iPhone por túnel RSD... [OK] App en ejecución. Presiona "r" para hot reload.'],
+  ['2', 'Diagnostico de Flutter', 'xcross flutter doctor', 'Verificando Flutter SDK... Detectado 3.24.3. Herramientas Swift: listas. Driver USB: activo. Todo en orden.'],
+  ['3', 'Detectar iPhone', 'USB y version de iOS', 'Escaneando dispositivos... Detectado iPhone 16 Pro (iOS 18.1). Estado de vinculación: Verificado.'],
+  ['4', 'Modo desarrollador', 'estado y activacion', 'Consultando perfil de seguridad iOS... Modo Desarrollador: ACTIVADO. Listo para depuración.'],
+  ['5', 'Abrir tunel USB', 'abre PowerShell con permisos', 'Iniciando túnel RSD en segundo plano (puerto 58783)... [OK] Túnel establecido con éxito.'],
+  ['6', 'Abrir tunel Wi-Fi', 'enlace inalambrico', 'Buscando dispositivo en red local... Encontrado 192.168.1.140. Enlace inalámbrico listo.'],
+  ['D', 'Descargas y SDK', 'Swift, xcross, Xcode, precache', 'Verificando herramientas... Swift 6.0: Descargado. SDK iOS 16: Extraído. Precache listo.'],
+  ['F', 'Firma y App ID', 'autorizacion Apple Development', 'Leyendo perfil Apple Developer... Perfil de desarrollo personal activo: 7 días restantes.'],
+  ['P', 'Proyectos Flutter', 'cambiar proyecto, VS Code, ejecutar', 'Proyecto activo: ./lumina-mobile. Espacio de trabajo verificado.'],
+  ['I', 'Instalar comando xcm', 'disponible desde cualquier carpeta', 'Instalando en %LOCALAPPDATA%\\Programs\\XCrossCLI... PATH actualizado. Disponible globalmente.'],
+  ['U', 'Actualizar xcm', 'descarga la ultima version desde GitHub', 'Verificando GitHub... La versión v1.2.0 ya está actualizada a la última release.'],
+  ['X', 'Desinstalar xcm', 'elimina el comando global', 'Para desinstalar ejecuta: powershell -File windows/uninstall.ps1'],
+  ['L', 'Idioma', 'cambiar ingles/espanol', 'Cambiando idioma entre Inglés y Español.'],
+  ['?', 'Comandos y ayuda', 'lista de comandos y ejemplos', 'Comandos directos: xcm doctor, xcm device, xcm run, xcm tunnel, xcm sign.']
+];
+
+let currentLang = 'en';
+let selectedIndex = 0;
+
+function renderTui() {
+  const items = currentLang === 'es' ? ES_MENU : EN_MENU;
+  const container = document.getElementById('menuContainer');
+  const w = 62;
+  const top = '╔' + '═'.repeat(w - 2) + '╗';
+  const bot = '╚' + '═'.repeat(w - 2) + '╝';
+  
+  let html = '<pre class="m-0 text-[12px] sm:text-[13px] leading-tight font-mono select-none">';
+  html += `<span class="text-white/40">${top}</span>\n`;
+  
+  items.forEach((it, i) => {
+    const key = it[0].padEnd(2);
+    const label = it[1].padEnd(28);
+    const desc = it[2].padEnd(24);
+    const isSel = i === selectedIndex;
+    
+    const line = '║  ' + key + '  ' + label + '  ' + desc + '║';
+    if (isSel) {
+      html += `<div onclick="selectTuiItem(${i})" class="cursor-pointer bg-dark-accent text-black font-bold font-mono transition-colors">${line}</div>`;
+    } else {
+      html += `<div onclick="selectTuiItem(${i})" class="cursor-pointer text-gray-300 hover:text-white hover:bg-white/5 font-mono transition-colors"><span class="text-white/30">║</span>  <span class="text-sky-400 font-bold">${key}</span>  <span>${label}</span>  <span class="text-dark-muted">${desc}</span><span class="text-white/30">║</span></div>`;
+    }
   });
-  html += bot;
+  
+  html += `<span class="text-white/40">${bot}</span>`;
   html += '</pre>';
-  m.innerHTML=html;
-  document.getElementById('t').textContent=lang==='es'?'xcm / Menu principal':'xcm / Main menu';
-  document.getElementById('s').textContent='Flutter iOS  /  Windows  /  developer toolkit';
-  document.getElementById('f').textContent=lang==='es'?'↑↓ mover   →/ESPACIO ejecutar   1-9 acceso directo   / comandos   ESC/0 atras':'↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back';
+  
+  container.innerHTML = html;
+  document.getElementById('tuiTitle').textContent = currentLang === 'es' ? 'Menú principal' : 'Main menu';
+  document.getElementById('langBadge').textContent = currentLang === 'es' ? 'ES' : 'EN';
+  document.getElementById('tuiFooter').innerHTML = currentLang === 'es'
+    ? '<span>↑↓ mover &nbsp; | &nbsp; →/ESPACIO ejecutar &nbsp; | &nbsp; 1-9 acceso directo &nbsp; | &nbsp; / comandos</span><span class="text-sky-400 text-[11px]">¡Haz clic en cualquier opción para probar!</span>'
+    : '<span>↑↓ move &nbsp; | &nbsp; →/SPACE execute &nbsp; | &nbsp; 1-9 direct &nbsp; | &nbsp; / commands</span><span class="text-sky-400 text-[11px]">Click any option to test!</span>';
 }
-function toggleLang(){ lang=lang==='en'?'es':'en'; render(); }
-function setTab(t){
-  document.getElementById('tabWin').classList.toggle('active',t==='win');
-  document.getElementById('tabLin').classList.toggle('active',t==='lin');
-  document.getElementById('cmd').textContent = t==='win'
+
+function selectTuiItem(idx) {
+  selectedIndex = idx;
+  renderTui();
+  executeTuiItem(idx);
+}
+
+function executeTuiItem(idx) {
+  const items = currentLang === 'es' ? ES_MENU : EN_MENU;
+  const item = items[idx];
+  const output = document.getElementById('cliOutputLog');
+  
+  output.innerHTML = `
+    <div class="space-y-1">
+      <div class="text-sky-400 font-bold">&gt; [xcm: ${item[0]}] ${item[1]}</div>
+      <div class="text-gray-300 font-mono text-[11px]">${item[3]}</div>
+    </div>
+  `;
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'en' ? 'es' : 'en';
+  renderTui();
+}
+
+// Arrow Key Navigation
+document.addEventListener('keydown', (e) => {
+  if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+  
+  const items = currentLang === 'es' ? ES_MENU : EN_MENU;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    selectedIndex = (selectedIndex + 1) % items.length;
+    renderTui();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+    renderTui();
+  } else if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault();
+    executeTuiItem(selectedIndex);
+  }
+});
+
+// --- Tab Switcher for Install Command ---
+function setTab(tab) {
+  const isWin = tab === 'win';
+  document.getElementById('tabWin').classList.toggle('active', isWin);
+  document.getElementById('tabLin').classList.toggle('active', !isWin);
+  
+  const cmd = document.getElementById('cmd');
+  cmd.textContent = isWin
     ? 'irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1 | iex'
     : 'curl -fsSL https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/linux/xcm-install.sh | bash';
 }
-function copyCmd(){ navigator.clipboard.writeText(document.getElementById('cmd').textContent); }
-document.addEventListener('keydown',e=>{
-  const items=lang==='es'?ES:EN;
-  if(e.key==='ArrowDown'){sel=(sel+1)%items.length;render();}
-  if(e.key==='ArrowUp'){sel=(sel+items.length-1)%items.length;render();}
-});
-render();
-document.addEventListener('DOMContentLoaded', () => {
-  if (!window.anime) return;
-  anime({ targets: 'section h1', opacity:[0,1], translateY:[24,0], duration:900, easing:'easeOutExpo', delay:100 });
-  anime({ targets: 'section p', opacity:[0,1], translateY:[16,0], duration:800, easing:'easeOutExpo', delay:250 });
-  anime({ targets: '.card', opacity:[0,1], translateY:[20,0], duration:700, easing:'easeOutCubic', delay:anime.stagger(80,{start:400}) });
-  anime({ targets: '.glass', opacity:[0,1], translateY:[30,0], scale:[.98,1], duration:900, easing:'easeOutExpo', delay:300 });
 
-  // Scroll-triggered reveals
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        anime({ targets: e.target, opacity:[0,1], translateY:[24,0], duration:700, easing:'easeOutCubic' });
-        io.unobserve(e.target);
-      }
+// --- Copy Command with Sound & Visual Confirmation ---
+function copyCmd() {
+  const text = document.getElementById('cmd').textContent;
+  navigator.clipboard.writeText(text);
+  
+  const tooltip = document.getElementById('copyTooltip');
+  const copyText = document.getElementById('copyText');
+  
+  copyText.textContent = 'Copied!';
+  tooltip.classList.add('show');
+  
+  setTimeout(() => {
+    copyText.textContent = 'Copy';
+    tooltip.classList.remove('show');
+  }, 2200);
+}
+
+function copySpecificCmd(cmdText, btnEl) {
+  navigator.clipboard.writeText(cmdText);
+  const orig = btnEl.innerHTML;
+  btnEl.innerHTML = '<span class="text-emerald-400 font-mono text-[10px]">✓</span>';
+  setTimeout(() => { btnEl.innerHTML = orig; }, 1500);
+}
+
+// --- Filter Commands in Explorer by Keyword ---
+function filterCommands() {
+  const q = document.getElementById('cmdSearch').value.toLowerCase();
+  const activeCatBtn = document.querySelector('.cmd-cat-btn.active');
+  const activeCat = activeCatBtn ? activeCatBtn.dataset.cat || 'all' : 'all';
+  
+  const items = document.querySelectorAll('.cmd-item');
+  items.forEach(el => {
+    const text = el.textContent.toLowerCase();
+    const cat = el.dataset.category || '';
+    const matchCat = activeCat === 'all' || cat.includes(activeCat);
+    const matchQuery = text.includes(q);
+    
+    el.style.display = (matchCat && matchQuery) ? 'flex' : 'none';
+  });
+}
+
+// --- Filter Commands by Category Tab ---
+function filterCategory(cat, btnEl) {
+  document.querySelectorAll('.cmd-cat-btn').forEach(b => {
+    b.classList.remove('active', 'bg-white/10', 'text-white');
+    b.classList.add('bg-white/5', 'text-dark-muted');
+  });
+  btnEl.classList.add('active', 'bg-white/10', 'text-white');
+  btnEl.classList.remove('bg-white/5', 'text-dark-muted');
+  btnEl.dataset.cat = cat;
+  
+  filterCommands();
+}
+
+// --- Word Swap Header Animation (Exact from xcross.sh) ---
+function initWordSwap() {
+  const track = document.getElementById('swapTrack');
+  const words = [...track.querySelectorAll('.word-swap-word')];
+  if (!track || words.length < 2) return;
+  
+  let widths = [];
+  let currentIdx = 0;
+  
+  function updateWidths() {
+    track.style.width = 'auto';
+    widths = words.map(w => w.getBoundingClientRect().width);
+    track.style.width = (widths[currentIdx] || 120) + 'px';
+  }
+  
+  function swap(nextIdx) {
+    const prevIdx = currentIdx;
+    currentIdx = nextIdx;
+    
+    words.forEach((w, i) => {
+      w.toggleAttribute('data-active', i === currentIdx);
+      w.toggleAttribute('data-leaving', i === prevIdx && i !== currentIdx);
     });
-  }, { threshold: 0.15 });
-  document.querySelectorAll('.card, .terminal, footer.site').forEach(el => { el.style.opacity='0'; io.observe(el); });
+    
+    track.style.width = widths[currentIdx] + 'px';
+    setTimeout(() => {
+      words[prevIdx]?.removeAttribute('data-leaving');
+    }, 460);
+  }
+  
+  updateWidths();
+  track.setAttribute('data-ready', '');
+  
+  setInterval(() => {
+    swap((currentIdx + 1) % words.length);
+  }, 3200);
+}
 
-  // Typing effect on install command
-  const cmd = document.getElementById('cmd');
-  if (cmd) {
-    const text = cmd.textContent;
-    cmd.textContent = '';
-    let i = 0;
-    const type = () => {
-      if (i < text.length) { cmd.textContent += text.charAt(i++); setTimeout(type, 18); }
-    };
-    setTimeout(type, 600);
+// --- Hot Reload Simulation (Code editor -> iPhone update) ---
+const hrPhrases = [
+  "Hello from Windows! 🚀",
+  "Hot Reload in 0.28s ⚡",
+  "No Mac or Xcode needed ✨",
+  "XCross CLI + xcross iOS"
+];
+
+let hrIdx = 0;
+let hrLoopActive = true;
+let hrTimer = null;
+
+async function runHotReloadCycle() {
+  if (!hrLoopActive) return;
+  
+  const codeEl = document.getElementById('hrCodeText');
+  const phoneTextEl = document.getElementById('hrPhoneText');
+  const flashEl = document.getElementById('phoneFlash');
+  const toastEl = document.getElementById('phoneToast');
+  const statusEl = document.getElementById('hrStatus');
+  
+  const currText = hrPhrases[hrIdx % hrPhrases.length];
+  const nextText = hrPhrases[(hrIdx + 1) % hrPhrases.length];
+  
+  // 1. Backspace typing
+  statusEl.textContent = '// editing code...';
+  statusEl.className = 'font-mono text-xs text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20';
+  for (let i = currText.length; i >= 0; i--) {
+    if (!hrLoopActive) return;
+    codeEl.textContent = currText.slice(0, i);
+    await new Promise(r => setTimeout(r, 25));
+  }
+  
+  // 2. Type new phrase
+  for (let i = 1; i <= nextText.length; i++) {
+    if (!hrLoopActive) return;
+    codeEl.textContent = nextText.slice(0, i);
+    await new Promise(r => setTimeout(r, 45));
+  }
+  
+  await new Promise(r => setTimeout(r, 200));
+  
+  // 3. Save -> Trigger Hot Reload
+  statusEl.textContent = '// saved → [r] reload';
+  statusEl.className = 'font-mono text-xs text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20';
+  await new Promise(r => setTimeout(r, 350));
+  
+  // 4. Flash screen & update phone
+  flashEl.classList.add('flash');
+  phoneTextEl.textContent = nextText;
+  toastEl.style.opacity = '1';
+  statusEl.textContent = '✓ Hot reloaded in 0.28s';
+  statusEl.className = 'font-mono text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20';
+  
+  setTimeout(() => flashEl.classList.remove('flash'), 250);
+  setTimeout(() => toastEl.style.opacity = '0', 1800);
+  
+  hrIdx++;
+  hrTimer = setTimeout(runHotReloadCycle, 3000);
+}
+
+function triggerHotReloadManual() {
+  clearTimeout(hrTimer);
+  const flashEl = document.getElementById('phoneFlash');
+  const toastEl = document.getElementById('phoneToast');
+  const statusEl = document.getElementById('hrStatus');
+  
+  flashEl.classList.add('flash');
+  toastEl.style.opacity = '1';
+  statusEl.textContent = '✓ Forced reload in 0.19s';
+  statusEl.className = 'font-mono text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20';
+  
+  setTimeout(() => flashEl.classList.remove('flash'), 250);
+  setTimeout(() => toastEl.style.opacity = '0', 2000);
+  
+  if (hrLoopActive) {
+    hrTimer = setTimeout(runHotReloadCycle, 3500);
+  }
+}
+
+function toggleHrLoop() {
+  hrLoopActive = !hrLoopActive;
+  const btn = document.getElementById('hrLoopBtn');
+  btn.innerHTML = hrLoopActive 
+    ? 'Auto-loop: <span class="text-emerald-400 font-semibold">ON</span>'
+    : 'Auto-loop: <span class="text-amber-400 font-semibold">PAUSED</span>';
+  
+  if (hrLoopActive) {
+    runHotReloadCycle();
+  } else {
+    clearTimeout(hrTimer);
+  }
+}
+
+// --- Spotlight Card Mouse Tracking ---
+function initSpotlightCards() {
+  const cards = document.querySelectorAll('.spotlight');
+  cards.forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      card.style.setProperty('--mouse-x', `${x}px`);
+      card.style.setProperty('--mouse-y', `${y}px`);
+    });
+  });
+}
+
+// --- FAQ Accordion Toggle ---
+function toggleFaq(itemEl) {
+  const isActive = itemEl.classList.contains('active');
+  document.querySelectorAll('.faq-item').forEach(el => el.classList.remove('active'));
+  if (!isActive) {
+    itemEl.classList.add('active');
+  }
+}
+
+// --- Initialization ---
+document.addEventListener('DOMContentLoaded', () => {
+  renderTui();
+  initWordSwap();
+  initSpotlightCards();
+  
+  // Start hot reload demo
+  setTimeout(runHotReloadCycle, 1500);
+  
+  // Anime.js Entrance Animations
+  if (window.anime) {
+    anime({
+      targets: 'header',
+      opacity: [0, 1],
+      translateY: [-20, 0],
+      duration: 800,
+      easing: 'easeOutCubic'
+    });
+    
+    anime({
+      targets: 'section h1',
+      opacity: [0, 1],
+      translateY: [24, 0],
+      duration: 900,
+      easing: 'easeOutExpo',
+      delay: 150
+    });
+    
+    anime({
+      targets: 'section p',
+      opacity: [0, 1],
+      translateY: [16, 0],
+      duration: 800,
+      easing: 'easeOutExpo',
+      delay: 250
+    });
+    
+    anime({
+      targets: '#install',
+      opacity: [0, 1],
+      translateY: [24, 0],
+      duration: 800,
+      easing: 'easeOutExpo',
+      delay: 350
+    });
   }
 });
 </script>
