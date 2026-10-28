@@ -14,6 +14,20 @@ BUNDLE_MODE="default"
 # ---------- colors ----------
 C='\033[1;36m'; W='\033[1;37m'; G='\033[1;32m'; Y='\033[1;33m'; R='\033[1;31m'; D='\033[0;90m'; N='\033[0m'
 
+print_logo() {
+  echo -e "${C}"
+  cat <<'LOGO'
+█   █  ███  █   █
+ █ █ ░█ ░░░ ██ ██░
+  █ ░ █░ ░░░█░█ █░░
+ █ █ ░█░░   █░░░█░░
+█ ░ █  ███  █░░ █░░
+ ░ ░ ░  ░░░  ░░  ░░
+  ░   ░  ░░░  ░   ░
+LOGO
+  echo -e "${N}"
+}
+
 title()   { echo; echo -e "  ${C}xcm${N} ${W}/ $1${N}"; echo -e "  ${D}------------------------------------------------------------${N}"; }
 ok()      { echo -e "  ${G}[OK]${N} $1"; }
 warn()    { echo -e "  ${Y}[!]${N} $1"; }
@@ -228,6 +242,8 @@ cmd_trust() {
 menu() {
   load_settings
   while true; do
+    clear 2>/dev/null || true
+    print_logo
     title "Menu principal"
     echo "  1) Doctor (verificar herramientas)"
     echo "  2) Dispositivos"

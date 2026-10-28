@@ -707,6 +707,19 @@ function Show-Menu {
 # ----------------------------------------------
 function Show-Banner {
     param([string]$Title, [string]$Subtitle)
+    $logo = @'
+█   █  ███  █   █
+ █ █ ░█ ░░░ ██ ██░
+  █ ░ █░ ░░░█░█ █░░
+ █ █ ░█░░   █░░░█░░
+█ ░ █  ███  █░░ █░░
+ ░ ░ ░  ░░░  ░░  ░░
+  ░   ░  ░░░  ░   ░
+'@
+    Write-Host ''
+    foreach ($line in ($logo -split "`r?`n")) {
+        if ($line.Trim() -ne '') { Write-Host ("    " + $line) -ForegroundColor Cyan }
+    }
     Write-Host ''
     Write-Host '    xcm' -NoNewline -ForegroundColor Cyan
     Write-Host '  /  XCross Console' -NoNewline -ForegroundColor White
