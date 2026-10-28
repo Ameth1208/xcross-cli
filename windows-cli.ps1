@@ -947,9 +947,9 @@ function Show-CurrentProject {
 }
 
 function Install-XcmGlobal {
-    $installer=Join-Path $PSScriptRoot 'Instalar-Comando-XCM.ps1'
+    $installer=Join-Path $PSScriptRoot 'install.ps1'
     if(-not (Test-Path -LiteralPath $installer)){
-        Write-Fail 'No se encontro el instalador en el paquete ZIP.'
+        Write-Fail 'No se encontro install.ps1 en el paquete.'
         return
     }
     Write-Title 'Comando xcm global'
@@ -958,6 +958,43 @@ function Install-XcmGlobal {
     if(Confirm-Yes 'Instalar comando global xcm?') {
         & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installer 2>&1 | Out-Host
     }
+}
+
+function Uninstall-XcmGlobal {
+    $uninstaller=Join-Path $PSScriptRoot 'uninstall.ps1'
+    Write-Title 'Desinstalar xcm global'
+    if(Test-Path -LiteralPath $uninstaller) {
+        if(Confirm-Yes 'Eliminar el comando global xcm?') {
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $uninstaller 2>&1 | Out-Host
+        }
+    }
+    else {
+        $target=Join-Path $env:LOCALAPPDATA 'Programs\XCrossCLI'
+        if(Test-Path -LiteralPath $target) {
+            if(Confirm-Yes "Eliminar $target y quitar del PATH?") {
+                Remove-Item -LiteralPath $target -Recurse -Force
+                $userPath=[Environment]::GetEnvironmentVariable('Path','User')
+                $parts=@($userPath -split ';' | Where-Object { $_ -and $_.Trim() -and $_.TrimEnd('\') -ine $target.TrimEnd('\') })
+                [Environment]::SetEnvironmentVariable('Path', ($parts -join ';'), 'User')
+                Write-Ok 'xcm desinstalado.'
+            }
+        }
+        else { Write-Warn 'xcm no esta instalado globalmente.' }
+    }
+}
+
+function Update-XcmGlobal {
+    Write-Title 'Actualizar xcm'
+    $url='https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1'
+    Write-Host "  Descargando actualizacion desde $url" -ForegroundColor DarkGray
+    try {
+        $tmp=Join-Path $env:TEMP 'xcm-install.ps1'
+        Invoke-WebRequest -Uri $url -OutFile $tmp -UseBasicParsing
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $tmp 2>&1 | Out-Host
+        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        Write-Ok 'xcm actualizado.'
+    }
+    catch { Write-Fail $_.Exception.Message }
 }
 
 function Show-XcmHelp {
@@ -990,6 +1027,8 @@ function Show-XcmHelp {
   xcm vscode                Configurar VS Code
   xcm update                Actualizar xcross
   xcm install-cli           Instalar comando xcm en el PATH
+  xcm uninstall-cli         Desinstalar comando xcm
+  xcm update-cli            Actualizar xcm desde GitHub
 '@
     Write-Host $helpText -ForegroundColor Gray
     Write-Host '  Ejemplo LUMINA:' -ForegroundColor Cyan
@@ -1113,6 +1152,8 @@ function Invoke-XcmCommand {
             return $true
         }
         'install-cli' {Install-XcmGlobal;return $true}
+        {$_ -in @('uninstall-cli','uninstall')} {Uninstall-XcmGlobal;return $true}
+        {$_ -in @('update-cli','upgrade-cli')} {Update-XcmGlobal;return $true}
         default {Write-Fail "Comando no reconocido: $Verb";Show-XcmHelp;return $false}
     }
 }

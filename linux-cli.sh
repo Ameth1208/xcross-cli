@@ -84,6 +84,8 @@ cmd_help() {
     bundle default|original   Selecciona modo de Bundle ID
     sign [id]       Info de firma (Linux: configura keystore manualmente)
     install         Instala xcm como comando global en ~/.local/bin
+    uninstall       Desinstala xcm
+    update-cli      Actualiza xcm desde GitHub
     tunnel usb|wifi Configura tunnel USB/WiFi via adb
     trust           Guia de confianza/firma en dispositivo
     update          Actualiza Flutter y dependencias
@@ -240,6 +242,32 @@ cmd_trust() {
   info "Modo Bundle ID actual: $BUNDLE_MODE"
 }
 
+# ---------- uninstall ----------
+cmd_uninstall() {
+  title "Desinstalar xcm (Linux)"
+  local bin="$HOME/.local/bin"
+  if [[ -f "$bin/xcm" ]]; then
+    if confirm "Eliminar $bin/xcm y quitar del PATH?"; then
+      rm -f "$bin/xcm" "$bin/setup-flutter.sh"
+      ok "xcm desinstalado."
+    fi
+  else
+    warn "xcm no esta instalado globalmente."
+  fi
+}
+
+# ---------- update cli ----------
+cmd_update_cli() {
+  title "Actualizar xcm (Linux)"
+  local url="https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.sh"
+  echo "  Descargando desde $url"
+  if curl -fsSL "$url" | bash; then
+    ok "xcm actualizado."
+  else
+    fail "No se pudo actualizar."
+  fi
+}
+
 # ---------- menu ----------
 menu() {
   load_settings
@@ -257,6 +285,8 @@ menu() {
     echo "  8) Precache all"
     echo "  9) Bundle ID: default/original"
     echo "  I) Instalar xcm global"
+    echo "  X) Desinstalar xcm"
+    echo "  G) Actualizar xcm"
     echo "  T) Tunnel (usb/wifi)"
     echo "  R) Trust / firma"
     echo "  D) Doctor detallado"
@@ -279,6 +309,8 @@ menu() {
       8) cmd_precache all; pause_menu ;;
       9) echo "  1) default  2) original"; read -rsn1 b; [[ "$b" == "1" ]] && cmd_bundle default || cmd_bundle original; pause_menu ;;
       [iI]) cmd_install; pause_menu ;;
+      [xX]) cmd_uninstall; pause_menu ;;
+      [gG]) cmd_update_cli; pause_menu ;;
       [tT]) echo "  1) usb  2) wifi"; read -rsn1 b; [[ "$b" == "1" ]] && cmd_tunnel usb || cmd_tunnel wifi; pause_menu ;;
       [rR]) cmd_trust; pause_menu ;;
       [dD]) cmd_doctor; pause_menu ;;
@@ -311,6 +343,8 @@ case "${1:-menu}" in
   bundle) shift; cmd_bundle "$@" ;;
   sign) shift; cmd_sign "$@" ;;
   install) shift; cmd_install "$@" ;;
+  uninstall) shift; cmd_uninstall "$@" ;;
+  update-cli) shift; cmd_update_cli "$@" ;;
   tunnel) shift; cmd_tunnel "$@" ;;
   trust) shift; cmd_trust "$@" ;;
   update) shift; cmd_update "$@" ;;
