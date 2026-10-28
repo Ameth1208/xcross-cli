@@ -684,6 +684,8 @@ function Show-Menu {
         @{ Key='F'; Label='Firma y App ID'; Description='autorizacion Apple Development'; Command='signing' },
         @{ Key='P'; Label='Proyectos Flutter'; Description='cambiar proyecto, VS Code, ejecutar'; Command='projects' },
         @{ Key='I'; Label='Instalar comando xcm'; Description='disponible desde cualquier carpeta'; Command='install-cli' },
+        @{ Key='U'; Label='Actualizar xcm'; Description='descarga la ultima version desde GitHub'; Command='update-cli' },
+        @{ Key='X'; Label='Desinstalar xcm'; Description='elimina el comando global'; Command='uninstall-cli' },
         @{ Key='?'; Label='Comandos y ayuda'; Description='lista de comandos y ejemplos'; Command='help' }
     )
     while ($true) {
@@ -701,6 +703,8 @@ function Show-Menu {
             'signing' { Signing-Menu; continue }
             'projects' { Projects-Menu; continue }
             'install-cli' { Install-XcmGlobal }
+            'update-cli' { Update-XcmGlobal }
+            'uninstall-cli' { Uninstall-XcmGlobal }
             'help' { Show-XcmHelp }
         }
         Pause-Menu
