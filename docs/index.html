@@ -8,131 +8,88 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter','-apple-system','BlinkMacSystemFont','Segoe UI','Roboto','sans-serif'] },
+        colors: { apple: { bg:'#f5f5f7', fg:'#1d1d1f', gray:'#6e6e73', accent:'#007aff', card:'#ffffff' } },
+        borderRadius: { ios:'20px', pill:'999px' },
+        boxShadow: { ios:'0 4px 20px rgba(0,0,0,.04)', iosHover:'0 12px 40px rgba(0,0,0,.1)', term:'0 20px 60px rgba(0,0,0,.15)' },
+      }
+    }
+  }
+</script>
 <style>
-  :root {
-    --bg:#f5f5f7; --fg:#1d1d1f; --gray:#6e6e73; --dark:#1d1d1f; --border:rgba(0,0,0,.08);
-    --accent:#007aff; --green:#30d158; --card:#ffffff; --radius:20px;
-  }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  html { scroll-behavior:smooth; }
-  body { background:var(--bg); color:var(--fg); font-family:Inter,-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
-  a { color:var(--accent); text-decoration:none; }
-  a:hover { text-decoration:underline; }
-  a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
-  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
-  header { display:flex; align-items:center; justify-content:space-between; padding:16px 0; position:sticky; top:0; backdrop-filter:blur(20px) saturate(180%); background:rgba(245,245,247,.72); z-index:10; border-bottom:1px solid var(--border); }
-  .brand { display:flex; align-items:center; gap:10px; color:var(--fg); font-weight:600; font-size:17px; }
-  .brand .logo { color:var(--accent); font-family:Consolas,monospace; font-size:11px; line-height:1; }
-  nav a { margin-left:24px; color:var(--gray); font-size:14px; transition:color .15s ease-out; }
-  nav a:hover { color:var(--fg); }
-  .hero { text-align:center; padding:80px 0 56px; }
-  .hero h1 { font-size:clamp(2.4rem,6vw,3.6rem); color:var(--fg); margin-bottom:12px; letter-spacing:-0.025em; line-height:1.05; font-weight:700; text-wrap:balance; }
-  .hero p { color:var(--gray); font-size:1.15rem; max-width:600px; margin:0 auto 36px; text-wrap:pretty; }
-  .tabs { display:flex; gap:8px; margin:0 auto 16px; max-width:720px; justify-content:center; }
-  .tabs button { background:transparent; border:1px solid var(--border); color:var(--gray); padding:8px 18px; border-radius:999px; cursor:pointer; font-size:14px; font-weight:500; transition:all .2s ease-out; }
-  .tabs button:hover { color:var(--fg); border-color:rgba(0,0,0,.2); }
-  .tabs button.active { background:var(--fg); color:#fff; border-color:var(--fg); }
-  .install { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; max-width:720px; margin:0 auto; display:flex; align-items:center; gap:12px; box-shadow:0 4px 20px rgba(0,0,0,.04); transition:box-shadow .2s; }
-  .install:hover { box-shadow:0 8px 30px rgba(0,0,0,.08); }
-  .install code { flex:1; color:#1d1d1f; font-family:Consolas,monospace; font-size:14px; overflow-x:auto; white-space:nowrap; }
-  .install button { background:var(--accent); color:#fff; border:none; border-radius:999px; padding:10px 18px; font-weight:600; cursor:pointer; font-size:14px; transition:transform .1s ease-out, opacity .15s; }
-  .install button:hover { opacity:.9; }
-  .install button:active { transform:scale(.96); }
-  .features { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin:72px 0; }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:24px; box-shadow:0 4px 20px rgba(0,0,0,.04); transition:transform .25s ease-out, box-shadow .25s; }
-  .card:hover { transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,.1); }
-  .card h3 { color:var(--fg); margin-bottom:6px; font-size:1.1rem; font-weight:600; }
-  .card p { color:var(--gray); font-size:0.95rem; }
-  .preview { margin:40px 0 72px; }
-  .preview h2 { color:var(--fg); margin-bottom:20px; text-align:center; font-size:1.8rem; letter-spacing:-0.015em; font-weight:700; }
-  .terminal { background:#1d1d1f; border:1px solid rgba(255,255,255,.08); border-radius:var(--radius); padding:20px 24px; box-shadow:0 20px 60px rgba(0,0,0,.15); font-family:Consolas,monospace; color:#f5f5f7; }
-  .logo { color:#58a6ff; white-space:pre; font-size:13px; line-height:1.2; margin-bottom:10px; }
-  .title { color:#fff; font-weight:bold; margin:6px 0 2px; }
-  .subtitle { color:#8b949e; font-size:12px; margin-bottom:10px; }
-  .status { display:flex; gap:16px; font-size:12px; color:#8b949e; margin-bottom:8px; flex-wrap:wrap; }
-  .status b { color:#58a6ff; }
-  .box { border:1px solid #58a6ff; border-radius:12px; padding:6px 0; margin:10px 0; }
-  .row { display:flex; padding:3px 14px; font-size:13px; transition:background .1s; }
-  .key { color:#58a6ff; width:34px; font-weight:bold; }
-  .label { width:230px; }
-  .desc { color:#8b949e; flex:1; }
-  .row.sel { background:#58a6ff; color:#000; }
-  .row.sel .key,.row.sel .label,.row.sel .desc { color:#000; }
-  .footer { color:#8b949e; font-size:11px; margin-top:10px; border-top:1px solid rgba(255,255,255,.08); padding-top:8px; }
-  .langbtn { float:right; cursor:pointer; color:#58a6ff; font-size:13px; padding:4px 10px; border-radius:999px; transition:background .15s; }
-  .langbtn:hover { background:rgba(88,166,255,.15); }
-  footer.site { text-align:center; color:var(--gray); font-size:13px; padding:32px 0; border-top:1px solid var(--border); margin-top:24px; }
+  .logo-pre { color:#58a6ff; white-space:pre; font-family:Consolas,monospace; font-size:13px; line-height:1.2; }
   @keyframes fadeUp { from { opacity:0; transform:translateY(16px);} to { opacity:1; transform:translateY(0);} }
-  .hero, .features, .preview { animation:fadeUp .6s cubic-bezier(.23,1,.32,1) both; }
-  .features { animation-delay:.1s; }
-  .preview { animation-delay:.2s; }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation:none !important; transition:none !important; }
-    html { scroll-behavior:auto; }
-  }
-  @media (max-width:640px){ .install{flex-direction:column;align-items:stretch;} .install button{width:100%;} .label{width:180px;} .brand span{display:none;} }
+  .fade-up { animation:fadeUp .6s cubic-bezier(.23,1,.32,1) both; }
+  .fade-up-1 { animation-delay:.1s; }
+  .fade-up-2 { animation-delay:.2s; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } html { scroll-behavior:auto; } }
 </style>
 </head>
-<body>
-<div class="wrap">
-  <header>
-    <div class="brand">
-      <div class="logo">█   █  ███  █   █
+<body class="bg-apple-bg text-apple-fg font-sans antialiased">
+<div class="max-w-[1080px] mx-auto px-6">
+  <header class="flex items-center justify-between py-4 sticky top-0 z-10 backdrop-blur-xl bg-apple-bg/72 border-b border-black/5">
+    <div class="flex items-center gap-2.5 text-[17px] font-semibold">
+      <div class="logo-pre">█   █  ███  █   █
  █ █ ░█ ░░░ ██ ██░
   █ ░ █░ ░░░█░█ █░░
  █ █ ░█░░   █░░░█░░
 █ ░ █  ███  █░░ █░░</div>
     </div>
-    <nav>
-      <a href="https://github.com/Ameth1208/xcross-cli">GitHub</a>
-      <a href="#install">Install</a>
-      <a href="#preview">Preview</a>
+    <nav class="flex gap-6">
+      <a href="https://github.com/Ameth1208/xcross-cli" class="text-sm text-apple-gray hover:text-apple-fg transition-colors">GitHub</a>
+      <a href="#install" class="text-sm text-apple-gray hover:text-apple-fg transition-colors">Install</a>
+      <a href="#preview" class="text-sm text-apple-gray hover:text-apple-fg transition-colors">Preview</a>
     </nav>
   </header>
 
-  <section class="hero">
-    <h1>The easiest way to build Flutter apps</h1>
-    <p>XCross CLI gives you a beautiful, keyboard-driven terminal experience for Flutter development on Windows and Linux. One-line install, guided setup, xcross integration.</p>
-    <div class="tabs">
-      <button id="tabWin" class="active" onclick="setTab('win')">Windows</button>
-      <button id="tabLin" onclick="setTab('lin')">Linux / macOS</button>
+  <section class="text-center py-20 fade-up">
+    <h1 class="text-[clamp(2.4rem,6vw,3.6rem)] font-bold tracking-tight leading-[1.05] mb-3">The easiest way to build Flutter apps</h1>
+    <p class="text-apple-gray text-lg max-w-[600px] mx-auto mb-9">XCross CLI gives you a beautiful, keyboard-driven terminal experience for Flutter development on Windows and Linux. One-line install, guided setup, xcross integration.</p>
+    <div class="flex gap-2 justify-center mb-4">
+      <button id="tabWin" onclick="setTab('win')" class="px-4 py-2 rounded-pill text-sm font-medium border border-black/10 text-apple-gray hover:text-apple-fg transition-all active:bg-apple-fg active:text-white active:border-apple-fg">Windows</button>
+      <button id="tabLin" onclick="setTab('lin')" class="px-4 py-2 rounded-pill text-sm font-medium border border-black/10 text-apple-gray hover:text-apple-fg transition-all">Linux / macOS</button>
     </div>
-    <div class="install" id="install">
-      <code id="cmd">irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex</code>
-      <button onclick="copyCmd()">Copy</button>
+    <div id="install" class="max-w-[720px] mx-auto flex items-center gap-3 bg-white border border-black/8 rounded-ios p-4 shadow-ios hover:shadow-iosHover transition-shadow">
+      <code id="cmd" class="flex-1 font-mono text-sm text-apple-fg overflow-x-auto whitespace-nowrap">irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex</code>
+      <button onclick="copyCmd()" class="bg-apple-accent text-white rounded-pill px-4 py-2.5 text-sm font-semibold hover:opacity-90 active:scale-95 transition-all">Copy</button>
     </div>
   </section>
 
-  <section class="features">
-    <div class="card"><h3>One-line install</h3><p>Get up and running in seconds with a single command. No admin rights required.</p></div>
-    <div class="card"><h3>Interactive menu</h3><p>Navigate with arrows, execute with space. Command palette with / for quick access.</p></div>
-    <div class="card"><h3>Bilingual</h3><p>English and Spanish built in. Switch anytime with xcm language en|es.</p></div>
-    <div class="card"><h3>xcross integration</h3><p>Guided installers for Swift, xcross, SDK import and Flutter precache.</p></div>
-    <div class="card"><h3>USB & Wi-Fi tunnels</h3><p>Open RSD tunnels for device debugging with one keystroke.</p></div>
-    <div class="card"><h3>Open source</h3><p>MIT licensed. Contributions welcome on GitHub.</p></div>
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-18 fade-up fade-up-1">
+    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">One-line install</h3><p class="text-apple-gray text-sm">Get up and running in seconds with a single command. No admin rights required.</p></div>
+    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">Interactive menu</h3><p class="text-apple-gray text-sm">Navigate with arrows, execute with space. Command palette with / for quick access.</p></div>
+    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">Bilingual</h3><p class="text-apple-gray text-sm">English and Spanish built in. Switch anytime with xcm language en|es.</p></div>
+    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">xcross integration</h3><p class="text-apple-gray text-sm">Guided installers for Swift, xcross, SDK import and Flutter precache.</p></div>
+    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">USB & Wi-Fi tunnels</h3><p class="text-apple-gray text-sm">Open RSD tunnels for device debugging with one keystroke.</p></div>
+    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">Open source</h3><p class="text-apple-gray text-sm">MIT licensed. Contributions welcome on GitHub.</p></div>
   </section>
 
-  <section class="preview" id="preview">
-    <h2>Live preview</h2>
-    <div class="terminal">
-      <div class="langbtn" onclick="toggleLang()">EN / ES</div>
-      <div class="logo">█   █  ███  █   █
+  <section id="preview" class="my-10 fade-up fade-up-2">
+    <h2 class="text-2xl font-bold tracking-tight text-center mb-5">Live preview</h2>
+    <div class="bg-[#1d1d1f] border border-white/8 rounded-ios p-5 shadow-term font-mono text-[#f5f5f7]">
+      <div class="flex justify-end mb-2"><span onclick="toggleLang()" class="cursor-pointer text-[#58a6ff] text-sm px-2.5 py-1 rounded-pill hover:bg-[#58a6ff]/15 transition-colors">EN / ES</span></div>
+      <div class="logo-pre mb-2.5">█   █  ███  █   █
  █ █ ░█ ░░░ ██ ██░
   █ ░ █░ ░░░█░█ █░░
  █ █ ░█░░   █░░░█░░
 █ ░ █  ███  █░░ █░░
  ░ ░ ░  ░░░  ░░  ░░
   ░   ░  ░░░  ░   ░</div>
-      <div class="title" id="t">xcm / Main menu</div>
-      <div class="subtitle" id="s">Flutter iOS  /  Windows  /  developer toolkit</div>
-      <div class="status"><span>xcross: <b>ready</b></span><span>swift: <b>ready</b></span><span id="proj">Project: lumina-mobile</span></div>
-      <div class="box" id="menu"></div>
-      <div class="footer" id="f">↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back</div>
+      <div id="t" class="font-bold mb-0.5">xcm / Main menu</div>
+      <div id="s" class="text-xs text-[#8b949e] mb-2.5">Flutter iOS  /  Windows  /  developer toolkit</div>
+      <div class="flex gap-4 text-xs text-[#8b949e] mb-2 flex-wrap"><span>xcross: <b class="text-[#58a6ff]">ready</b></span><span>swift: <b class="text-[#58a6ff]">ready</b></span><span id="proj">Project: lumina-mobile</span></div>
+      <div id="menu" class="border border-[#58a6ff] rounded-xl p-1.5 my-2.5"></div>
+      <div id="f" class="text-[#8b949e] text-xs mt-2.5 pt-2 border-t border-white/8">↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back</div>
     </div>
   </section>
 
-  <footer class="site">
-    MIT License · <a href="https://github.com/Ameth1208/xcross-cli">github.com/Ameth1208/xcross-cli</a>
+  <footer class="text-center text-apple-gray text-sm py-8 border-t border-black/8 mt-6">
+    MIT License · <a href="https://github.com/Ameth1208/xcross-cli" class="text-apple-accent">github.com/Ameth1208/xcross-cli</a>
   </footer>
 </div>
 
