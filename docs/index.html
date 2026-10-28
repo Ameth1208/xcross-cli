@@ -7,79 +7,82 @@
 <meta name="description" content="XCross CLI makes installing and running Flutter apps effortless on Windows and Linux. One-line install, interactive menu, xcross integration.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/animejs@4.0.2/lib/anime.iife.min.js"></script>
 <script>
   tailwind.config = {
     theme: {
       extend: {
         fontFamily: { sans: ['Inter','-apple-system','BlinkMacSystemFont','Segoe UI','Roboto','sans-serif'] },
-        colors: { apple: { bg:'#f5f5f7', fg:'#1d1d1f', gray:'#6e6e73', accent:'#007aff', card:'#ffffff' } },
+        colors: { dark:{ bg:'#0a0a0a', card:'#141414', border:'rgba(255,255,255,.08)', fg:'#f5f5f7', gray:'#86868b', accent:'#2997ff' } },
         borderRadius: { ios:'20px', pill:'999px' },
-        boxShadow: { ios:'0 4px 20px rgba(0,0,0,.04)', iosHover:'0 12px 40px rgba(0,0,0,.1)', term:'0 20px 60px rgba(0,0,0,.15)' },
+        boxShadow: { card:'0 4px 24px rgba(0,0,0,.4)', cardHover:'0 16px 48px rgba(0,0,0,.5)', term:'0 24px 80px rgba(0,0,0,.6)' },
       }
     }
   }
 </script>
 <style>
-  .logo-pre { color:#58a6ff; white-space:pre; font-family:Consolas,monospace; font-size:13px; line-height:1.2; }
-  @keyframes fadeUp { from { opacity:0; transform:translateY(16px);} to { opacity:1; transform:translateY(0);} }
-  .fade-up { animation:fadeUp .6s cubic-bezier(.23,1,.32,1) both; }
-  .fade-up-1 { animation-delay:.1s; }
-  .fade-up-2 { animation-delay:.2s; }
+  .logo-pre { color:#2997ff; white-space:pre; font-family:Consolas,monospace; font-size:13px; line-height:1.2; }
+  .glass { background:rgba(20,20,20,.6); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%); border:1px solid rgba(255,255,255,.08); }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } html { scroll-behavior:auto; } }
 </style>
 </head>
-<body class="bg-apple-bg text-apple-fg font-sans antialiased">
-<div class="max-w-[1080px] mx-auto px-6">
-  <header class="flex items-center justify-between py-4 sticky top-0 z-10 backdrop-blur-xl bg-apple-bg/72 border-b border-black/5">
-    <div class="flex items-center gap-2.5 text-[17px] font-semibold">
-      <img src="logo.svg" alt="XCross CLI logo" height="36" class="block">
+<body class="bg-dark-bg text-dark-fg font-sans antialiased selection:bg-dark-accent/30">
+<div class="max-w-[1120px] mx-auto px-6 lg:px-12">
+  <header class="flex items-center justify-between py-5 sticky top-0 z-20 glass rounded-2xl mt-4 px-6">
+    <div class="flex items-center gap-3">
+      <img src="logo.svg" alt="XCross CLI logo" height="32" class="block">
     </div>
-    <nav class="flex gap-6">
-      <a href="https://github.com/Ameth1208/xcross-cli" class="text-sm text-apple-gray hover:text-apple-fg transition-colors">GitHub</a>
-      <a href="#install" class="text-sm text-apple-gray hover:text-apple-fg transition-colors">Install</a>
-      <a href="#preview" class="text-sm text-apple-gray hover:text-apple-fg transition-colors">Preview</a>
+    <nav class="flex gap-8">
+      <a href="https://github.com/Ameth1208/xcross-cli" class="text-sm text-dark-gray hover:text-dark-fg transition-colors duration-300">GitHub</a>
+      <a href="#install" class="text-sm text-dark-gray hover:text-dark-fg transition-colors duration-300">Install</a>
+      <a href="#preview" class="text-sm text-dark-gray hover:text-dark-fg transition-colors duration-300">Preview</a>
     </nav>
   </header>
 
-  <section class="text-center py-20 fade-up">
-    <h1 class="text-[clamp(2.4rem,6vw,3.6rem)] font-bold tracking-tight leading-[1.05] mb-3">The easiest way to build Flutter apps</h1>
-    <p class="text-apple-gray text-lg max-w-[600px] mx-auto mb-9">XCross CLI gives you a beautiful, keyboard-driven terminal experience for Flutter development on Windows and Linux. One-line install, guided setup, xcross integration.</p>
-    <div class="flex gap-2 justify-center mb-4">
-      <button id="tabWin" onclick="setTab('win')" class="px-4 py-2 rounded-pill text-sm font-medium border border-black/10 text-apple-gray hover:text-apple-fg transition-all active:bg-apple-fg active:text-white active:border-apple-fg">Windows</button>
-      <button id="tabLin" onclick="setTab('lin')" class="px-4 py-2 rounded-pill text-sm font-medium border border-black/10 text-apple-gray hover:text-apple-fg transition-all">Linux / macOS</button>
+  <section class="text-center pt-24 pb-20">
+    <p class="text-xs font-medium tracking-[0.2em] text-dark-gray uppercase mb-6">XCross CLI</p>
+    <h1 class="text-[clamp(2.6rem,6vw,4.2rem)] font-light tracking-tight leading-[1.05] mb-6">The easiest way to<br><span class="text-dark-gray">build Flutter apps.</span></h1>
+    <p class="text-dark-gray text-lg max-w-[620px] mx-auto mb-10 leading-relaxed">A beautiful, keyboard-driven terminal experience for Flutter development on Windows and Linux. One-line install, guided setup, xcross integration.</p>
+    <div class="flex gap-2 justify-center mb-6">
+      <button id="tabWin" onclick="setTab('win')" class="px-5 py-2.5 rounded-pill text-sm font-medium border border-white/10 text-dark-gray hover:text-dark-fg transition-all duration-300 active:bg-dark-fg active:text-dark-bg active:border-dark-fg">Windows</button>
+      <button id="tabLin" onclick="setTab('lin')" class="px-5 py-2.5 rounded-pill text-sm font-medium border border-white/10 text-dark-gray hover:text-dark-fg transition-all duration-300">Linux / macOS</button>
     </div>
-    <div id="install" class="max-w-[720px] mx-auto flex items-center gap-3 bg-white border border-black/8 rounded-ios p-4 shadow-ios hover:shadow-iosHover transition-shadow">
-      <code id="cmd" class="flex-1 min-w-0 font-mono text-sm text-apple-fg overflow-x-auto whitespace-nowrap">irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex</code>
-      <button onclick="copyCmd()" class="shrink-0 bg-apple-accent text-white rounded-pill px-4 py-2.5 text-sm font-semibold hover:opacity-90 active:scale-95 transition-all">Copy</button>
-    </div>
-  </section>
-
-  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-18 fade-up fade-up-1">
-    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">One-line install</h3><p class="text-apple-gray text-sm">Get up and running in seconds with a single command. No admin rights required.</p></div>
-    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">Interactive menu</h3><p class="text-apple-gray text-sm">Navigate with arrows, execute with space. Command palette with / for quick access.</p></div>
-    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">Bilingual</h3><p class="text-apple-gray text-sm">English and Spanish built in. Switch anytime with xcm language en|es.</p></div>
-    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">xcross integration</h3><p class="text-apple-gray text-sm">Guided installers for Swift, xcross, SDK import and Flutter precache.</p></div>
-    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">USB & Wi-Fi tunnels</h3><p class="text-apple-gray text-sm">Open RSD tunnels for device debugging with one keystroke.</p></div>
-    <div class="bg-white border border-black/8 rounded-ios p-6 shadow-ios hover:-translate-y-1 hover:shadow-iosHover transition-all"><h3 class="text-lg font-semibold mb-1.5">Open source</h3><p class="text-apple-gray text-sm">MIT licensed. Contributions welcome on GitHub.</p></div>
-  </section>
-
-  <section id="preview" class="my-10 fade-up fade-up-2">
-    <h2 class="text-2xl font-bold tracking-tight text-center mb-5">Live preview</h2>
-    <div class="bg-[#1d1d1f] border border-white/8 rounded-ios p-5 shadow-term font-mono text-[#f5f5f7]">
-      <div class="flex justify-end mb-2"><span onclick="toggleLang()" class="cursor-pointer text-[#58a6ff] text-sm px-2.5 py-1 rounded-pill hover:bg-[#58a6ff]/15 transition-colors">EN / ES</span></div>
-      <img src="logo.svg" alt="XCross CLI logo" height="60" class="block mb-2.5">
-      <div id="t" class="font-bold mb-0.5">xcm / Main menu</div>
-      <div id="s" class="text-xs text-[#8b949e] mb-2.5">Flutter iOS  /  Windows  /  developer toolkit</div>
-      <div class="flex gap-4 text-xs text-[#8b949e] mb-2 flex-wrap"><span>xcross: <b class="text-[#58a6ff]">ready</b></span><span>swift: <b class="text-[#58a6ff]">ready</b></span><span id="proj">Project: lumina-mobile</span></div>
-      <div id="menu" class="border border-[#58a6ff] rounded-xl p-1.5 my-2.5"></div>
-      <div id="f" class="text-[#8b949e] text-xs mt-2.5 pt-2 border-t border-white/8">â†‘â†“ move   â†’/SPACE execute   1-9 direct   / commands   ESC/0 back</div>
+    <div id="install" class="max-w-[760px] mx-auto flex items-center gap-3 glass rounded-2xl p-4 shadow-card hover:shadow-cardHover transition-all duration-400">
+      <code id="cmd" class="flex-1 min-w-0 font-mono text-sm text-dark-fg overflow-x-auto whitespace-nowrap">irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex</code>
+      <button onclick="copyCmd()" class="shrink-0 bg-dark-accent text-black rounded-pill px-5 py-2.5 text-sm font-semibold hover:opacity-90 active:scale-95 transition-all duration-200">Copy</button>
     </div>
   </section>
 
-  <footer class="text-center text-apple-gray text-sm py-8 border-t border-black/8 mt-6">
-    MIT License Â· <a href="https://github.com/Ameth1208/xcross-cli" class="text-apple-accent">github.com/Ameth1208/xcross-cli</a>
+  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-24">
+    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400"><h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">One-line install</h3><p class="text-dark-gray text-sm leading-relaxed">Get up and running in seconds with a single command. No admin rights required.</p></div>
+    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400"><h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">Interactive menu</h3><p class="text-dark-gray text-sm leading-relaxed">Navigate with arrows, execute with space. Command palette with / for quick access.</p></div>
+    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400"><h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">Bilingual</h3><p class="text-dark-gray text-sm leading-relaxed">English and Spanish built in. Switch anytime with xcm language en|es.</p></div>
+    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400"><h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">xcross integration</h3><p class="text-dark-gray text-sm leading-relaxed">Guided installers for Swift, xcross, SDK import and Flutter precache.</p></div>
+    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400"><h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">USB & Wi-Fi tunnels</h3><p class="text-dark-gray text-sm leading-relaxed">Open RSD tunnels for device debugging with one keystroke.</p></div>
+    <div class="card glass rounded-2xl p-8 hover:-translate-y-1 transition-all duration-400"><h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">Open source</h3><p class="text-dark-gray text-sm leading-relaxed">MIT licensed. Contributions welcome on GitHub.</p></div>
+  </section>
+
+  <section id="preview" class="my-20">
+    <h2 class="text-3xl font-light tracking-tight text-center mb-8">Live preview</h2>
+    <div class="glass rounded-2xl p-6 shadow-term">
+      <div class="flex justify-end mb-3"><span onclick="toggleLang()" class="cursor-pointer text-dark-accent text-sm px-3 py-1 rounded-pill hover:bg-dark-accent/10 transition-colors duration-200">EN / ES</span></div>
+      <div class="logo-pre mb-3"><img src="logo.svg" alt="XCross CLI logo" height="52" class="block"></div>
+      <div id="t" class="font-bold mb-1">xcm / Main menu</div>
+      <div id="s" class="text-xs text-dark-gray mb-3">Flutter iOS  /  Windows  /  developer toolkit</div>
+      <div class="flex gap-4 text-xs text-dark-gray mb-3 flex-wrap"><span>xcross: <b class="text-dark-accent">ready</b></span><span>swift: <b class="text-dark-accent">ready</b></span><span id="proj">Project: lumina-mobile</span></div>
+      <div id="menu" class="border border-dark-accent/60 rounded-xl p-1.5 my-3"></div>
+      <div id="f" class="text-dark-gray text-xs mt-3 pt-3 border-t border-white/8">↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back</div>
+    </div>
+  </section>
+
+  <div class="text-center py-6 text-dark-gray text-xs tracking-wider uppercase border-t border-white/8 mt-8">
+    Crafted for excellence · MIT License
+  </div>
+
+  <footer class="text-center text-dark-gray text-sm py-8">
+    <a href="https://github.com/Ameth1208/xcross-cli" class="text-dark-accent hover:underline">github.com/Ameth1208/xcross-cli</a>
   </footer>
 </div>
 
@@ -97,7 +100,7 @@ function render(){
   });
   document.getElementById('t').textContent=lang==='es'?'xcm / Menu principal':'xcm / Main menu';
   document.getElementById('s').textContent='Flutter iOS  /  Windows  /  developer toolkit';
-  document.getElementById('f').textContent=lang==='es'?'â†‘â†“ mover   â†’/ESPACIO ejecutar   1-9 acceso directo   / comandos   ESC/0 atras':'â†‘â†“ move   â†’/SPACE execute   1-9 direct   / commands   ESC/0 back';
+  document.getElementById('f').textContent=lang==='es'?'↑↓ mover   →/ESPACIO ejecutar   1-9 acceso directo   / comandos   ESC/0 atras':'↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back';
 }
 function toggleLang(){ lang=lang==='en'?'es':'en'; render(); }
 function setTab(t){
@@ -114,7 +117,16 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowUp'){sel=(sel+items.length-1)%items.length;render();}
 });
 render();
+
+// Anime.js entrance animations
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.anime) {
+    anime({ targets: '.hero h1', opacity:[0,1], translateY:[24,0], duration:900, easing:'easeOutExpo', delay:100 });
+    anime({ targets: '.hero p', opacity:[0,1], translateY:[16,0], duration:800, easing:'easeOutExpo', delay:250 });
+    anime({ targets: '.card', opacity:[0,1], translateY:[20,0], duration:700, easing:'easeOutCubic', delay:anime.stagger(80,{start:400}) });
+    anime({ targets: '.terminal', opacity:[0,1], translateY:[30,0], scale:[.98,1], duration:900, easing:'easeOutExpo', delay:300 });
+  }
+});
 </script>
 </body>
 </html>
-
