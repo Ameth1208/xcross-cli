@@ -67,6 +67,9 @@ cmd_help() {
     precache debug|all   Descarga artefactos del motor Flutter
     bundle default|original   Selecciona modo de Bundle ID
     sign [id]       Info de firma (Linux: configura keystore manualmente)
+    install         Instala xcm como comando global en ~/.local/bin
+    tunnel usb|wifi Configura tunnel USB/WiFi via adb
+    trust           Guia de confianza/firma en dispositivo
     update          Actualiza Flutter y dependencias
     version         Version del CLI
     menu            Abre el menu interactivo (por defecto)
@@ -173,6 +176,54 @@ cmd_update() {
   fi
 }
 
+# ---------- install as global command ----------
+cmd_install() {
+  title "Instalar xcm (Linux)"
+  local bin="$HOME/.local/bin"
+  mkdir -p "$bin"
+  local src
+  src="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+  cp "$src" "$bin/xcm"
+  chmod +x "$bin/xcm"
+  ok "Instalado en $bin/xcm"
+  if [[ ":$PATH:" != *":$bin:"* ]]; then
+    warn "$bin no esta en PATH. Agrega a tu shell rc:"
+    echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+  else
+    ok "PATH ya incluye $bin"
+  fi
+  info "Abre una nueva terminal y usa: xcm help"
+}
+
+# ---------- tunnel ----------
+cmd_tunnel() {
+  title "Tunnel"
+  if ! has adb; then fail "adb no encontrado"; return; fi
+  case "${1:-usb}" in
+    usb)
+      info "Configurando reverse USB (tcp:8081)..."
+      adb reverse tcp:8081 tcp:8081 && ok "USB reverse listo"
+      ;;
+    wifi)
+      info "Habilitando depuracion inalambrica..."
+      adb tcpip 5555
+      warn "Conecta con: adb connect <IP_DEL_DISPOSITIVO>:5555"
+      ;;
+    *)
+      warn "Uso: xcm tunnel usb|wifi"
+      ;;
+  esac
+}
+
+# ---------- trust guidance ----------
+cmd_trust() {
+  title "Trust / firma"
+  info "En Android, habilita 'Opciones de desarrollador' y 'Depuracion USB' en el dispositivo."
+  info "Acepta el dialogo RSA al conectar por primera vez."
+  info "Para firma de release, configura keystore en android/app/build.gradle."
+  info "Modo Bundle ID actual: $BUNDLE_MODE"
+}
+
 # ---------- menu ----------
 menu() {
   load_settings
@@ -187,6 +238,9 @@ menu() {
     echo "  7) Precache debug"
     echo "  8) Precache all"
     echo "  9) Bundle ID: default/original"
+    echo "  I) Instalar xcm global"
+    echo "  T) Tunnel (usb/wifi)"
+    echo "  R) Trust / firma"
     echo "  D) Doctor detallado"
     echo "  F) Firma / keystore"
     echo "  P) Project show"
@@ -206,6 +260,9 @@ menu() {
       7) cmd_precache debug; pause_menu ;;
       8) cmd_precache all; pause_menu ;;
       9) echo "  1) default  2) original"; read -rsn1 b; [[ "$b" == "1" ]] && cmd_bundle default || cmd_bundle original; pause_menu ;;
+      [iI]) cmd_install; pause_menu ;;
+      [tT]) echo "  1) usb  2) wifi"; read -rsn1 b; [[ "$b" == "1" ]] && cmd_tunnel usb || cmd_tunnel wifi; pause_menu ;;
+      [rR]) cmd_trust; pause_menu ;;
       [dD]) cmd_doctor; pause_menu ;;
       [fF]) cmd_sign; pause_menu ;;
       [pP]) cmd_project_show; pause_menu ;;
@@ -235,6 +292,9 @@ case "${1:-menu}" in
   precache) shift; cmd_precache "$@" ;;
   bundle) shift; cmd_bundle "$@" ;;
   sign) shift; cmd_sign "$@" ;;
+  install) shift; cmd_install "$@" ;;
+  tunnel) shift; cmd_tunnel "$@" ;;
+  trust) shift; cmd_trust "$@" ;;
   update) shift; cmd_update "$@" ;;
   menu) menu ;;
   *) menu ;;
