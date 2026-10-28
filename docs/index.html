@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -34,11 +34,11 @@
 <div class="max-w-[1080px] mx-auto px-6">
   <header class="flex items-center justify-between py-4 sticky top-0 z-10 backdrop-blur-xl bg-apple-bg/72 border-b border-black/5">
     <div class="flex items-center gap-2.5 text-[17px] font-semibold">
-      <div class="logo-pre">█   █  ███  █   █
- █ █ ░█ ░░░ ██ ██░
-  █ ░ █░ ░░░█░█ █░░
- █ █ ░█░░   █░░░█░░
-█ ░ █  ███  █░░ █░░</div>
+      <div class="logo-pre">â–ˆ   â–ˆ  â–ˆâ–ˆâ–ˆ  â–ˆ   â–ˆ
+ â–ˆ â–ˆ â–‘â–ˆ â–‘â–‘â–‘ â–ˆâ–ˆ â–ˆâ–ˆâ–‘
+  â–ˆ â–‘ â–ˆâ–‘ â–‘â–‘â–‘â–ˆâ–‘â–ˆ â–ˆâ–‘â–‘
+ â–ˆ â–ˆ â–‘â–ˆâ–‘â–‘   â–ˆâ–‘â–‘â–‘â–ˆâ–‘â–‘
+â–ˆ â–‘ â–ˆ  â–ˆâ–ˆâ–ˆ  â–ˆâ–‘â–‘ â–ˆâ–‘â–‘</div>
     </div>
     <nav class="flex gap-6">
       <a href="https://github.com/Ameth1208/xcross-cli" class="text-sm text-apple-gray hover:text-apple-fg transition-colors">GitHub</a>
@@ -73,23 +73,23 @@
     <h2 class="text-2xl font-bold tracking-tight text-center mb-5">Live preview</h2>
     <div class="bg-[#1d1d1f] border border-white/8 rounded-ios p-5 shadow-term font-mono text-[#f5f5f7]">
       <div class="flex justify-end mb-2"><span onclick="toggleLang()" class="cursor-pointer text-[#58a6ff] text-sm px-2.5 py-1 rounded-pill hover:bg-[#58a6ff]/15 transition-colors">EN / ES</span></div>
-      <div class="logo-pre mb-2.5">█   █  ███  █   █
- █ █ ░█ ░░░ ██ ██░
-  █ ░ █░ ░░░█░█ █░░
- █ █ ░█░░   █░░░█░░
-█ ░ █  ███  █░░ █░░
- ░ ░ ░  ░░░  ░░  ░░
-  ░   ░  ░░░  ░   ░</div>
+      <div class="logo-pre mb-2.5">â–ˆ   â–ˆ  â–ˆâ–ˆâ–ˆ  â–ˆ   â–ˆ
+ â–ˆ â–ˆ â–‘â–ˆ â–‘â–‘â–‘ â–ˆâ–ˆ â–ˆâ–ˆâ–‘
+  â–ˆ â–‘ â–ˆâ–‘ â–‘â–‘â–‘â–ˆâ–‘â–ˆ â–ˆâ–‘â–‘
+ â–ˆ â–ˆ â–‘â–ˆâ–‘â–‘   â–ˆâ–‘â–‘â–‘â–ˆâ–‘â–‘
+â–ˆ â–‘ â–ˆ  â–ˆâ–ˆâ–ˆ  â–ˆâ–‘â–‘ â–ˆâ–‘â–‘
+ â–‘ â–‘ â–‘  â–‘â–‘â–‘  â–‘â–‘  â–‘â–‘
+  â–‘   â–‘  â–‘â–‘â–‘  â–‘   â–‘</div>
       <div id="t" class="font-bold mb-0.5">xcm / Main menu</div>
       <div id="s" class="text-xs text-[#8b949e] mb-2.5">Flutter iOS  /  Windows  /  developer toolkit</div>
       <div class="flex gap-4 text-xs text-[#8b949e] mb-2 flex-wrap"><span>xcross: <b class="text-[#58a6ff]">ready</b></span><span>swift: <b class="text-[#58a6ff]">ready</b></span><span id="proj">Project: lumina-mobile</span></div>
       <div id="menu" class="border border-[#58a6ff] rounded-xl p-1.5 my-2.5"></div>
-      <div id="f" class="text-[#8b949e] text-xs mt-2.5 pt-2 border-t border-white/8">↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back</div>
+      <div id="f" class="text-[#8b949e] text-xs mt-2.5 pt-2 border-t border-white/8">â†‘â†“ move   â†’/SPACE execute   1-9 direct   / commands   ESC/0 back</div>
     </div>
   </section>
 
   <footer class="text-center text-apple-gray text-sm py-8 border-t border-black/8 mt-6">
-    MIT License · <a href="https://github.com/Ameth1208/xcross-cli" class="text-apple-accent">github.com/Ameth1208/xcross-cli</a>
+    MIT License Â· <a href="https://github.com/Ameth1208/xcross-cli" class="text-apple-accent">github.com/Ameth1208/xcross-cli</a>
   </footer>
 </div>
 
@@ -107,7 +107,7 @@ function render(){
   });
   document.getElementById('t').textContent=lang==='es'?'xcm / Menu principal':'xcm / Main menu';
   document.getElementById('s').textContent='Flutter iOS  /  Windows  /  developer toolkit';
-  document.getElementById('f').textContent=lang==='es'?'↑↓ mover   →/ESPACIO ejecutar   1-9 acceso directo   / comandos   ESC/0 atras':'↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back';
+  document.getElementById('f').textContent=lang==='es'?'â†‘â†“ mover   â†’/ESPACIO ejecutar   1-9 acceso directo   / comandos   ESC/0 atras':'â†‘â†“ move   â†’/SPACE execute   1-9 direct   / commands   ESC/0 back';
 }
 function toggleLang(){ lang=lang==='en'?'es':'en'; render(); }
 function setTab(t){
@@ -127,3 +127,5 @@ render();
 </script>
 </body>
 </html>
+
+<!-- rebuild -->
