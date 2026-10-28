@@ -13,6 +13,12 @@ param(
     [string[]]$CommandArgs = @()
 )
 
+# Ensure Unicode (logo/box chars) renders correctly on all Windows consoles.
+try {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+} catch { }
+
 $ErrorActionPreference = 'Stop'
 $script:Version = '1.2.0'
 $script:SettingsDir = Join-Path $env:APPDATA 'XCrossMenu'

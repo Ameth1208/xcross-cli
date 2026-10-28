@@ -6,6 +6,8 @@
 set -u
 
 VERSION="1.2.0"
+# Ensure UTF-8 for logo/box characters.
+export LANG="${LANG:-en_US.UTF-8}"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/xcross-menu"
 CONFIG_FILE="$CONFIG_DIR/settings.json"
 PROJECT_DIR=""
