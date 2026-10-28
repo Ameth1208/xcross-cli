@@ -2,6 +2,14 @@
 
 ![XCross CLI logo](logo.svg)
 
+![XCross CLI demo](docs/cli-demo.gif)
+
+[![GitHub stars](https://img.shields.io/github/stars/Ameth1208/xcross-cli?style=social)](https://github.com/Ameth1208/xcross-cli)
+
+⭐ **If you find this useful, please star the repo!** It helps others discover it.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GitHub Pages](https://img.shields.io/badge/demo-live-brightgreen)](https://ameth1208.github.io/xcross-cli/)
+
 
 A terminal interface inspired by modern CLIs used with programming assistants. **It does not include an AI model**, but provides a fast keyboard-driven experience with a command palette and reusable commands.
 
