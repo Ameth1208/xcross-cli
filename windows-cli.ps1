@@ -688,37 +688,37 @@ function Guided-Setup {
 function Get-MenuItems {
     if ($script:Language -eq 'es') {
         return @(
-            @{ Key='1'; Label='Ejecutar Flutter en iPhone'; Description='compilar, firmar, instalar, hot reload'; Command='run' },
-            @{ Key='2'; Label='Diagnostico de Flutter'; Description='xcross flutter doctor'; Command='doctor' },
-            @{ Key='3'; Label='Detectar iPhone'; Description='USB y version de iOS'; Command='device' },
-            @{ Key='4'; Label='Modo desarrollador'; Description='estado y activacion'; Command='devmode' },
-            @{ Key='5'; Label='Abrir tunel USB'; Description='abre PowerShell con permisos'; Command='tunnel-usb' },
-            @{ Key='6'; Label='Abrir tunel Wi-Fi'; Description='enlace inalambrico'; Command='tunnel-wifi' },
-            @{ Key='D'; Label='Descargas y SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
-            @{ Key='F'; Label='Firma y App ID'; Description='autorizacion Apple Development'; Command='signing' },
-            @{ Key='P'; Label='Proyectos Flutter'; Description='cambiar proyecto, VS Code, ejecutar'; Command='projects' },
-            @{ Key='I'; Label='Instalar comando xcm'; Description='disponible desde cualquier carpeta'; Command='install-cli' },
-            @{ Key='U'; Label='Actualizar xcm'; Description='descarga la ultima version desde GitHub'; Command='update-cli' },
-            @{ Key='X'; Label='Desinstalar xcm'; Description='elimina el comando global'; Command='uninstall-cli' },
-            @{ Key='L'; Label='Idioma'; Description='cambiar ingles/espanol'; Command='language' },
-            @{ Key='?'; Label='Comandos y ayuda'; Description='lista de comandos y ejemplos'; Command='help' }
+            @{ Key='1'; Icon='▶'; Label='Ejecutar Flutter en iPhone'; Description='compilar, firmar, instalar, hot reload'; Command='run' },
+            @{ Key='2'; Icon='⚡'; Label='Diagnostico de Flutter'; Description='xcross flutter doctor'; Command='doctor' },
+            @{ Key='3'; Icon='◉'; Label='Detectar iPhone'; Description='USB y version de iOS'; Command='device' },
+            @{ Key='4'; Icon='⚙'; Label='Modo desarrollador'; Description='estado y activacion'; Command='devmode' },
+            @{ Key='5'; Icon='⬢'; Label='Abrir tunel USB'; Description='abre PowerShell con permisos'; Command='tunnel-usb' },
+            @{ Key='6'; Icon='⌁'; Label='Abrir tunel Wi-Fi'; Description='enlace inalambrico'; Command='tunnel-wifi' },
+            @{ Key='D'; Icon='⬇'; Label='Descargas y SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
+            @{ Key='F'; Icon='✒'; Label='Firma y App ID'; Description='autorizacion Apple Development'; Command='signing' },
+            @{ Key='P'; Icon='▣'; Label='Proyectos Flutter'; Description='cambiar proyecto, VS Code, ejecutar'; Command='projects' },
+            @{ Key='I'; Icon='✚'; Label='Instalar comando xcm'; Description='disponible desde cualquier carpeta'; Command='install-cli' },
+            @{ Key='U'; Icon='⤴'; Label='Actualizar xcm'; Description='descarga la ultima version desde GitHub'; Command='update-cli' },
+            @{ Key='X'; Icon='✖'; Label='Desinstalar xcm'; Description='elimina el comando global'; Command='uninstall-cli' },
+            @{ Key='L'; Icon='Ⓘ'; Label='Idioma'; Description='cambiar ingles/espanol'; Command='language' },
+            @{ Key='?'; Icon='?'; Label='Comandos y ayuda'; Description='lista de comandos y ejemplos'; Command='help' }
         )
     }
     return @(
-        @{ Key='1'; Label='Run Flutter on iPhone'; Description='build, sign, install, hot reload'; Command='run' },
-        @{ Key='2'; Label='Flutter diagnostics'; Description='xcross flutter doctor'; Command='doctor' },
-        @{ Key='3'; Label='Detect iPhone'; Description='USB and iOS version'; Command='device' },
-        @{ Key='4'; Label='Developer mode'; Description='status and activation'; Command='devmode' },
-        @{ Key='5'; Label='Open USB tunnel'; Description='opens PowerShell with permissions'; Command='tunnel-usb' },
-        @{ Key='6'; Label='Open Wi-Fi tunnel'; Description='wireless link'; Command='tunnel-wifi' },
-        @{ Key='D'; Label='Downloads and SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
-        @{ Key='F'; Label='Signing and App ID'; Description='Apple Development authorization'; Command='signing' },
-        @{ Key='P'; Label='Flutter projects'; Description='change project, VS Code, run'; Command='projects' },
-        @{ Key='I'; Label='Install xcm command'; Description='available from any folder'; Command='install-cli' },
-        @{ Key='U'; Label='Update xcm'; Description='download latest version from GitHub'; Command='update-cli' },
-        @{ Key='X'; Label='Uninstall xcm'; Description='remove global command'; Command='uninstall-cli' },
-        @{ Key='L'; Label='Language'; Description='switch English/Spanish'; Command='language' },
-        @{ Key='?'; Label='Commands and help'; Description='command list and examples'; Command='help' }
+        @{ Key='1'; Icon='▶'; Label='Run Flutter on iPhone'; Description='build, sign, install, hot reload'; Command='run' },
+        @{ Key='2'; Icon='⚡'; Label='Flutter diagnostics'; Description='xcross flutter doctor'; Command='doctor' },
+        @{ Key='3'; Icon='◉'; Label='Detect iPhone'; Description='USB and iOS version'; Command='device' },
+        @{ Key='4'; Icon='⚙'; Label='Developer mode'; Description='status and activation'; Command='devmode' },
+        @{ Key='5'; Icon='⬢'; Label='Open USB tunnel'; Description='opens PowerShell with permissions'; Command='tunnel-usb' },
+        @{ Key='6'; Icon='⌁'; Label='Open Wi-Fi tunnel'; Description='wireless link'; Command='tunnel-wifi' },
+        @{ Key='D'; Icon='⬇'; Label='Downloads and SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
+        @{ Key='F'; Icon='✒'; Label='Signing and App ID'; Description='Apple Development authorization'; Command='signing' },
+        @{ Key='P'; Icon='▣'; Label='Flutter projects'; Description='change project, VS Code, run'; Command='projects' },
+        @{ Key='I'; Icon='✚'; Label='Install xcm command'; Description='available from any folder'; Command='install-cli' },
+        @{ Key='U'; Icon='⤴'; Label='Update xcm'; Description='download latest version from GitHub'; Command='update-cli' },
+        @{ Key='X'; Icon='✖'; Label='Uninstall xcm'; Description='remove global command'; Command='uninstall-cli' },
+        @{ Key='L'; Icon='Ⓘ'; Label='Language'; Description='switch English/Spanish'; Command='language' },
+        @{ Key='?'; Icon='?'; Label='Commands and help'; Description='command list and examples'; Command='help' }
     )
 }
 
@@ -800,7 +800,8 @@ function Show-KeyMenu {
             $key = [string]$item['Key']
             $label = [string]$item['Label']
             $desc = [string]$item['Description']
-            $line = ('  {0} {1}  {2}' -f [char]0x25B8, $key.PadRight(2), $label.PadRight(28))
+            $icon = if ($item.ContainsKey('Icon')) { [string]$item['Icon'] } else { [char]0x25B8 }
+            $line = ('  {0} {1}  {2}' -f $icon, $key.PadRight(2), $label.PadRight(28))
             $desc = $desc.PadRight(34)
             if ($i -eq $index) {
                 Write-Host '    ║' -ForegroundColor DarkCyan -NoNewline
