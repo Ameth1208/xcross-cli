@@ -54,9 +54,12 @@
     </nav>
   </header>
 
-  <section class="text-center pt-24 pb-20">
+  <section class="text-center pt-24 pb-20 relative">
+    <div class="absolute inset-0 -z-10 flex items-center justify-center">
+      <div class="w-[500px] h-[500px] rounded-full bg-dark-accent/10 blur-[120px]"></div>
+    </div>
     <p class="text-xs font-medium tracking-[0.2em] text-dark-gray uppercase mb-6">XCross CLI</p>
-    <h1 class="text-[clamp(2.6rem,6vw,4.2rem)] font-light tracking-tight leading-[1.05] mb-6">The easiest way to<br><span class="text-dark-gray">build Flutter apps.</span></h1>
+    <h1 class="text-[clamp(2.6rem,6vw,4.2rem)] font-light tracking-tight leading-[1.05] mb-6">The easiest way to<br><span class="bg-gradient-to-r from-dark-accent to-cyan-300 bg-clip-text text-transparent">build Flutter apps.</span></h1>
     <p class="text-dark-gray text-lg max-w-[620px] mx-auto mb-10 leading-relaxed">A beautiful, keyboard-driven terminal experience for Flutter development on Windows and Linux. One-line install, guided setup, xcross integration.</p>
     <div class="flex gap-2 justify-center mb-6">
       <button id="tabWin" onclick="setTab('win')" class="px-5 py-2.5 rounded-pill text-sm font-medium border border-white/10 text-dark-gray hover:text-dark-fg transition-all duration-300 active:bg-dark-fg active:text-dark-bg active:border-dark-fg">Windows</button>
@@ -130,6 +133,22 @@
         <div class="text-dark-accent text-sm font-mono mb-4">03</div>
         <h3 class="text-xl font-light text-dark-fg mb-3 tracking-tight">Run</h3>
         <pre class="text-xs text-dark-gray font-mono bg-black/30 rounded-xl p-4 overflow-x-auto">xcm run --usb</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="my-24">
+    <p class="text-xs font-medium tracking-[0.2em] text-dark-gray uppercase mb-6 text-center">Commands</p>
+    <div class="glass rounded-2xl p-6 max-w-[760px] mx-auto">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+        <div><span class="text-dark-accent font-mono">xcm doctor</span><span class="text-dark-gray ml-3">Check tools</span></div>
+        <div><span class="text-dark-accent font-mono">xcm device</span><span class="text-dark-gray ml-3">Detect devices</span></div>
+        <div><span class="text-dark-accent font-mono">xcm project set</span><span class="text-dark-gray ml-3">Select project</span></div>
+        <div><span class="text-dark-accent font-mono">xcm run --usb</span><span class="text-dark-gray ml-3">Run on device</span></div>
+        <div><span class="text-dark-accent font-mono">xcm tunnel usb</span><span class="text-dark-gray ml-3">Open tunnel</span></div>
+        <div><span class="text-dark-accent font-mono">xcm sign</span><span class="text-dark-gray ml-3">Signing info</span></div>
+        <div><span class="text-dark-accent font-mono">xcm update</span><span class="text-dark-gray ml-3">Update tools</span></div>
+        <div><span class="text-dark-accent font-mono">xcm language</span><span class="text-dark-gray ml-3">Switch language</span></div>
       </div>
     </div>
   </section>
