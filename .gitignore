@@ -1,0 +1,14 @@
+﻿# Windows
+Thumbs.db
+Desktop.ini
+*.lnk
+
+# PowerShell
+*.psd1.bak
+
+# Settings
+XCrossMenu/
+settings.json
+
+# Logs
+*.log
