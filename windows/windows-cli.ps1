@@ -1057,7 +1057,7 @@ function Set-Language {
 
 function Update-XcmGlobal {
     Write-Title 'Actualizar xcm'
-    $url='https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1'
+    $url='https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1'
     Write-Host (Msg "  Downloading update from $url" "  Descargando actualizacion desde $url") -ForegroundColor DarkGray
     try {
         $tmp=Join-Path $env:TEMP 'xcm-install.ps1'

@@ -16,11 +16,11 @@ fetch() {
   curl -fsSL "$BASE/$file" -o "$dest"
 }
 
-fetch "linux-cli.sh" "$BIN/xcm"
+fetch "linux/linux-cli.sh" "$BIN/xcm"
 chmod +x "$BIN/xcm"
 
 # Optional helpers
-fetch "setup-flutter.sh" "$BIN/setup-flutter.sh" 2>/dev/null && chmod +x "$BIN/setup-flutter.sh" || true
+fetch "linux/setup-flutter.sh" "$BIN/setup-flutter.sh" 2>/dev/null && chmod +x "$BIN/setup-flutter.sh" || true
 
 # PATH
 if [[ ":$PATH:" != *":$BIN:"* ]]; then

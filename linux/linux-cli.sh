@@ -293,7 +293,7 @@ cmd_uninstall() {
 # ---------- update cli ----------
 cmd_update_cli() {
   title "Actualizar xcm (Linux)"
-  local url="https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.sh"
+  local url="https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/linux/xcm-install.sh"
   echo "$(msg "  Downloading from $url" "  Descargando desde $url")"
   if curl -fsSL "$url" | bash; then
     ok "xcm actualizado."

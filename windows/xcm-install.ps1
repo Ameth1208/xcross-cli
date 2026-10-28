@@ -5,7 +5,7 @@
 .DESCRIPTION
   Downloads the latest files from GitHub and installs xcm globally.
   Usage (PowerShell):
-    irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex
+    irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1 | iex
 #>
 $ErrorActionPreference = 'Stop'
 
@@ -15,27 +15,29 @@ $base   = "https://raw.githubusercontent.com/$repo/$branch"
 $target = Join-Path $env:LOCALAPPDATA 'Programs\XCrossCLI'
 
 $files = @(
-    'windows-cli.ps1',
-    'xcm.cmd',
-    'start.cmd',
-    'install.ps1',
-    'uninstall.ps1',
-    'setup-flutter.sh',
-    'linux-cli.sh',
-    'logo.svg',
-    'README.md'
+    @{ Source = 'windows/windows-cli.ps1'; Dest = 'windows-cli.ps1' },
+    @{ Source = 'windows/xcm.cmd'; Dest = 'xcm.cmd' },
+    @{ Source = 'windows/start.cmd'; Dest = 'start.cmd' },
+    @{ Source = 'windows/install.ps1'; Dest = 'install.ps1' },
+    @{ Source = 'windows/uninstall.ps1'; Dest = 'uninstall.ps1' },
+    @{ Source = 'linux/setup-flutter.sh'; Dest = 'setup-flutter.sh' },
+    @{ Source = 'linux/linux-cli.sh'; Dest = 'linux-cli.sh' },
+    @{ Source = 'assets/logo.svg'; Dest = 'logo.svg' },
+    @{ Source = 'README.md'; Dest = 'README.md' }
 )
 
 New-Item -ItemType Directory -Path $target -Force | Out-Null
-foreach ($f in $files) {
-    $url  = "$base/$f"
-    $dest = Join-Path $target $f
-    Write-Host "Descargando $f ..." -ForegroundColor DarkGray
+foreach ($item in $files) {
+    $src  = $item.Source
+    $destName = $item.Dest
+    $url  = "$base/$src"
+    $dest = Join-Path $target $destName
+    Write-Host "Descargando $destName ..." -ForegroundColor DarkGray
     try {
         Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing
     }
     catch {
-        Write-Warning "No se pudo descargar $f : $($_.Exception.Message)"
+        Write-Warning "No se pudo descargar $destName : $($_.Exception.Message)"
     }
 }
 

@@ -1,6 +1,6 @@
 # XCross CLI (xcm) v1.2.0
 
-![XCross CLI logo](logo.svg)
+![XCross CLI logo](assets/logo.svg)
 
 ![XCross CLI demo](docs/cli-demo.gif)
 
@@ -13,7 +13,7 @@
 
 A terminal interface inspired by modern CLIs used with programming assistants. **It does not include an AI model**, but provides a fast keyboard-driven experience with a command palette and reusable commands.
 
-> Windows-focused (PowerShell 5.1+). For a cross-platform Flutter setup helper, see `setup-flutter.sh` (and `linux-cli.sh` for Linux).
+> Windows-focused (PowerShell 5.1+). For a cross-platform Flutter setup helper, see `linux/setup-flutter.sh` (and `linux/linux-cli.sh` for Linux).
 
 ## Features
 
@@ -33,7 +33,7 @@ See how the CLI menu looks: https://ameth1208.github.io/xcross-cli/
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex
+irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1 | iex
 
 ## Language / Idioma
 
@@ -48,24 +48,24 @@ Or press `I` in the menu and confirm. Scripts are copied to `%LOCALAPPDATA%\Prog
 To remove it:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\windows\uninstall.ps1
 
-Without the global command, replace `xcm` with `./xcm.cmd` when inside the extracted folder.
+Without the global command, replace `xcm` with `./windows/xcm.cmd` when inside the extracted folder.
 
 ## Flutter setup helper (`setup-flutter.sh`)
 
 For a quick cross-platform Flutter environment setup:
 
 ```bash
-chmod +x setup-flutter.sh
-./setup-flutter.sh
+chmod +x linux/setup-flutter.sh
+./linux/setup-flutter.sh
 
 ## Linux CLI (`linux-cli.sh`)
 
 A Linux counterpart of the Windows CLI. Run directly:
 
 ```bash
-chmod +x linux-cli.sh
-./linux-cli.sh            # interactive menu
-./linux-cli.sh doctor     # verify tools
-./linux-cli.sh help       # list commands
+chmod +x linux/linux-cli.sh
+./linux/linux-cli.sh            # interactive menu
+./linux/linux-cli.sh doctor     # verify tools
+./linux/linux-cli.sh help       # list commands

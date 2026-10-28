@@ -66,7 +66,7 @@
       <button id="tabLin" onclick="setTab('lin')" class="px-5 py-2.5 rounded-pill text-sm font-medium border border-white/10 text-dark-gray hover:text-dark-fg transition-all duration-300">Linux / macOS</button>
     </div>
     <div id="install" class="max-w-[760px] mx-auto flex items-center gap-3 glass rounded-2xl p-4 shadow-card hover:shadow-cardHover transition-all duration-400 overflow-hidden">
-      <code id="cmd" class="flex-1 min-w-0 font-mono text-sm text-dark-fg overflow-x-hidden whitespace-nowrap cursor-ew-resize outline-none" tabindex="0" role="region" aria-label="Install command">irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex</code>
+      <code id="cmd" class="flex-1 min-w-0 font-mono text-sm text-dark-fg overflow-x-hidden whitespace-nowrap cursor-ew-resize outline-none" tabindex="0" role="region" aria-label="Install command">irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1 | iex</code>
       <button onclick="copyCmd()" class="shrink-0 bg-dark-accent text-black rounded-pill px-5 py-2.5 text-sm font-semibold hover:opacity-90 active:scale-95 transition-all duration-200">Copy</button>
     </div>
   </section>
@@ -223,8 +223,8 @@ function setTab(t){
   document.getElementById('tabWin').classList.toggle('active',t==='win');
   document.getElementById('tabLin').classList.toggle('active',t==='lin');
   document.getElementById('cmd').textContent = t==='win'
-    ? 'irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex'
-    : 'curl -fsSL https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.sh | bash';
+    ? 'irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1 | iex'
+    : 'curl -fsSL https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/linux/xcm-install.sh | bash';
 }
 function copyCmd(){ navigator.clipboard.writeText(document.getElementById('cmd').textContent); }
 document.addEventListener('keydown',e=>{

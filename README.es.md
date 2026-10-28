@@ -1,6 +1,6 @@
 # XCross CLI (xcm) v1.2.0 para Windows
 
-![XCross CLI logo](logo.svg)
+![XCross CLI logo](assets/logo.svg)
 
 
 Interfaz de terminal inspirada en los CLI modernos usados con asistentes de programación. **No incorpora un modelo de IA**, pero ofrece una experiencia ágil con teclado, paleta de comandos y órdenes reutilizables.
@@ -13,7 +13,7 @@ Mira como se ve el menu del CLI: https://ameth1208.github.io/xcross-cli/
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex
+irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1 | iex
 
 ## Idioma / Language
 
