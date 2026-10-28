@@ -757,28 +757,32 @@ function Show-KeyMenu {
     while ($true) {
         Clear-Host
         Show-Banner -Title $Title -Subtitle $Subtitle
+        Write-Host '    ╔══════════════════════════════════════════════════════════════╗' -ForegroundColor DarkCyan
         for ($i = 0; $i -lt $Items.Count; $i++) {
             $item = $Items[$i]
             $key = [string]$item['Key']
             $label = [string]$item['Label']
             $desc = [string]$item['Description']
-            $first = ('  {0}  {1}' -f $key.PadRight(2), $label.PadRight(32))
+            $line = ('  {0}  {1}' -f $key.PadRight(2), $label.PadRight(30))
+            $desc = $desc.PadRight(34)
             if ($i -eq $index) {
-                Write-Host ('  >' + $first) -ForegroundColor Black -BackgroundColor Cyan -NoNewline
-                Write-Host ('  ' + $desc) -ForegroundColor Cyan
+                Write-Host '    ║' -ForegroundColor DarkCyan -NoNewline
+                Write-Host (' >' + $line + '  ' + $desc) -ForegroundColor Black -BackgroundColor Cyan -NoNewline
+                Write-Host '║' -ForegroundColor DarkCyan
             }
             else {
-                Write-Host ('   ' + $first) -ForegroundColor Gray -NoNewline
-                Write-Host ('  ' + $desc) -ForegroundColor DarkGray
+                Write-Host '    ║' -ForegroundColor DarkGray -NoNewline
+                Write-Host ('   ' + $line + '  ' + $desc) -ForegroundColor Gray -NoNewline
+                Write-Host '║' -ForegroundColor DarkGray
             }
         }
+        Write-Host '    ╚══════════════════════════════════════════════════════════════╝' -ForegroundColor DarkCyan
         Write-Host ''
-        Write-Host '    ---------------------------------------------------------------' -ForegroundColor DarkGray
-        Write-Host '    Flechas: mover   |   -> / ESPACIO: ejecutar   |   1-9: acceso directo' -ForegroundColor DarkCyan
+        Write-Host '    ↑↓ mover   →/ESPACIO ejecutar   1-9 acceso directo   HOME/END' -ForegroundColor DarkCyan
         if ($AllowPalette) {
-            Write-Host '    / : comandos    |   ESC / 0 : atras o salir' -ForegroundColor DarkGray
+            Write-Host '    / comandos   ESC/0 atras o salir' -ForegroundColor DarkGray
         }
-        else { Write-Host '    ESC / 0 : atras' -ForegroundColor DarkGray }
+        else { Write-Host '    ESC/0 atras' -ForegroundColor DarkGray }
         try { $keyInfo = [Console]::ReadKey($true) }
         catch {
             $fallback=Read-Host 'Opcion'
