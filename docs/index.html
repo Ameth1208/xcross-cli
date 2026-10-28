@@ -23,17 +23,29 @@
   }
 </script>
 <style>
-  html { overflow-x:hidden; }
+  html { overflow-x:hidden; overflow-y:scroll; scrollbar-width:none; }
+  html::-webkit-scrollbar { display:none; }
+  body {
+    --sb-track-color: #000000;
+    --sb-thumb-color: #121212;
+    --sb-size: 0px;
+  }
+  body::-webkit-scrollbar { width: var(--sb-size); height: var(--sb-size); }
+  body::-webkit-scrollbar-track { background: var(--sb-track-color); border-radius: 1px; }
+  body::-webkit-scrollbar-thumb { background: var(--sb-thumb-color); border-radius: 1px; }
+  @supports not selector(::-webkit-scrollbar) {
+    body { scrollbar-color: var(--sb-thumb-color) var(--sb-track-color); }
+  }
   .logo-pre { color:#2997ff; white-space:pre; font-family:Consolas,monospace; font-size:13px; line-height:1.2; }
   .glass { background:rgba(20,20,20,.6); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%); border:1px solid rgba(255,255,255,.08); }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } html { scroll-behavior:auto; } }
 </style>
 </head>
 <body class="bg-dark-bg text-dark-fg font-sans antialiased selection:bg-dark-accent/30 overflow-x-hidden">
-<div class="max-w-[1120px] mx-auto px-6 lg:px-12">
-  <header class="flex items-center justify-between py-5 sticky top-0 z-20 glass rounded-2xl mt-4 px-6">
+<div class="max-w-[1120px] mx-auto px-8 lg:px-12">
+  <header class="flex items-center justify-between py-2  sticky top-0 z-20 glass rounded-2xl top-4 px-4">
     <div class="flex items-center gap-3">
-      <img src="logo.svg" alt="XCross CLI logo" height="20" class="block">
+      <img src="logo.svg" alt="XCross CLI logo"  class="h-10 block">
     </div>
     <nav class="flex gap-8">
       <a href="https://github.com/Ameth1208/xcross-cli" class="text-sm text-dark-gray hover:text-dark-fg transition-colors duration-300">GitHub</a>
@@ -50,8 +62,8 @@
       <button id="tabWin" onclick="setTab('win')" class="px-5 py-2.5 rounded-pill text-sm font-medium border border-white/10 text-dark-gray hover:text-dark-fg transition-all duration-300 active:bg-dark-fg active:text-dark-bg active:border-dark-fg">Windows</button>
       <button id="tabLin" onclick="setTab('lin')" class="px-5 py-2.5 rounded-pill text-sm font-medium border border-white/10 text-dark-gray hover:text-dark-fg transition-all duration-300">Linux / macOS</button>
     </div>
-    <div id="install" class="max-w-[760px] mx-auto flex items-center gap-3 glass rounded-2xl p-4 shadow-card hover:shadow-cardHover transition-all duration-400">
-      <code id="cmd" class="flex-1 min-w-0 font-mono text-sm text-dark-fg overflow-x-auto whitespace-nowrap">irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex</code>
+    <div id="install" class="max-w-[760px] mx-auto flex items-center gap-3 glass rounded-2xl p-4 shadow-card hover:shadow-cardHover transition-all duration-400 overflow-hidden">
+      <code id="cmd" class="flex-1 min-w-0 font-mono text-sm text-dark-fg overflow-x-hidden whitespace-nowrap cursor-ew-resize outline-none" tabindex="0" role="region" aria-label="Install command">irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex</code>
       <button onclick="copyCmd()" class="shrink-0 bg-dark-accent text-black rounded-pill px-5 py-2.5 text-sm font-semibold hover:opacity-90 active:scale-95 transition-all duration-200">Copy</button>
     </div>
   </section>
@@ -67,7 +79,7 @@
 
   <section id="preview" class="my-20">
     <h2 class="text-3xl font-light tracking-tight text-center mb-8">Live preview</h2>
-    <div class="glass rounded-2xl shadow-term overflow-hidden">
+    <div class="glass rounded-2xl shadow-term overflow-hidden font-mono">
       <div class="flex items-center gap-2 px-4 py-3 border-b border-white/8">
         <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
         <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
@@ -76,11 +88,11 @@
       </div>
       <div class="p-6">
         <div class="flex justify-end mb-3"><span onclick="toggleLang()" class="cursor-pointer text-dark-accent text-sm px-3 py-1 rounded-pill hover:bg-dark-accent/10 transition-colors duration-200">EN / ES</span></div>
-        <div class="mb-3"><img src="logo.svg" alt="XCross CLI logo" height="52" class="block"></div>
-        <div id="t" class="font-bold mb-1">xcm / Main menu</div>
-        <div id="s" class="text-xs text-dark-gray mb-3">Flutter iOS  /  Windows  /  developer toolkit</div>
+        <div class="mb-2"><img src="logo.svg" alt="XCross CLI logo" height="16" class="block"></div>
+        <div class="text-sm mb-1"><span class="text-dark-accent font-bold">xcm</span> <span class="text-dark-fg">/</span> <span id="t" class="text-dark-fg font-bold">Main menu</span> <span class="text-dark-gray float-right text-xs">v1.2.0</span></div>
+        <div class="text-xs text-dark-gray mb-2" id="s">Flutter iOS  /  Windows  /  developer toolkit</div>
         <div class="flex gap-4 text-xs text-dark-gray mb-3 flex-wrap"><span>xcross: <b class="text-dark-accent">ready</b></span><span>swift: <b class="text-dark-accent">ready</b></span><span id="proj">Project: lumina-mobile</span></div>
-        <div id="menu" class="border border-dark-accent/60 rounded-xl p-1.5 my-3"></div>
+        <div id="menu" class="my-3 overflow-x-auto rounded-xl"></div>
         <div id="f" class="text-dark-gray text-xs mt-3 pt-3 border-t border-white/8">↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back</div>
       </div>
     </div>
@@ -101,12 +113,23 @@ const ES=[['1','Ejecutar Flutter en iPhone','compilar, firmar, instalar, hot rel
 let lang='en', sel=0;
 function render(){
   const items=lang==='es'?ES:EN;
-  const m=document.getElementById('menu'); m.innerHTML='';
+  const m=document.getElementById('menu');
+  const w=60;
+  const top='╔'+ '═'.repeat(w-2) + '╗';
+  const bot='╚'+ '═'.repeat(w-2) + '╝';
+  let html='<pre class="m-0 text-[13px] leading-tight font-mono">';
+  html += top + '\n';
   items.forEach((it,i)=>{
-    const r=document.createElement('div'); r.className='row'+(i===sel?' sel':'');
-    r.innerHTML=`<div class="key">${it[0]}</div><div class="label">${it[1]}</div><div class="desc">${it[2]}</div>`;
-    m.appendChild(r);
+    const key=it[0].padEnd(2);
+    const label=it[1].padEnd(28);
+    const desc=it[2].padEnd(22);
+    const line='║  ' + key + '  ' + label + '  ' + desc + '║';
+    if(i===sel){ html += '<span class="bg-[#2997ff] text-black">' + line + '</span>\n'; }
+    else { html += line + '\n'; }
   });
+  html += bot;
+  html += '</pre>';
+  m.innerHTML=html;
   document.getElementById('t').textContent=lang==='es'?'xcm / Menu principal':'xcm / Main menu';
   document.getElementById('s').textContent='Flutter iOS  /  Windows  /  developer toolkit';
   document.getElementById('f').textContent=lang==='es'?'↑↓ mover   →/ESPACIO ejecutar   1-9 acceso directo   / comandos   ESC/0 atras':'↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back';
@@ -127,11 +150,33 @@ document.addEventListener('keydown',e=>{
 });
 render();
 document.addEventListener('DOMContentLoaded', () => {
-  if (window.anime) {
-    anime({ targets: 'section h1', opacity:[0,1], translateY:[24,0], duration:900, easing:'easeOutExpo', delay:100 });
-    anime({ targets: 'section p', opacity:[0,1], translateY:[16,0], duration:800, easing:'easeOutExpo', delay:250 });
-    anime({ targets: '.card', opacity:[0,1], translateY:[20,0], duration:700, easing:'easeOutCubic', delay:anime.stagger(80,{start:400}) });
-    anime({ targets: '.glass', opacity:[0,1], translateY:[30,0], scale:[.98,1], duration:900, easing:'easeOutExpo', delay:300 });
+  if (!window.anime) return;
+  anime({ targets: 'section h1', opacity:[0,1], translateY:[24,0], duration:900, easing:'easeOutExpo', delay:100 });
+  anime({ targets: 'section p', opacity:[0,1], translateY:[16,0], duration:800, easing:'easeOutExpo', delay:250 });
+  anime({ targets: '.card', opacity:[0,1], translateY:[20,0], duration:700, easing:'easeOutCubic', delay:anime.stagger(80,{start:400}) });
+  anime({ targets: '.glass', opacity:[0,1], translateY:[30,0], scale:[.98,1], duration:900, easing:'easeOutExpo', delay:300 });
+
+  // Scroll-triggered reveals
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        anime({ targets: e.target, opacity:[0,1], translateY:[24,0], duration:700, easing:'easeOutCubic' });
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.card, .terminal, footer.site').forEach(el => { el.style.opacity='0'; io.observe(el); });
+
+  // Typing effect on install command
+  const cmd = document.getElementById('cmd');
+  if (cmd) {
+    const text = cmd.textContent;
+    cmd.textContent = '';
+    let i = 0;
+    const type = () => {
+      if (i < text.length) { cmd.textContent += text.charAt(i++); setTimeout(type, 18); }
+    };
+    setTimeout(type, 600);
   }
 });
 </script>
