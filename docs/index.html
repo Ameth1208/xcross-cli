@@ -3,99 +3,145 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>XCross CLI - Preview</title>
+<title>XCross CLI - Easiest Flutter setup for Windows & Linux</title>
+<meta name="description" content="XCross CLI makes installing and running Flutter apps effortless on Windows and Linux. One-line install, interactive menu, xcross integration.">
 <style>
-  :root { --bg:#0d1117; --fg:#c9d1d9; --cyan:#58a6ff; --gray:#8b949e; --dark:#161b22; --border:#30363d; }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font-family:Consolas,'Courier New',monospace; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
-  .terminal { background:var(--dark); border:1px solid var(--border); border-radius:12px; padding:20px 24px; width:min(760px,100%); box-shadow:0 10px 40px rgba(0,0,0,.5); }
-  .logo { color:var(--cyan); white-space:pre; font-size:16px; line-height:1.2; margin-bottom:12px; }
-  .title { color:#fff; font-weight:bold; margin:8px 0 4px; }
-  .subtitle { color:var(--gray); font-size:13px; margin-bottom:12px; }
-  .box { border:1px solid var(--cyan); border-radius:8px; padding:8px 0; margin:12px 0; }
-  .row { display:flex; padding:4px 16px; }
-  .key { color:var(--cyan); width:40px; font-weight:bold; }
-  .label { width:260px; }
+  :root { --bg:#0d1117; --fg:#c9d1d9; --cyan:#58a6ff; --gray:#8b949e; --dark:#161b22; --border:#30363d; --green:#3fb950; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; }
+  a { color:var(--cyan); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:20px 0; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:700; color:#fff; }
+  .brand .logo { color:var(--cyan); font-family:Consolas,monospace; font-size:14px; line-height:1; }
+  nav a { margin-left:20px; color:var(--gray); font-size:14px; }
+  nav a:hover { color:#fff; }
+  .hero { text-align:center; padding:60px 0 40px; }
+  .hero h1 { font-size:clamp(2rem,5vw,3.2rem); color:#fff; margin-bottom:12px; }
+  .hero p { color:var(--gray); font-size:1.1rem; max-width:640px; margin:0 auto 28px; }
+  .install { background:var(--dark); border:1px solid var(--border); border-radius:10px; padding:16px 20px; max-width:720px; margin:0 auto; display:flex; align-items:center; gap:12px; }
+  .install code { flex:1; color:var(--green); font-family:Consolas,monospace; font-size:14px; overflow-x:auto; white-space:nowrap; }
+  .install button { background:var(--cyan); color:#000; border:none; border-radius:6px; padding:8px 14px; font-weight:600; cursor:pointer; }
+  .tabs { display:flex; gap:8px; margin:16px auto 0; max-width:720px; justify-content:center; }
+  .tabs button { background:transparent; border:1px solid var(--border); color:var(--gray); padding:6px 14px; border-radius:6px; cursor:pointer; font-size:13px; }
+  .tabs button.active { background:var(--cyan); color:#000; border-color:var(--cyan); }
+  .features { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin:60px 0; }
+  .card { background:var(--dark); border:1px solid var(--border); border-radius:10px; padding:20px; }
+  .card h3 { color:#fff; margin-bottom:6px; font-size:1.05rem; }
+  .card p { color:var(--gray); font-size:0.9rem; }
+  .preview { margin:40px 0 60px; }
+  .preview h2 { color:#fff; margin-bottom:16px; text-align:center; }
+  .terminal { background:var(--dark); border:1px solid var(--border); border-radius:12px; padding:20px 24px; box-shadow:0 10px 40px rgba(0,0,0,.5); font-family:Consolas,monospace; }
+  .logo { color:var(--cyan); white-space:pre; font-size:14px; line-height:1.2; margin-bottom:10px; }
+  .title { color:#fff; font-weight:bold; margin:6px 0 2px; }
+  .subtitle { color:var(--gray); font-size:12px; margin-bottom:10px; }
+  .status { display:flex; gap:16px; font-size:12px; color:var(--gray); margin-bottom:8px; }
+  .status b { color:var(--cyan); }
+  .box { border:1px solid var(--cyan); border-radius:8px; padding:6px 0; margin:10px 0; }
+  .row { display:flex; padding:3px 14px; font-size:13px; }
+  .key { color:var(--cyan); width:34px; font-weight:bold; }
+  .label { width:230px; }
   .desc { color:var(--gray); flex:1; }
   .row.sel { background:var(--cyan); color:#000; }
   .row.sel .key,.row.sel .label,.row.sel .desc { color:#000; }
-  .footer { color:var(--gray); font-size:12px; margin-top:12px; border-top:1px solid var(--border); padding-top:8px; }
-  .status { display:flex; gap:16px; font-size:12px; color:var(--gray); margin-bottom:8px; }
-  .status span b { color:var(--cyan); }
-  .lang { float:right; cursor:pointer; color:var(--cyan); }
+  .footer { color:var(--gray); font-size:11px; margin-top:10px; border-top:1px solid var(--border); padding-top:8px; }
+  .langbtn { float:right; cursor:pointer; color:var(--cyan); font-size:13px; }
+  footer.site { text-align:center; color:var(--gray); font-size:13px; padding:30px 0; border-top:1px solid var(--border); }
+  @media(max-width:640px){ .install{flex-direction:column;align-items:stretch;} .install button{width:100%;} }
 </style>
 </head>
 <body>
-<div class="terminal">
-  <div class="lang" onclick="toggleLang()">EN / ES</div>
-  <div class="logo" id="logo">█   █  ███  █   █
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">█   █  ███  █   █
+ █ █ ░█ ░░░ ██ ██░
+  █ ░ █░ ░░░█░█ █░░
+ █ █ ░█░░   █░░░█░░
+█ ░ █  ███  █░░ █░░</div>
+      <span>XCross CLI</span>
+    </div>
+    <nav>
+      <a href="https://github.com/Ameth1208/xcross-cli">GitHub</a>
+      <a href="#install">Install</a>
+      <a href="#preview">Preview</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>The easiest way to build Flutter apps</h1>
+    <p>XCross CLI gives you a beautiful, keyboard-driven terminal experience for Flutter development on Windows and Linux. One-line install, guided setup, xcross integration.</p>
+    <div class="tabs">
+      <button id="tabWin" class="active" onclick="setTab('win')">Windows</button>
+      <button id="tabLin" onclick="setTab('lin')">Linux / macOS</button>
+    </div>
+    <div class="install" id="install">
+      <code id="cmd">irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex</code>
+      <button onclick="copyCmd()">Copy</button>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="card"><h3>One-line install</h3><p>Get up and running in seconds with a single command. No admin rights required.</p></div>
+    <div class="card"><h3>Interactive menu</h3><p>Navigate with arrows, execute with space. Command palette with / for quick access.</p></div>
+    <div class="card"><h3>Bilingual</h3><p>English and Spanish built in. Switch anytime with xcm language en|es.</p></div>
+    <div class="card"><h3>xcross integration</h3><p>Guided installers for Swift, xcross, SDK import and Flutter precache.</p></div>
+    <div class="card"><h3>USB & Wi-Fi tunnels</h3><p>Open RSD tunnels for device debugging with one keystroke.</p></div>
+    <div class="card"><h3>Open source</h3><p>MIT licensed. Contributions welcome on GitHub.</p></div>
+  </section>
+
+  <section class="preview" id="preview">
+    <h2>Live preview</h2>
+    <div class="terminal">
+      <div class="langbtn" onclick="toggleLang()">EN / ES</div>
+      <div class="logo">█   █  ███  █   █
  █ █ ░█ ░░░ ██ ██░
   █ ░ █░ ░░░█░█ █░░
  █ █ ░█░░   █░░░█░░
 █ ░ █  ███  █░░ █░░
  ░ ░ ░  ░░░  ░░  ░░
   ░   ░  ░░░  ░   ░</div>
-  <div class="title" id="title">xcm / Main menu</div>
-  <div class="subtitle" id="subtitle">Flutter iOS  /  Windows  /  developer toolkit</div>
-  <div class="status">
-    <span>xcross: <b>ready</b></span>
-    <span>swift: <b>ready</b></span>
-    <span id="proj">Project: lumina-mobile</span>
-  </div>
-  <div class="box" id="menu"></div>
-  <div class="footer" id="footer">↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back</div>
+      <div class="title" id="t">xcm / Main menu</div>
+      <div class="subtitle" id="s">Flutter iOS  /  Windows  /  developer toolkit</div>
+      <div class="status"><span>xcross: <b>ready</b></span><span>swift: <b>ready</b></span><span id="proj">Project: lumina-mobile</span></div>
+      <div class="box" id="menu"></div>
+      <div class="footer" id="f">↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back</div>
+    </div>
+  </section>
+
+  <footer class="site">
+    MIT License · <a href="https://github.com/Ameth1208/xcross-cli">github.com/Ameth1208/xcross-cli</a>
+  </footer>
 </div>
+
 <script>
-const itemsEN = [
-  ['1','Run Flutter on iPhone','build, sign, install, hot reload'],
-  ['2','Flutter diagnostics','xcross flutter doctor'],
-  ['3','Detect iPhone','USB and iOS version'],
-  ['4','Developer mode','status and activation'],
-  ['5','Open USB tunnel','opens PowerShell with permissions'],
-  ['6','Open Wi-Fi tunnel','wireless link'],
-  ['D','Downloads and SDK','Swift, xcross, Xcode, precache'],
-  ['F','Signing and App ID','Apple Development authorization'],
-  ['P','Flutter projects','change project, VS Code, run'],
-  ['I','Install xcm command','available from any folder'],
-  ['U','Update xcm','download latest version from GitHub'],
-  ['X','Uninstall xcm','remove global command'],
-  ['L','Language','switch English/Spanish'],
-  ['?','Commands and help','command list and examples'],
-];
-const itemsES = [
-  ['1','Ejecutar Flutter en iPhone','compilar, firmar, instalar, hot reload'],
-  ['2','Diagnostico de Flutter','xcross flutter doctor'],
-  ['3','Detectar iPhone','USB y version de iOS'],
-  ['4','Modo desarrollador','estado y activacion'],
-  ['5','Abrir tunel USB','abre PowerShell con permisos'],
-  ['6','Abrir tunel Wi-Fi','enlace inalambrico'],
-  ['D','Descargas y SDK','Swift, xcross, Xcode, precache'],
-  ['F','Firma y App ID','autorizacion Apple Development'],
-  ['P','Proyectos Flutter','cambiar proyecto, VS Code, ejecutar'],
-  ['I','Instalar comando xcm','disponible desde cualquier carpeta'],
-  ['U','Actualizar xcm','descarga la ultima version desde GitHub'],
-  ['X','Desinstalar xcm','elimina el comando global'],
-  ['L','Idioma','cambiar ingles/espanol'],
-  ['?','Comandos y ayuda','lista de comandos y ejemplos'],
-];
+const EN=[['1','Run Flutter on iPhone','build, sign, install, hot reload'],['2','Flutter diagnostics','xcross flutter doctor'],['3','Detect iPhone','USB and iOS version'],['4','Developer mode','status and activation'],['5','Open USB tunnel','opens PowerShell with permissions'],['6','Open Wi-Fi tunnel','wireless link'],['D','Downloads and SDK','Swift, xcross, Xcode, precache'],['F','Signing and App ID','Apple Development authorization'],['P','Flutter projects','change project, VS Code, run'],['I','Install xcm command','available from any folder'],['U','Update xcm','download latest version from GitHub'],['X','Uninstall xcm','remove global command'],['L','Language','switch English/Spanish'],['?','Commands and help','command list and examples']];
+const ES=[['1','Ejecutar Flutter en iPhone','compilar, firmar, instalar, hot reload'],['2','Diagnostico de Flutter','xcross flutter doctor'],['3','Detectar iPhone','USB y version de iOS'],['4','Modo desarrollador','estado y activacion'],['5','Abrir tunel USB','abre PowerShell con permisos'],['6','Abrir tunel Wi-Fi','enlace inalambrico'],['D','Descargas y SDK','Swift, xcross, Xcode, precache'],['F','Firma y App ID','autorizacion Apple Development'],['P','Proyectos Flutter','cambiar proyecto, VS Code, ejecutar'],['I','Instalar comando xcm','disponible desde cualquier carpeta'],['U','Actualizar xcm','descarga la ultima version desde GitHub'],['X','Desinstalar xcm','elimina el comando global'],['L','Idioma','cambiar ingles/espanol'],['?','Comandos y ayuda','lista de comandos y ejemplos']];
 let lang='en', sel=0;
 function render(){
-  const items = lang==='es'?itemsES:itemsEN;
-  const menu=document.getElementById('menu');
-  menu.innerHTML='';
+  const items=lang==='es'?ES:EN;
+  const m=document.getElementById('menu'); m.innerHTML='';
   items.forEach((it,i)=>{
-    const row=document.createElement('div');
-    row.className='row'+(i===sel?' sel':'');
-    row.innerHTML=`<div class="key">${it[0]}</div><div class="label">${it[1]}</div><div class="desc">${it[2]}</div>`;
-    menu.appendChild(row);
+    const r=document.createElement('div'); r.className='row'+(i===sel?' sel':'');
+    r.innerHTML=`<div class="key">${it[0]}</div><div class="label">${it[1]}</div><div class="desc">${it[2]}</div>`;
+    m.appendChild(r);
   });
-  document.getElementById('title').textContent = lang==='es'?'xcm / Menu principal':'xcm / Main menu';
-  document.getElementById('subtitle').textContent = lang==='es'?'Flutter iOS  /  Windows  /  developer toolkit':'Flutter iOS  /  Windows  /  developer toolkit';
-  document.getElementById('footer').textContent = lang==='es'?'↑↓ mover   →/ESPACIO ejecutar   1-9 acceso directo   / comandos   ESC/0 atras':'↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back';
+  document.getElementById('t').textContent=lang==='es'?'xcm / Menu principal':'xcm / Main menu';
+  document.getElementById('s').textContent='Flutter iOS  /  Windows  /  developer toolkit';
+  document.getElementById('f').textContent=lang==='es'?'↑↓ mover   →/ESPACIO ejecutar   1-9 acceso directo   / comandos   ESC/0 atras':'↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back';
 }
 function toggleLang(){ lang=lang==='en'?'es':'en'; render(); }
+function setTab(t){
+  document.getElementById('tabWin').classList.toggle('active',t==='win');
+  document.getElementById('tabLin').classList.toggle('active',t==='lin');
+  document.getElementById('cmd').textContent = t==='win'
+    ? 'irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex'
+    : 'curl -fsSL https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.sh | bash';
+}
+function copyCmd(){ navigator.clipboard.writeText(document.getElementById('cmd').textContent); }
 document.addEventListener('keydown',e=>{
-  const items=lang==='es'?itemsES:itemsEN;
+  const items=lang==='es'?ES:EN;
   if(e.key==='ArrowDown'){sel=(sel+1)%items.length;render();}
   if(e.key==='ArrowUp'){sel=(sel+items.length-1)%items.length;render();}
 });
