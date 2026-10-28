@@ -3,11 +3,11 @@ $ErrorActionPreference = 'Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'Solo disponible para Windows.' }
 $target = Join-Path $env:LOCALAPPDATA 'Programs\XCrossCLI'
 $source = Split-Path -Parent $MyInvocation.MyCommand.Path
-if (-not (Test-Path -LiteralPath (Join-Path $source 'XCross-CLI.ps1'))) {
-    throw 'No se encontro XCross-CLI.ps1 junto al instalador.'
+if (-not (Test-Path -LiteralPath (Join-Path $source 'windows-cli.ps1'))) {
+    throw 'No se encontro windows-cli.ps1 junto al instalador.'
 }
 New-Item -ItemType Directory -Path $target -Force | Out-Null
-foreach($file in @('XCross-CLI.ps1','xcm.cmd','Iniciar-XCross-CLI.cmd','Instalar-Comando-XCM.ps1','Desinstalar-Comando-XCM.ps1')) {
+foreach($file in @('windows-cli.ps1','xcm.cmd','start.cmd','install.ps1','uninstall.ps1')) {
     $srcFile = Join-Path $source $file
     $dstFile = Join-Path $target $file
     if ($srcFile -ine $dstFile) { Copy-Item -LiteralPath $srcFile -Destination $dstFile -Force }

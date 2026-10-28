@@ -2,7 +2,7 @@
 
 A terminal interface inspired by modern CLIs used with programming assistants. **It does not include an AI model**, but provides a fast keyboard-driven experience with a command palette and reusable commands.
 
-> Windows-focused (PowerShell 5.1+). For a cross-platform Flutter setup helper, see `xcross.sh`.
+> Windows-focused (PowerShell 5.1+). For a cross-platform Flutter setup helper, see `setup-flutter.sh` (and `linux-cli.sh` for Linux).
 
 ## Features
 
@@ -17,7 +17,7 @@ A terminal interface inspired by modern CLIs used with programming assistants. *
 ## Quick Start (Windows)
 
 1. Extract this ZIP into a permanent folder.
-2. Run `Iniciar-XCross-CLI.cmd` to open the menu, or `xcm.cmd` from that folder.
+2. Run `start.cmd` to open the menu, or `xcm.cmd` from that folder.
 3. Use **arrows** to navigate and **Right arrow / Space** to execute. Press `/` for the command palette.
 4. Numbers `1`-`9`, `D`, `F`, `P`, `I`, `?` are shortcuts where shown. `Esc` / `0` goes back.
 
@@ -26,7 +26,7 @@ A terminal interface inspired by modern CLIs used with programming assistants. *
 Run the installer (no administrator required):
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Instalar-Comando-XCM.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
 Or press `I` in the menu and confirm. Scripts are copied to `%LOCALAPPDATA%\Programs\XCrossCLI` and added to your user `PATH`. Open a **new terminal** to use `xcm` anywhere.
@@ -34,7 +34,7 @@ Or press `I` in the menu and confirm. Scripts are copied to `%LOCALAPPDATA%\Prog
 To remove it:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Desinstalar-Comando-XCM.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
 ```
 
 Saved settings in `%APPDATA%\XCrossMenu` are preserved.
@@ -67,19 +67,30 @@ xcm update
 
 Without the global command, replace `xcm` with `./xcm.cmd` when inside the extracted folder.
 
-## Flutter setup helper (`xcross.sh`)
+## Flutter setup helper (`setup-flutter.sh`)
 
 For a quick cross-platform Flutter environment setup:
 
 ```bash
-chmod +x xcross.sh
-./xcross.sh
+chmod +x setup-flutter.sh
+./setup-flutter.sh
 ```
 
 It verifies basic dependencies, installs the Flutter SDK, attempts to install `xcross`, and configures your shell `PATH`. Override defaults with environment variables:
 
 ```bash
-FLUTTER_VERSION=stable INSTALL_DIR=$HOME/dev ./xcross.sh
+FLUTTER_VERSION=stable INSTALL_DIR=$HOME/dev ./setup-flutter.sh
+```
+
+## Linux CLI (`linux-cli.sh`)
+
+A Linux counterpart of the Windows CLI. Run directly:
+
+```bash
+chmod +x linux-cli.sh
+./linux-cli.sh            # interactive menu
+./linux-cli.sh doctor     # verify tools
+./linux-cli.sh help       # list commands
 ```
 
 ## Notes on downloads and signing

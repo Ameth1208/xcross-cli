@@ -5,7 +5,7 @@ Interfaz de terminal inspirada en los CLI modernos usados con asistentes de prog
 ## Empezar
 
 1. Descomprime este ZIP en una carpeta permanente.
-2. Ejecuta `Iniciar-XCross-CLI.cmd` para abrir el menú, o `xcm.cmd` desde esa carpeta.
+2. Ejecuta `start.cmd` para abrir el menú, o `xcm.cmd` desde esa carpeta. (En Linux, usa `linux-cli.sh`.)
 3. Usa las **flechas** para navegar y **flecha derecha o barra espaciadora** para ejecutar, **sin pulsar Enter**. También puedes pulsar directamente `1`–`9`, `D`, `F`, `P`, `I` o `?` donde aparezcan en el menú. `Esc` o `0` vuelve atrás.
 4. Pulsa `/` dentro del menú para abrir una **paleta de comandos**, filtra escribiendo y elige con flecha derecha o `Tab` (no hace falta Enter). Para comandos con argumentos libres, escribe todo y usa flecha derecha cuando no haya sugerencias; Enter también funciona.
 
@@ -13,15 +13,15 @@ La introducción de rutas, emails y otros textos libres se confirma con Enter, p
 
 ## Instalar `xcm` como comando global
 
-Ejecuta `Instalar-Comando-XCM.ps1` con PowerShell o pulsa `I` en el menú y confirma. Copia los scripts a `%LOCALAPPDATA%\Programs\XCrossCLI` y agrega esta carpeta al `PATH` de usuario. **No requiere administrador**. Abre una **nueva terminal** para usar `xcm` desde cualquier carpeta.
+Ejecuta `install.ps1` con PowerShell o pulsa `I` en el menú y confirma. Copia los scripts a `%LOCALAPPDATA%\Programs\XCrossCLI` y agrega esta carpeta al `PATH` de usuario. **No requiere administrador**. Abre una **nueva terminal** para usar `xcm` desde cualquier carpeta.
 
 Puedes ejecutar el instalador manualmente así:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Instalar-Comando-XCM.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-Para eliminar el comando global, usa `Desinstalar-Comando-XCM.ps1`. No se borran los ajustes guardados.
+Para eliminar el comando global, usa `uninstall.ps1`. No se borran los ajustes guardados.
 
 ## Comandos directos (sin abrir el menú)
 
