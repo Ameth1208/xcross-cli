@@ -5,50 +5,73 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>XCross CLI - Easiest Flutter setup for Windows & Linux</title>
 <meta name="description" content="XCross CLI makes installing and running Flutter apps effortless on Windows and Linux. One-line install, interactive menu, xcross integration.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0d1117; --fg:#c9d1d9; --cyan:#58a6ff; --gray:#8b949e; --dark:#161b22; --border:#30363d; --green:#3fb950; }
+  :root {
+    --bg:#0d1117; --fg:#c9d1d9; --cyan:#58a6ff; --gray:#8b949e; --dark:#161b22; --border:#30363d; --green:#3fb950;
+    --radius:21px; --space:4px;
+  }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { background:var(--bg); color:var(--fg); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--bg); color:var(--fg); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
   a { color:var(--cyan); text-decoration:none; }
   a:hover { text-decoration:underline; }
+  a:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; border-radius:4px; }
   .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
-  header { display:flex; align-items:center; justify-content:space-between; padding:20px 0; }
-  .brand { display:flex; align-items:center; gap:10px; font-weight:700; color:#fff; }
-  .brand .logo { color:var(--cyan); font-family:Consolas,monospace; font-size:14px; line-height:1; }
-  nav a { margin-left:20px; color:var(--gray); font-size:14px; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:20px 0; position:sticky; top:0; backdrop-filter:blur(20px) saturate(180%); background:rgba(13,17,23,.6); z-index:10; border-bottom:1px solid rgba(255,255,255,.06); }
+  .brand { display:flex; align-items:center; gap:10px; color:#fff; }
+  .brand .logo { color:var(--cyan); font-family:Consolas,monospace; font-size:12px; line-height:1; }
+  nav a { margin-left:20px; color:var(--gray); font-size:14px; transition:color .15s ease-out; }
   nav a:hover { color:#fff; }
-  .hero { text-align:center; padding:60px 0 40px; }
-  .hero h1 { font-size:clamp(2rem,5vw,3.2rem); color:#fff; margin-bottom:12px; }
-  .hero p { color:var(--gray); font-size:1.1rem; max-width:640px; margin:0 auto 28px; }
-  .install { background:var(--dark); border:1px solid var(--border); border-radius:10px; padding:16px 20px; max-width:720px; margin:0 auto; display:flex; align-items:center; gap:12px; }
-  .install code { flex:1; color:var(--green); font-family:Consolas,monospace; font-size:14px; overflow-x:auto; white-space:nowrap; }
-  .install button { background:var(--cyan); color:#000; border:none; border-radius:6px; padding:8px 14px; font-weight:600; cursor:pointer; }
-  .tabs { display:flex; gap:8px; margin:16px auto 0; max-width:720px; justify-content:center; }
-  .tabs button { background:transparent; border:1px solid var(--border); color:var(--gray); padding:6px 14px; border-radius:6px; cursor:pointer; font-size:13px; }
+  .hero { text-align:center; padding:72px 0 48px; }
+  .hero h1 { font-size:clamp(2rem,5vw,3.2rem); color:#fff; margin-bottom:12px; letter-spacing:-0.02em; line-height:1.05; font-weight:700; text-wrap:balance; }
+  .hero p { color:var(--gray); font-size:1.05rem; max-width:620px; margin:0 auto 32px; text-wrap:pretty; }
+  .tabs { display:flex; gap:8px; margin:0 auto 16px; max-width:720px; justify-content:center; }
+  .tabs button { background:transparent; border:1px solid var(--border); color:var(--gray); padding:6px 14px; border-radius:var(--radius); cursor:pointer; font-size:13px; transition:all .15s ease-out; }
+  .tabs button:hover { color:#fff; border-color:var(--gray); }
   .tabs button.active { background:var(--cyan); color:#000; border-color:var(--cyan); }
-  .features { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin:60px 0; }
-  .card { background:var(--dark); border:1px solid var(--border); border-radius:10px; padding:20px; }
-  .card h3 { color:#fff; margin-bottom:6px; font-size:1.05rem; }
+  .install { background:var(--dark); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; max-width:720px; margin:0 auto; display:flex; align-items:center; gap:12px; transition:border-color .15s ease-out; }
+  .install:hover { border-color:var(--gray); }
+  .install code { flex:1; color:var(--green); font-family:Consolas,monospace; font-size:13px; overflow-x:auto; white-space:nowrap; }
+  .install button { background:var(--cyan); color:#000; border:none; border-radius:var(--radius); padding:8px 14px; font-weight:600; cursor:pointer; font-size:13px; transition:transform .1s ease-out, opacity .15s; }
+  .install button:hover { opacity:.9; }
+  .install button:active { transform:scale(.97); }
+  .features { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin:64px 0; }
+  .card { background:var(--dark); border:1px solid var(--border); border-radius:var(--radius); padding:20px; transition:transform .2s ease-out, border-color .2s; }
+  .card:hover { transform:translateY(-2px); border-color:var(--gray); }
+  .card h3 { color:#fff; margin-bottom:6px; font-size:1.05rem; font-weight:600; }
   .card p { color:var(--gray); font-size:0.9rem; }
-  .preview { margin:40px 0 60px; }
-  .preview h2 { color:#fff; margin-bottom:16px; text-align:center; }
-  .terminal { background:var(--dark); border:1px solid var(--border); border-radius:12px; padding:20px 24px; box-shadow:0 10px 40px rgba(0,0,0,.5); font-family:Consolas,monospace; }
+  .preview { margin:40px 0 64px; }
+  .preview h2 { color:#fff; margin-bottom:16px; text-align:center; font-size:1.6rem; letter-spacing:-0.01em; }
+  .terminal { background:var(--dark); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; box-shadow:0 10px 40px rgba(0,0,0,.5); font-family:Consolas,monospace; transition:box-shadow .2s; }
+  .terminal:hover { box-shadow:0 14px 50px rgba(0,0,0,.6); }
   .logo { color:var(--cyan); white-space:pre; font-size:14px; line-height:1.2; margin-bottom:10px; }
   .title { color:#fff; font-weight:bold; margin:6px 0 2px; }
   .subtitle { color:var(--gray); font-size:12px; margin-bottom:10px; }
-  .status { display:flex; gap:16px; font-size:12px; color:var(--gray); margin-bottom:8px; }
+  .status { display:flex; gap:16px; font-size:12px; color:var(--gray); margin-bottom:8px; flex-wrap:wrap; }
   .status b { color:var(--cyan); }
-  .box { border:1px solid var(--cyan); border-radius:8px; padding:6px 0; margin:10px 0; }
-  .row { display:flex; padding:3px 14px; font-size:13px; }
+  .box { border:1px solid var(--cyan); border-radius:12px; padding:6px 0; margin:10px 0; }
+  .row { display:flex; padding:3px 14px; font-size:13px; transition:background .1s; }
   .key { color:var(--cyan); width:34px; font-weight:bold; }
   .label { width:230px; }
   .desc { color:var(--gray); flex:1; }
   .row.sel { background:var(--cyan); color:#000; }
   .row.sel .key,.row.sel .label,.row.sel .desc { color:#000; }
   .footer { color:var(--gray); font-size:11px; margin-top:10px; border-top:1px solid var(--border); padding-top:8px; }
-  .langbtn { float:right; cursor:pointer; color:var(--cyan); font-size:13px; }
-  footer.site { text-align:center; color:var(--gray); font-size:13px; padding:30px 0; border-top:1px solid var(--border); }
-  @media(max-width:640px){ .install{flex-direction:column;align-items:stretch;} .install button{width:100%;} }
+  .langbtn { float:right; cursor:pointer; color:var(--cyan); font-size:13px; padding:4px 8px; border-radius:8px; transition:background .15s; }
+  .langbtn:hover { background:rgba(88,166,255,.1); }
+  footer.site { text-align:center; color:var(--gray); font-size:13px; padding:32px 0; border-top:1px solid var(--border); margin-top:24px; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px);} to { opacity:1; transform:translateY(0);} }
+  .hero, .features, .preview { animation:fadeUp .5s ease-out both; }
+  .features { animation-delay:.1s; }
+  .preview { animation-delay:.2s; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation:none !important; transition:none !important; }
+    html { scroll-behavior:auto; }
+  }
+  @media (max-width:640px){ .install{flex-direction:column;align-items:stretch;} .install button{width:100%;} .label{width:180px;} }
 </style>
 </head>
 <body>
@@ -60,7 +83,6 @@
   █ ░ █░ ░░░█░█ █░░
  █ █ ░█░░   █░░░█░░
 █ ░ █  ███  █░░ █░░</div>
-      <span>XCross CLI</span>
     </div>
     <nav>
       <a href="https://github.com/Ameth1208/xcross-cli">GitHub</a>
