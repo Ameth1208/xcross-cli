@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XCross CLI - Preview</title>
+<style>
+  :root { --bg:#0d1117; --fg:#c9d1d9; --cyan:#58a6ff; --gray:#8b949e; --dark:#161b22; --border:#30363d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:Consolas,'Courier New',monospace; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+  .terminal { background:var(--dark); border:1px solid var(--border); border-radius:12px; padding:20px 24px; width:min(760px,100%); box-shadow:0 10px 40px rgba(0,0,0,.5); }
+  .logo { color:var(--cyan); white-space:pre; font-size:16px; line-height:1.2; margin-bottom:12px; }
+  .title { color:#fff; font-weight:bold; margin:8px 0 4px; }
+  .subtitle { color:var(--gray); font-size:13px; margin-bottom:12px; }
+  .box { border:1px solid var(--cyan); border-radius:8px; padding:8px 0; margin:12px 0; }
+  .row { display:flex; padding:4px 16px; }
+  .key { color:var(--cyan); width:40px; font-weight:bold; }
+  .label { width:260px; }
+  .desc { color:var(--gray); flex:1; }
+  .row.sel { background:var(--cyan); color:#000; }
+  .row.sel .key,.row.sel .label,.row.sel .desc { color:#000; }
+  .footer { color:var(--gray); font-size:12px; margin-top:12px; border-top:1px solid var(--border); padding-top:8px; }
+  .status { display:flex; gap:16px; font-size:12px; color:var(--gray); margin-bottom:8px; }
+  .status span b { color:var(--cyan); }
+  .lang { float:right; cursor:pointer; color:var(--cyan); }
+</style>
+</head>
+<body>
+<div class="terminal">
+  <div class="lang" onclick="toggleLang()">EN / ES</div>
+  <div class="logo" id="logo">█   █  ███  █   █
+ █ █ ░█ ░░░ ██ ██░
+  █ ░ █░ ░░░█░█ █░░
+ █ █ ░█░░   █░░░█░░
+█ ░ █  ███  █░░ █░░
+ ░ ░ ░  ░░░  ░░  ░░
+  ░   ░  ░░░  ░   ░</div>
+  <div class="title" id="title">xcm / Main menu</div>
+  <div class="subtitle" id="subtitle">Flutter iOS  /  Windows  /  developer toolkit</div>
+  <div class="status">
+    <span>xcross: <b>ready</b></span>
+    <span>swift: <b>ready</b></span>
+    <span id="proj">Project: lumina-mobile</span>
+  </div>
+  <div class="box" id="menu"></div>
+  <div class="footer" id="footer">↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back</div>
+</div>
+<script>
+const itemsEN = [
+  ['1','Run Flutter on iPhone','build, sign, install, hot reload'],
+  ['2','Flutter diagnostics','xcross flutter doctor'],
+  ['3','Detect iPhone','USB and iOS version'],
+  ['4','Developer mode','status and activation'],
+  ['5','Open USB tunnel','opens PowerShell with permissions'],
+  ['6','Open Wi-Fi tunnel','wireless link'],
+  ['D','Downloads and SDK','Swift, xcross, Xcode, precache'],
+  ['F','Signing and App ID','Apple Development authorization'],
+  ['P','Flutter projects','change project, VS Code, run'],
+  ['I','Install xcm command','available from any folder'],
+  ['U','Update xcm','download latest version from GitHub'],
+  ['X','Uninstall xcm','remove global command'],
+  ['L','Language','switch English/Spanish'],
+  ['?','Commands and help','command list and examples'],
+];
+const itemsES = [
+  ['1','Ejecutar Flutter en iPhone','compilar, firmar, instalar, hot reload'],
+  ['2','Diagnostico de Flutter','xcross flutter doctor'],
+  ['3','Detectar iPhone','USB y version de iOS'],
+  ['4','Modo desarrollador','estado y activacion'],
+  ['5','Abrir tunel USB','abre PowerShell con permisos'],
+  ['6','Abrir tunel Wi-Fi','enlace inalambrico'],
+  ['D','Descargas y SDK','Swift, xcross, Xcode, precache'],
+  ['F','Firma y App ID','autorizacion Apple Development'],
+  ['P','Proyectos Flutter','cambiar proyecto, VS Code, ejecutar'],
+  ['I','Instalar comando xcm','disponible desde cualquier carpeta'],
+  ['U','Actualizar xcm','descarga la ultima version desde GitHub'],
+  ['X','Desinstalar xcm','elimina el comando global'],
+  ['L','Idioma','cambiar ingles/espanol'],
+  ['?','Comandos y ayuda','lista de comandos y ejemplos'],
+];
+let lang='en', sel=0;
+function render(){
+  const items = lang==='es'?itemsES:itemsEN;
+  const menu=document.getElementById('menu');
+  menu.innerHTML='';
+  items.forEach((it,i)=>{
+    const row=document.createElement('div');
+    row.className='row'+(i===sel?' sel':'');
+    row.innerHTML=`<div class="key">${it[0]}</div><div class="label">${it[1]}</div><div class="desc">${it[2]}</div>`;
+    menu.appendChild(row);
+  });
+  document.getElementById('title').textContent = lang==='es'?'xcm / Menu principal':'xcm / Main menu';
+  document.getElementById('subtitle').textContent = lang==='es'?'Flutter iOS  /  Windows  /  developer toolkit':'Flutter iOS  /  Windows  /  developer toolkit';
+  document.getElementById('footer').textContent = lang==='es'?'↑↓ mover   →/ESPACIO ejecutar   1-9 acceso directo   / comandos   ESC/0 atras':'↑↓ move   →/SPACE execute   1-9 direct   / commands   ESC/0 back';
+}
+function toggleLang(){ lang=lang==='en'?'es':'en'; render(); }
+document.addEventListener('keydown',e=>{
+  const items=lang==='es'?itemsES:itemsEN;
+  if(e.key==='ArrowDown'){sel=(sel+1)%items.length;render();}
+  if(e.key==='ArrowUp'){sel=(sel+items.length-1)%items.length;render();}
+});
+render();
+</script>
+</body>
+</html>
