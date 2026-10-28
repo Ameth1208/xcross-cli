@@ -35,28 +35,35 @@ function Write-Title([string]$Text) {
 }
 
 function Write-Ok([string]$Text)   { Write-Host ('[OK] ' + $Text) -ForegroundColor Green }
+function Msg([string]$En,[string]$Es){ if ($script:Language -eq 'es') { $Es } else { $En } }
 function Write-Warn([string]$Text) { Write-Host ('[!] ' + $Text) -ForegroundColor Yellow }
 function Write-Fail([string]$Text) { Write-Host ('[X] ' + $Text) -ForegroundColor Red }
 
 function Pause-Menu {
     Write-Host ''
-    Write-Host '  [ cualquier tecla ] Volver al menu' -ForegroundColor DarkGray
+    if ($script:Language -eq 'es') {
+        Write-Host '  [ cualquier tecla ] Volver al menu' -ForegroundColor DarkGray
+    } else {
+        Write-Host '  [ any key ] Back to menu' -ForegroundColor DarkGray
+    }
     try { [void][Console]::ReadKey($true) }
-    catch { [void](Read-Host 'Continuar') }
+    catch {
+        if ($script:Language -eq 'es') { [void](Read-Host 'Continuar') } else { [void](Read-Host 'Continue') }
+    }
 }
 
 function Confirm-Yes([string]$Question) {
     Write-Host ("  ? $Question  ") -ForegroundColor Yellow -NoNewline
-    Write-Host '[S]i / [N]o  ' -ForegroundColor DarkGray -NoNewline
+    if ($script:Language -eq 'es') { Write-Host '[S]i / [N]o  ' -ForegroundColor DarkGray -NoNewline } else { Write-Host '[Y]es / [N]o  ' -ForegroundColor DarkGray -NoNewline }
     try {
         $key = [Console]::ReadKey($true)
         $answer = [string]$key.KeyChar
         Write-Host $answer
-        return ($answer -match '^[sSyY]$')
+        if ($script:Language -eq 'es') { return ($answer -match '^[sSyY]$') } else { return ($answer -match '^[yY]$') }
     }
     catch {
-        $answer = Read-Host 'Responde S o N'
-        return ($answer -match '^(s|si|sí|y|yes)$')
+        if ($script:Language -eq 'es') { $answer = Read-Host 'Responde S o N' } else { $answer = Read-Host 'Answer Y or N' }
+        if ($script:Language -eq 'es') { return ($answer -match '^(s|si|yes|y)$') } else { return ($answer -match '^(y|yes)$') }
     }
 }
 
@@ -77,7 +84,7 @@ function Refresh-Path {
 
 function Invoke-Tool([string]$Tool, [string[]]$Arguments = @()) {
     if (-not (Test-Tool $Tool)) {
-        Write-Fail "No encuentro $Tool en PATH."
+        Write-Fail (Msg "Tool not found in PATH: $Tool" "No encuentro $Tool en PATH.")
         return $false
     }
     Write-Host ("> $Tool " + ($Arguments -join ' ')) -ForegroundColor DarkGray
@@ -86,7 +93,7 @@ function Invoke-Tool([string]$Tool, [string[]]$Arguments = @()) {
         & $Tool @Arguments 2>&1 | Out-Host
         $code = $LASTEXITCODE
         if ($null -ne $code -and $code -ne 0) {
-            Write-Fail "$Tool termino con codigo $code."
+            Write-Fail (Msg "$Tool exited with code $code." "$Tool termino con codigo $code.")
             return $false
         }
         return $true
@@ -111,7 +118,7 @@ function Load-Settings {
             $script:Language = [string]$data.Language
         }
     }
-    catch { Write-Warn 'No se pudo leer la configuracion anterior. Usare los valores predeterminados.' }
+    catch { Write-Warn (Msg 'Could not read previous settings. Using defaults.' 'No se pudo leer la configuracion anterior. Usare los valores predeterminados.') }
 }
 
 function Save-Settings {
@@ -122,7 +129,7 @@ function Save-Settings {
         $script:Settings.Language = $script:Language
         $script:Settings | ConvertTo-Json -Depth 2 | Set-Content -LiteralPath $script:SettingsFile -Encoding UTF8
     }
-    catch { Write-Warn 'No se pudo guardar la configuracion local.' }
+    catch { Write-Warn (Msg 'Could not save local settings.' 'No se pudo guardar la configuracion local.') }
 }
 
 function Get-SwiftVersion {
@@ -140,7 +147,7 @@ function Get-SwiftVersion {
 function Check-Swift {
     $version = Get-SwiftVersion
     if ($null -eq $version) {
-        Write-Warn 'No se detecta Swift o no se puede leer su version.'
+        Write-Warn (Msg 'Swift not detected or version unreadable.' 'No se detecta Swift o no se puede leer su version.')
         return $false
     }
     Write-Host "Swift detectado: $version"
@@ -166,7 +173,7 @@ function Show-Environment {
     if (Test-Tool 'xcross') { [void](Invoke-Tool 'xcross' @('--version')) }
     Write-Host ''
     Write-Host 'Nota: Python o py pueden ser alternativos; no necesitas los dos.'
-    Write-Host 'Si acabas de instalar herramientas, abre una nueva terminal.'
+    Write-Host (Msg 'If you just installed tools, open a new terminal.' 'Si acabas de instalar herramientas, abre una nueva terminal.')
 }
 
 function Install-Swift {
@@ -218,7 +225,7 @@ function Install-Xcross {
         $code = $LASTEXITCODE
         Refresh-Path
         if ($code -ne 0 -or -not (Test-Tool 'xcross')) {
-            Write-Fail 'La instalacion no se verifico. Revisa la salida y reinicia la terminal si es necesario.'
+            Write-Fail (Msg 'Installation not verified. Check output and restart terminal if needed.' 'La instalacion no se verifico. Revisa la salida y reinicia la terminal si es necesario.')
             return $false
         }
         Write-Ok 'xcross instalado y disponible.'
@@ -247,7 +254,7 @@ function Install-Dependencies {
     if (Test-Tool 'winget') { $args += @('--manager', 'winget') }
     $ok = Invoke-Tool 'xcross' $args
     Refresh-Path
-    if ($ok) { Write-Ok 'Configuracion finalizada. Reabre PowerShell si falta alguna herramienta en PATH.' }
+    if ($ok) { Write-Ok (Msg 'Setup complete. Reopen PowerShell if a tool is missing from PATH.' 'Configuracion finalizada. Reabre PowerShell si falta alguna herramienta en PATH.') }
     return $ok
 }
 
@@ -270,7 +277,7 @@ function Select-Xip {
     $answer = Read-Host 'Ruta a Xcode.xip (ENTER = archivo detectado)'
     $path = if ($answer.Trim()) { $answer.Trim().Trim('"').Trim("'") } else { $default }
     if (-not $path -or -not (Test-Path -LiteralPath $path -PathType Leaf)) {
-        Write-Fail 'No se encontro el archivo indicado.'
+        Write-Fail (Msg 'File not found.' 'No se encontro el archivo indicado.')
         return $null
     }
     if ([IO.Path]::GetExtension($path) -ine '.xip') {
@@ -297,7 +304,7 @@ function Install-DarwinSdk {
 
 function Get-UsbDevices {
     if (-not (Test-Tool 'pymobiledevice3')) {
-        Write-Fail 'No encuentro pymobiledevice3. Ejecuta la instalacion de dependencias.'
+        Write-Fail (Msg 'pymobiledevice3 not found. Run dependency installation.' 'No encuentro pymobiledevice3. Ejecuta la instalacion de dependencias.')
         return
     }
     try {
@@ -309,7 +316,7 @@ function Get-UsbDevices {
         $devices = ConvertFrom-Json -InputObject $output
         foreach ($device in @($devices)) { if ($null -ne $device) { Write-Output $device } }
     }
-    catch { Write-Fail "No se pudieron consultar dispositivos USB: $($_.Exception.Message)" }
+    catch { Write-Fail (Msg "Could not query USB devices: $($_.Exception.Message)" "No se pudieron consultar dispositivos USB: $($_.Exception.Message)") }
 }
 
 function Show-UsbDevices {
@@ -381,7 +388,7 @@ function Start-TunnelWindow([string]$Transport) {
         Write-Ok 'Tunel iniciado en otra ventana. Manten esa ventana abierta.'
         Write-Host 'Vuelve aqui para ejecutar Flutter cuando el tunel informe que esta listo.'
     }
-    catch { Write-Fail "No se pudo abrir la ventana del tunel: $($_.Exception.Message)" }
+    catch { Write-Fail (Msg "Could not open tunnel window: $($_.Exception.Message)" "No se pudo abrir la ventana del tunel: $($_.Exception.Message)") }
 }
 
 function Tunnel-Command([string]$Transport) {
@@ -404,7 +411,7 @@ function Connect-AppleId {
     Write-Host 'Usa preferiblemente una cuenta Apple de pruebas.'
     $email = (Read-Host 'Correo de la cuenta Apple de pruebas').Trim()
     if (-not $email -or $email -notmatch '^\S+@\S+\.\S+$') {
-        Write-Warn 'No se proporciono un correo valido.'
+        Write-Warn (Msg 'No valid email provided.' 'No se proporciono un correo valido.')
         return
     }
     Write-Host 'xcross pedira las credenciales y el codigo 2FA de forma interactiva.'
@@ -432,7 +439,7 @@ function Select-FlutterProject {
         if ($entered.Trim()) { $default = $entered.Trim().Trim('"').Trim("'") }
     }
     if (-not $default -or -not (Test-Path -LiteralPath (Join-Path $default 'pubspec.yaml') -PathType Leaf)) {
-        Write-Fail 'No se encontro pubspec.yaml. Usa: xcm project set "C:\ruta\proyecto"'
+        Write-Fail (Msg 'pubspec.yaml not found. Use: xcm project set "C:\path\project"' 'No se encontro pubspec.yaml. Usa: xcm project set "C:\ruta\proyecto"')
         return $null
     }
     $resolved = (Resolve-Path -LiteralPath $default).Path
@@ -459,7 +466,7 @@ function Flutter-Run {
     $project = Select-FlutterProject
     if (-not $project) { return }
     Write-Host "  Proyecto: $project" -ForegroundColor DarkGray
-    Write-Host '  Consejo: si no hay tunel RSD, abre otro terminal con xcm tunnel usb.' -ForegroundColor DarkGray
+    Write-Host (Msg '  Tip: if there is no RSD tunnel, open another terminal with xcm tunnel usb.' '  Consejo: si no hay tunel RSD, abre otro terminal con xcm tunnel usb.') -ForegroundColor DarkGray
     Write-Host '  Hot Reload: r   |   Hot Restart: R   |   salir: q' -ForegroundColor Cyan
     $toolArgs = @('flutter', 'run', "--$Transport")
     if ($Target) {
@@ -596,10 +603,10 @@ function Set-BundleIdentity {
 function Show-DeveloperTrustGuide {
     Write-Title 'Autorizar una app de desarrollo en iPhone'
     Write-Host '1. Conecta el iPhone y comprueba que el Modo desarrollador esta activo.'
-    Write-Host '2. Abre en iPhone: Configuracion > General > Adm. de dispositivos y VPN.'
+    Write-Host (Msg '2. Open on iPhone: Settings > General > Device Management & VPN.' '2. Abre en iPhone: Configuracion > General > Adm. de dispositivos y VPN.')
     Write-Host '3. Busca la identidad Apple Development usada para firmar la app.'
     Write-Host '4. Si el iPhone ofrece Confiar/Permitir y reiniciar, confirma desde el dispositivo.'
-    Write-Host '5. Abre la app directamente desde el iPhone antes de probar el depurador.'
+    Write-Host (Msg '5. Open the app directly from the iPhone before testing the debugger.' '5. Abre la app directamente desde el iPhone antes de probar el depurador.')
     Write-Warn 'xcross NO puede forzar la confianza desde Windows: la autorizacion ocurre en iOS.'
     Write-Warn 'Si no aparece esa identidad o el dispositivo prohibe apps de desarrollador,'
     Write-Warn 'revisa restricciones de Tiempo de uso o perfiles administrados (MDM).'
@@ -885,7 +892,7 @@ function Show-CommandPalette {
         else { $matches=@($commands) }
         if ($selected -ge $matches.Count) { $selected=0 }
         Clear-Host
-        Show-Banner -Title 'COMMAND PALETTE' -Subtitle 'Escribe para filtrar comandos; sin Enter para seleccionar'
+        if ($script:Language -eq 'es') { Show-Banner -Title 'PALETA DE COMANDOS' -Subtitle 'Escribe para filtrar; sin Enter para seleccionar' } else { Show-Banner -Title 'COMMAND PALETTE' -Subtitle 'Type to filter commands; no Enter to select' }
         Write-Host ('    / ' + $buffer + '_') -ForegroundColor Cyan
         Write-Host ''
         $limit=[Math]::Min(11,$matches.Count)
@@ -987,7 +994,7 @@ function Show-CurrentProject {
 function Install-XcmGlobal {
     $installer=Join-Path $PSScriptRoot 'install.ps1'
     if(-not (Test-Path -LiteralPath $installer)){
-        Write-Fail 'No se encontro install.ps1 en el paquete.'
+        Write-Fail (Msg 'install.ps1 not found in package.' 'No se encontro install.ps1 en el paquete.')
         return
     }
     Write-Title 'Comando xcm global'
@@ -1045,7 +1052,7 @@ function Set-Language {
 function Update-XcmGlobal {
     Write-Title 'Actualizar xcm'
     $url='https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1'
-    Write-Host "  Descargando actualizacion desde $url" -ForegroundColor DarkGray
+    Write-Host (Msg "  Downloading update from $url" "  Descargando actualizacion desde $url") -ForegroundColor DarkGray
     try {
         $tmp=Join-Path $env:TEMP 'xcm-install.ps1'
         Invoke-WebRequest -Uri $url -OutFile $tmp -UseBasicParsing

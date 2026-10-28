@@ -49,6 +49,7 @@ confirm() {
 }
 
 has() { command -v "$1" >/dev/null 2>&1; }
+msg() { if [[ "$LANGUAGE" == "es" ]]; then echo "$2"; else echo "$1"; fi; }
 
 # ---------- settings ----------
 load_settings() {
@@ -151,10 +152,10 @@ cmd_device() {
 cmd_project_show() {
   title "Proyecto Flutter"
   if [[ -n "$PROJECT_DIR" ]]; then
-    info "Proyecto: $PROJECT_DIR"
-    if [[ -f "$PROJECT_DIR/pubspec.yaml" ]]; then ok "pubspec.yaml encontrado"; else warn "No parece un proyecto Flutter"; fi
+    info "$(msg "Project: $PROJECT_DIR" "Proyecto: $PROJECT_DIR")"
+    if [[ -f "$PROJECT_DIR/pubspec.yaml" ]]; then ok "$(msg "pubspec.yaml found" "pubspec.yaml encontrado")"; else warn "$(msg "Not a Flutter project" "No parece un proyecto Flutter")"; fi
   else
-    warn "No hay proyecto seleccionado. Usa: xcm project set <ruta>"
+    warn "$(msg "No project selected. Use: xcm project set <path>" "No hay proyecto seleccionado. Usa: xcm project set <ruta>")"
   fi
 }
 
@@ -181,19 +182,19 @@ cmd_run() {
       *) shift ;;
     esac
   done
-  if [[ -z "$PROJECT_DIR" ]]; then fail "Selecciona un proyecto primero (xcm project set)."; return; fi
+  if [[ -z "$PROJECT_DIR" ]]; then fail "$(msg "Select a project first (xcm project set)." "Selecciona un proyecto primero (xcm project set).")"; return; fi
   cd "$PROJECT_DIR" || return
   if [[ "$mode" == "wifi" ]]; then
-    warn "Modo WiFi: asegurate de que el dispositivo este en la misma red y habilitado para depuracion inalambrica."
+    warn "$(msg "WiFi mode: ensure device is on same network and wireless debugging enabled." "Modo WiFi: asegurate de que el dispositivo este en la misma red y habilitado para depuracion inalambrica.")"
   fi
-  info "Ejecutando: flutter run -t $target"
+  info "$(msg "Running: flutter run -t $target" "Ejecutando: flutter run -t $target")"
   flutter run -t "$target"
 }
 
 cmd_precache() {
   title "Precache"
   if ! has flutter; then fail "flutter no encontrado"; return; fi
-  if [[ -z "$PROJECT_DIR" ]]; then fail "Selecciona un proyecto primero."; return; fi
+  if [[ -z "$PROJECT_DIR" ]]; then fail "$(msg "Select a project first." "Selecciona un proyecto primero.")"; return; fi
   cd "$PROJECT_DIR" || return
   case "${1:-debug}" in
     debug) flutter precache --ios 2>/dev/null || flutter precache ;;
@@ -236,14 +237,14 @@ cmd_install() {
   src="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
   cp "$src" "$bin/xcm"
   chmod +x "$bin/xcm"
-  ok "Instalado en $bin/xcm"
+  ok "$(msg "Installed in $bin/xcm" "Instalado en $bin/xcm")"
   if [[ ":$PATH:" != *":$bin:"* ]]; then
     warn "$bin no esta en PATH. Agrega a tu shell rc:"
     echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
   else
     ok "PATH ya incluye $bin"
   fi
-  info "Abre una nueva terminal y usa: xcm help"
+  info "$(msg "Open a new terminal and use: xcm help" "Abre una nueva terminal y usa: xcm help")"
 }
 
 # ---------- tunnel ----------
@@ -282,10 +283,10 @@ cmd_uninstall() {
   if [[ -f "$bin/xcm" ]]; then
     if confirm "Eliminar $bin/xcm y quitar del PATH?"; then
       rm -f "$bin/xcm" "$bin/setup-flutter.sh"
-      ok "xcm desinstalado."
+      ok "$(msg "xcm uninstalled." "xcm desinstalado.")"
     fi
   else
-    warn "xcm no esta instalado globalmente."
+    warn "$(msg "xcm not installed globally." "xcm no esta instalado globalmente.")"
   fi
 }
 
@@ -293,11 +294,11 @@ cmd_uninstall() {
 cmd_update_cli() {
   title "Actualizar xcm (Linux)"
   local url="https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.sh"
-  echo "  Descargando desde $url"
+  echo "$(msg "  Downloading from $url" "  Descargando desde $url")"
   if curl -fsSL "$url" | bash; then
     ok "xcm actualizado."
   else
-    fail "No se pudo actualizar."
+    fail "$(msg "Could not update." "No se pudo actualizar.")"
   fi
 }
 
@@ -383,8 +384,8 @@ menu() {
       [uU]) cmd_update; pause_menu ;;
       [lL]) cmd_language; pause_menu ;;
       [hH]) cmd_help; pause_menu ;;
-      0|[qQ]) echo "  Saliendo."; exit 0 ;;
-      *) warn "Opcion no valida"; sleep 1 ;;
+      0|[qQ]) echo "  $(msg "Exiting." "Saliendo.")"; exit 0 ;;
+      *) warn "$(msg "Invalid option" "Opcion no valida")"; sleep 1 ;;
     esac
   done
 }

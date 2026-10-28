@@ -26,6 +26,17 @@ irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 
 curl -fsSL https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.sh | bash
 ```
 
+## Idioma / Language
+
+El CLI es bilingue (ingles por defecto, espanol disponible):
+
+```powershell
+xcm language en
+xcm language es
+```
+
+O usa la opcion `L` en el menu interactivo.
+
 ## Empezar
 
 1. Descomprime este ZIP en una carpeta permanente.
