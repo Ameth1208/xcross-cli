@@ -26,6 +26,10 @@ A terminal interface inspired by modern CLIs used with programming assistants. *
 - USB/Wi-Fi tunnel helpers for device debugging
 - No admin rights required for the global `xcm` command
 
+## Live preview
+
+See how the CLI menu looks: https://ameth1208.github.io/xcross-cli/
+
 ## Install from GitHub (no clone needed)
 
 **Windows (PowerShell):**

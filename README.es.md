@@ -14,6 +14,10 @@
 
 Interfaz de terminal inspirada en los CLI modernos usados con asistentes de programación. **No incorpora un modelo de IA**, pero ofrece una experiencia ágil con teclado, paleta de comandos y órdenes reutilizables.
 
+## Vista previa en vivo
+
+Mira como se ve el menu del CLI: https://ameth1208.github.io/xcross-cli/
+
 ## Instalar desde GitHub (sin clonar)
 
 **Windows (PowerShell):**
