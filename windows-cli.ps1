@@ -23,7 +23,8 @@ $ErrorActionPreference = 'Stop'
 $script:Version = '1.2.0'
 $script:SettingsDir = Join-Path $env:APPDATA 'XCrossMenu'
 $script:SettingsFile = Join-Path $script:SettingsDir 'settings.json'
-$script:Settings = @{ XcodeXip = ''; FlutterProject = ''; BundleIdMode = 'default' }
+$script:Settings = @{ XcodeXip = ''; FlutterProject = ''; BundleIdMode = 'default'; Language = 'en' }
+$script:Language = 'en'
 $script:ProjectOverride = ''
 
 function Write-Title([string]$Text) {
@@ -105,6 +106,10 @@ function Load-Settings {
         if ($data.BundleIdMode -in @('default', 'original', 'prefixed')) {
             $script:Settings.BundleIdMode = [string]$data.BundleIdMode
         }
+        if ($data.Language -in @('en','es')) {
+            $script:Settings.Language = [string]$data.Language
+            $script:Language = [string]$data.Language
+        }
     }
     catch { Write-Warn 'No se pudo leer la configuracion anterior. Usare los valores predeterminados.' }
 }
@@ -114,6 +119,7 @@ function Save-Settings {
         if (-not (Test-Path -LiteralPath $script:SettingsDir)) {
             New-Item -ItemType Directory -Path $script:SettingsDir -Force | Out-Null
         }
+        $script:Settings.Language = $script:Language
         $script:Settings | ConvertTo-Json -Depth 2 | Set-Content -LiteralPath $script:SettingsFile -Encoding UTF8
     }
     catch { Write-Warn 'No se pudo guardar la configuracion local.' }
@@ -672,22 +678,45 @@ function Guided-Setup {
     Write-Host 'Despues usa las opciones del menu para Modo desarrollador, Autenticacion y Tunel.'
 }
 
-function Show-Menu {
-    $items = @(
-        @{ Key='1'; Label='Ejecutar Flutter en iPhone'; Description='compilar, firmar, instalar, hot reload'; Command='run' },
-        @{ Key='2'; Label='Diagnostico de Flutter'; Description='xcross flutter doctor'; Command='doctor' },
-        @{ Key='3'; Label='Detectar iPhone'; Description='USB y version de iOS'; Command='device' },
-        @{ Key='4'; Label='Modo desarrollador'; Description='estado y activacion'; Command='devmode' },
-        @{ Key='5'; Label='Abrir tunel USB'; Description='abre PowerShell con permisos'; Command='tunnel-usb' },
-        @{ Key='6'; Label='Abrir tunel Wi-Fi'; Description='enlace inalambrico'; Command='tunnel-wifi' },
-        @{ Key='D'; Label='Descargas y SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
-        @{ Key='F'; Label='Firma y App ID'; Description='autorizacion Apple Development'; Command='signing' },
-        @{ Key='P'; Label='Proyectos Flutter'; Description='cambiar proyecto, VS Code, ejecutar'; Command='projects' },
-        @{ Key='I'; Label='Instalar comando xcm'; Description='disponible desde cualquier carpeta'; Command='install-cli' },
-        @{ Key='U'; Label='Actualizar xcm'; Description='descarga la ultima version desde GitHub'; Command='update-cli' },
-        @{ Key='X'; Label='Desinstalar xcm'; Description='elimina el comando global'; Command='uninstall-cli' },
-        @{ Key='?'; Label='Comandos y ayuda'; Description='lista de comandos y ejemplos'; Command='help' }
+function Get-MenuItems {
+    if ($script:Language -eq 'es') {
+        return @(
+            @{ Key='1'; Label='Ejecutar Flutter en iPhone'; Description='compilar, firmar, instalar, hot reload'; Command='run' },
+            @{ Key='2'; Label='Diagnostico de Flutter'; Description='xcross flutter doctor'; Command='doctor' },
+            @{ Key='3'; Label='Detectar iPhone'; Description='USB y version de iOS'; Command='device' },
+            @{ Key='4'; Label='Modo desarrollador'; Description='estado y activacion'; Command='devmode' },
+            @{ Key='5'; Label='Abrir tunel USB'; Description='abre PowerShell con permisos'; Command='tunnel-usb' },
+            @{ Key='6'; Label='Abrir tunel Wi-Fi'; Description='enlace inalambrico'; Command='tunnel-wifi' },
+            @{ Key='D'; Label='Descargas y SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
+            @{ Key='F'; Label='Firma y App ID'; Description='autorizacion Apple Development'; Command='signing' },
+            @{ Key='P'; Label='Proyectos Flutter'; Description='cambiar proyecto, VS Code, ejecutar'; Command='projects' },
+            @{ Key='I'; Label='Instalar comando xcm'; Description='disponible desde cualquier carpeta'; Command='install-cli' },
+            @{ Key='U'; Label='Actualizar xcm'; Description='descarga la ultima version desde GitHub'; Command='update-cli' },
+            @{ Key='X'; Label='Desinstalar xcm'; Description='elimina el comando global'; Command='uninstall-cli' },
+            @{ Key='L'; Label='Idioma'; Description='cambiar ingles/espanol'; Command='language' },
+            @{ Key='?'; Label='Comandos y ayuda'; Description='lista de comandos y ejemplos'; Command='help' }
+        )
+    }
+    return @(
+        @{ Key='1'; Label='Run Flutter on iPhone'; Description='build, sign, install, hot reload'; Command='run' },
+        @{ Key='2'; Label='Flutter diagnostics'; Description='xcross flutter doctor'; Command='doctor' },
+        @{ Key='3'; Label='Detect iPhone'; Description='USB and iOS version'; Command='device' },
+        @{ Key='4'; Label='Developer mode'; Description='status and activation'; Command='devmode' },
+        @{ Key='5'; Label='Open USB tunnel'; Description='opens PowerShell with permissions'; Command='tunnel-usb' },
+        @{ Key='6'; Label='Open Wi-Fi tunnel'; Description='wireless link'; Command='tunnel-wifi' },
+        @{ Key='D'; Label='Downloads and SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
+        @{ Key='F'; Label='Signing and App ID'; Description='Apple Development authorization'; Command='signing' },
+        @{ Key='P'; Label='Flutter projects'; Description='change project, VS Code, run'; Command='projects' },
+        @{ Key='I'; Label='Install xcm command'; Description='available from any folder'; Command='install-cli' },
+        @{ Key='U'; Label='Update xcm'; Description='download latest version from GitHub'; Command='update-cli' },
+        @{ Key='X'; Label='Uninstall xcm'; Description='remove global command'; Command='uninstall-cli' },
+        @{ Key='L'; Label='Language'; Description='switch English/Spanish'; Command='language' },
+        @{ Key='?'; Label='Commands and help'; Description='command list and examples'; Command='help' }
     )
+}
+
+function Show-Menu {
+    $items = Get-MenuItems
     while ($true) {
         $choice = Show-KeyMenu -Title 'XCROSS CONSOLE' -Subtitle 'Flutter iOS  /  Windows  /  developer toolkit' -Items $items -AllowPalette
         if ($choice -eq '__back__') { return }
@@ -705,6 +734,7 @@ function Show-Menu {
             'install-cli' { Install-XcmGlobal }
             'update-cli' { Update-XcmGlobal }
             'uninstall-cli' { Uninstall-XcmGlobal }
+            'language' { Set-Language }
             'help' { Show-XcmHelp }
         }
         Pause-Menu
@@ -991,6 +1021,27 @@ function Uninstall-XcmGlobal {
     }
 }
 
+function Set-Language {
+    param([string]$Lang)
+    if ($Lang) {
+        $l = $Lang.ToLowerInvariant()
+        if ($l -in @('en','es','english','spanish','ingles','espanol')) {
+            if ($l -in @('es','spanish','espanol')) { $script:Language = 'es' } else { $script:Language = 'en' }
+            $script:Settings.Language = $script:Language
+            Save-Settings
+            Write-Ok "Language set to $script:Language"
+            return
+        }
+    }
+    Write-Title 'Language'
+    Write-Host '  Current: ' -NoNewline; Write-Host $script:Language -ForegroundColor Cyan
+    Write-Host '  Usage: xcm language en|es'
+    if (Confirm-Yes 'Switch to Spanish?') { $script:Language='es' } elseif (Confirm-Yes 'Switch to English?') { $script:Language='en' }
+    $script:Settings.Language = $script:Language
+    Save-Settings
+    Write-Ok "Language: $script:Language"
+}
+
 function Update-XcmGlobal {
     Write-Title 'Actualizar xcm'
     $url='https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1'
@@ -1006,45 +1057,80 @@ function Update-XcmGlobal {
 }
 
 function Show-XcmHelp {
-    Write-Title 'Comandos disponibles'
-    $helpText = @'
-  xcm                       Menu interactivo (sin Enter para elegir)
+    if ($script:Language -eq 'es') { Write-Title 'Comandos disponibles' } else { Write-Title 'Available commands' }
+    if ($script:Language -eq 'es') {
+        $helpText = @'
+  xcm                       Menu interactivo
   xcm help                  Mostrar esta ayuda
   xcm doctor                Comprobar dependencias y Flutter
   xcm device                Detectar el iPhone por USB
   xcm devmode               Menu de desarrollador
-  xcm devmode status        Comprobar Developer Mode
-  xcm devmode reveal        Solicitar mostrar Developer Mode
-  xcm devmode enable        Solicitar activarlo (confirmacion + reinicio)
-  xcm tunnel usb            Abrir tunel RSD USB
-  xcm tunnel wifi           Abrir tunel RSD Wi-Fi
+  xcm tunnel usb|wifi       Abrir tunel RSD
   xcm sdk install [ruta]    Instalar SDK desde Xcode.xip
-  xcm xcode                 Abrir descarga de Xcode.xip de Apple
+  xcm xcode                 Abrir descarga de Xcode.xip
   xcm install               Preparacion guiada
   xcm swift                 Instalar Swift con winget
   xcm xcross                Instalar xcross
   xcm dependencies          Ejecutar xcross setup
   xcm precache debug|all    Descargar artefactos Flutter iOS
-  xcm project show          Ver proyecto activo
-  xcm project set [ruta]    Seleccionar proyecto Flutter
-  xcm run [--usb|--wifi] [-t archivo] [--project ruta] [-v]
+  xcm project show|set       Proyecto activo
+  xcm run [--usb|--wifi]    Ejecutar Flutter
   xcm bundle default|original|prefixed
-  xcm sign [bundle-id]      Diagnosticar firma / perfiles
-  xcm trust                 Guia de confianza iOS (no elude seguridad)
-  xcm auth                  Conectar Apple ID desde xcross
+  xcm sign [bundle-id]      Diagnosticar firma
+  xcm trust                 Guia de confianza iOS
+  xcm auth                  Conectar Apple ID
   xcm vscode                Configurar VS Code
   xcm update                Actualizar xcross
-  xcm install-cli           Instalar comando xcm en el PATH
+  xcm install-cli           Instalar comando xcm
   xcm uninstall-cli         Desinstalar comando xcm
   xcm update-cli            Actualizar xcm desde GitHub
+  xcm language en|es        Cambiar idioma
 '@
+    }
+    else {
+        $helpText = @'
+  xcm                       Interactive menu
+  xcm help                  Show this help
+  xcm doctor                Check dependencies and Flutter
+  xcm device                Detect iPhone over USB
+  xcm devmode               Developer menu
+  xcm tunnel usb|wifi       Open RSD tunnel
+  xcm sdk install [path]    Install SDK from Xcode.xip
+  xcm xcode                 Open Apple Xcode.xip download
+  xcm install               Guided setup
+  xcm swift                 Install Swift via winget
+  xcm xcross                Install xcross
+  xcm dependencies          Run xcross setup
+  xcm precache debug|all    Download Flutter iOS artifacts
+  xcm project show|set       Active project
+  xcm run [--usb|--wifi]    Run Flutter
+  xcm bundle default|original|prefixed
+  xcm sign [bundle-id]      Diagnose signing
+  xcm trust                 iOS trust guide
+  xcm auth                  Connect Apple ID
+  xcm vscode                Configure VS Code
+  xcm update                Update xcross
+  xcm install-cli           Install xcm command
+  xcm uninstall-cli         Uninstall xcm command
+  xcm update-cli            Update xcm from GitHub
+  xcm language en|es        Change language
+'@
+    }
     Write-Host $helpText -ForegroundColor Gray
-    Write-Host '  Ejemplo LUMINA:' -ForegroundColor Cyan
+    if ($script:Language -eq 'es') {
+        Write-Host '  Ejemplo LUMINA:' -ForegroundColor Cyan
+    } else {
+        Write-Host '  LUMINA example:' -ForegroundColor Cyan
+    }
     Write-Host '    xcm project set "C:\Users\USUARIO\Documents\Github\LUMINA-v0.2-integracion\LUMINA-v0.2\lumina-mobile"' -ForegroundColor Gray
     Write-Host '    xcm tunnel usb' -ForegroundColor Gray
     Write-Host '    xcm run --usb -t lib/main.dart' -ForegroundColor Gray
     Write-Host ''
-    Write-Host '  La paleta con / funciona dentro del menu; las opciones aceptan teclas sin Enter.' -ForegroundColor DarkGray
+    if ($script:Language -eq 'es') {
+        Write-Host '  La paleta con / funciona dentro del menu; las opciones aceptan teclas sin Enter.' -ForegroundColor DarkGray
+    } else {
+        Write-Host '  The / palette works inside the menu; options accept keys without Enter.' -ForegroundColor DarkGray
+    }
 }
 
 function Invoke-XcmCommand {
@@ -1162,6 +1248,7 @@ function Invoke-XcmCommand {
         'install-cli' {Install-XcmGlobal;return $true}
         {$_ -in @('uninstall-cli','uninstall')} {Uninstall-XcmGlobal;return $true}
         {$_ -in @('update-cli','upgrade-cli')} {Update-XcmGlobal;return $true}
+        {$_ -in @('language','lang')} {Set-Language @Arguments;return $true}
         default {Write-Fail "Comando no reconocido: $Verb";Show-XcmHelp;return $false}
     }
 }

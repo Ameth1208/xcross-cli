@@ -12,6 +12,7 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/xcross-menu"
 CONFIG_FILE="$CONFIG_DIR/settings.json"
 PROJECT_DIR=""
 BUNDLE_MODE="default"
+LANGUAGE="en"
 
 # ---------- colors ----------
 C='\033[1;36m'; W='\033[1;37m'; G='\033[1;32m'; Y='\033[1;33m'; R='\033[1;31m'; D='\033[0;90m'; N='\033[0m'
@@ -55,6 +56,8 @@ load_settings() {
     PROJECT_DIR=$(grep -o '"FlutterProject"[[:space:]]*:[[:space:]]*"[^"]*"' "$CONFIG_FILE" 2>/dev/null | sed 's/.*:"\(.*\)"/\1/')
     BUNDLE_MODE=$(grep -o '"BundleIdMode"[[:space:]]*:[[:space:]]*"[^"]*"' "$CONFIG_FILE" 2>/dev/null | sed 's/.*:"\(.*\)"/\1/')
     [[ -z "$BUNDLE_MODE" ]] && BUNDLE_MODE="default"
+    LANGUAGE=$(grep -o '"Language"[[:space:]]*:[[:space:]]*"[^"]*"' "$CONFIG_FILE" 2>/dev/null | sed 's/.*:"\(.*\)"/\1/')
+    [[ -z "$LANGUAGE" ]] && LANGUAGE="en"
   fi
 }
 save_settings() {
@@ -62,38 +65,68 @@ save_settings() {
   cat > "$CONFIG_FILE" <<EOF
 {
   "FlutterProject": "$PROJECT_DIR",
-  "BundleIdMode": "$BUNDLE_MODE"
+  "BundleIdMode": "$BUNDLE_MODE",
+  "Language": "$LANGUAGE"
 }
 EOF
 }
 
 # ---------- commands ----------
 cmd_help() {
-  title "Ayuda"
-  cat <<'EOF'
+  if [[ "$LANGUAGE" == "es" ]]; then title "Ayuda"; else title "Help"; fi
+  if [[ "$LANGUAGE" == "es" ]]; then
+    cat <<'EOF'
   Uso: xcm [comando] [args]
 
   Comandos:
     help            Muestra esta ayuda
-    doctor          Verifica herramientas instaladas (flutter, git, adb, xcross)
-    device          Lista dispositivos conectados (adb / flutter devices)
+    doctor          Verifica herramientas instaladas
+    device          Lista dispositivos (adb / flutter)
     project show    Muestra el proyecto Flutter seleccionado
     project set DIR Selecciona un proyecto Flutter
     run [--usb|--wifi] [-t file]   Ejecuta flutter run
     precache debug|all   Descarga artefactos del motor Flutter
     bundle default|original   Selecciona modo de Bundle ID
-    sign [id]       Info de firma (Linux: configura keystore manualmente)
-    install         Instala xcm como comando global en ~/.local/bin
+    sign [id]       Info de firma
+    install         Instala xcm global en ~/.local/bin
     uninstall       Desinstala xcm
     update-cli      Actualiza xcm desde GitHub
     tunnel usb|wifi Configura tunnel USB/WiFi via adb
-    trust           Guia de confianza/firma en dispositivo
+    trust           Guia de confianza/firma
     update          Actualiza Flutter y dependencias
     version         Version del CLI
-    menu            Abre el menu interactivo (por defecto)
+    language en|es  Cambiar idioma
+    menu            Abre el menu interactivo
 
-  Sin instalar como comando global, ejecuta: ./xcross-linux.sh <comando>
+  Sin instalar: ./xcross-linux.sh <comando>
 EOF
+  else
+    cat <<'EOF'
+  Usage: xcm [command] [args]
+
+  Commands:
+    help            Show this help
+    doctor          Check installed tools
+    device          List devices (adb / flutter)
+    project show    Show selected Flutter project
+    project set DIR Select a Flutter project
+    run [--usb|--wifi] [-t file]   Run flutter
+    precache debug|all   Download Flutter engine artifacts
+    bundle default|original   Select Bundle ID mode
+    sign [id]       Signing info
+    install         Install xcm globally in ~/.local/bin
+    uninstall       Uninstall xcm
+    update-cli      Update xcm from GitHub
+    tunnel usb|wifi Configure USB/WiFi tunnel via adb
+    trust           Trust/signing guide
+    update          Update Flutter and dependencies
+    version         CLI version
+    language en|es  Change language
+    menu            Open interactive menu (default)
+
+  Without global install: ./xcross-linux.sh <command>
+EOF
+  fi
 }
 
 cmd_version() { echo "XCross CLI (Linux) v$VERSION"; }
@@ -268,34 +301,63 @@ cmd_update_cli() {
   fi
 }
 
+# ---------- language ----------
+cmd_language() {
+  title "Language"
+  if [[ "${1:-}" == "en" || "${1:-}" == "es" ]]; then
+    LANGUAGE="$1"; save_settings; ok "Language set to $LANGUAGE"; return
+  fi
+  echo "  Current: $LANGUAGE"
+  echo "  Usage: xcm language en|es"
+  if confirm "Switch to Spanish?"; then LANGUAGE="es"; save_settings; ok "Language: es"
+  elif confirm "Switch to English?"; then LANGUAGE="en"; save_settings; ok "Language: en"; fi
+}
+
 # ---------- menu ----------
 menu() {
   load_settings
   while true; do
     clear 2>/dev/null || true
     print_logo
-    title "Menu principal"
+    if [[ "$LANGUAGE" == "es" ]]; then title "Menu principal"; else title "Main menu"; fi
     echo -e "  ${D}╔══════════════════════════════════════════════════════╗${N}"
-    echo -e "  ${D}║${N}  ${C}1${N}) Doctor (verificar herramientas)                  ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}2${N}) Dispositivos                                    ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}3${N}) Proyecto: mostrar                               ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}4${N}) Proyecto: seleccionar                          ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}5${N}) Run (USB)                                      ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}6${N}) Run (WiFi)                                     ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}7${N}) Precache debug                                 ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}8${N}) Precache all                                   ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}9${N}) Bundle ID: default/original                    ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}I${N}) Instalar xcm global                           ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}X${N}) Desinstalar xcm                               ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}G${N}) Actualizar xcm                                 ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}T${N}) Tunnel (usb/wifi)                              ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}R${N}) Trust / firma                                 ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}D${N}) Doctor detallado                              ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}F${N}) Firma / keystore                              ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}P${N}) Project show                                  ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}U${N}) Update                                        ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}H${N}) Ayuda                                         ${D}║${N}"
-    echo -e "  ${D}║${N}  ${C}0${N}) Salir                                         ${D}║${N}"
+    if [[ "$LANGUAGE" == "es" ]]; then
+      echo -e "  ${D}║${N}  ${C}1${N}) Doctor (verificar herramientas)                  ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}2${N}) Dispositivos                                    ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}3${N}) Proyecto: mostrar                               ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}4${N}) Proyecto: seleccionar                          ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}5${N}) Run (USB)                                      ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}6${N}) Run (WiFi)                                     ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}7${N}) Precache debug                                 ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}8${N}) Precache all                                   ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}9${N}) Bundle ID: default/original                    ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}I${N}) Instalar xcm global                           ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}X${N}) Desinstalar xcm                               ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}G${N}) Actualizar xcm                                 ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}T${N}) Tunnel (usb/wifi)                              ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}R${N}) Trust / firma                                 ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}L${N}) Idioma (en/es)                                ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}H${N}) Ayuda                                         ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}0${N}) Salir                                         ${D}║${N}"
+    else
+      echo -e "  ${D}║${N}  ${C}1${N}) Doctor (check tools)                          ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}2${N}) Devices                                       ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}3${N}) Project: show                                 ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}4${N}) Project: select                               ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}5${N}) Run (USB)                                     ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}6${N}) Run (WiFi)                                    ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}7${N}) Precache debug                                ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}8${N}) Precache all                                  ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}9${N}) Bundle ID: default/original                   ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}I${N}) Install xcm globally                         ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}X${N}) Uninstall xcm                                ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}G${N}) Update xcm                                   ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}T${N}) Tunnel (usb/wifi)                             ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}R${N}) Trust / signing                              ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}L${N}) Language (en/es)                              ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}H${N}) Help                                          ${D}║${N}"
+      echo -e "  ${D}║${N}  ${C}0${N}) Exit                                          ${D}║${N}"
+    fi
     echo -e "  ${D}╚══════════════════════════════════════════════════════╝${N}"
     echo
     read -rsn1 choice
@@ -319,6 +381,7 @@ menu() {
       [fF]) cmd_sign; pause_menu ;;
       [pP]) cmd_project_show; pause_menu ;;
       [uU]) cmd_update; pause_menu ;;
+      [lL]) cmd_language; pause_menu ;;
       [hH]) cmd_help; pause_menu ;;
       0|[qQ]) echo "  Saliendo."; exit 0 ;;
       *) warn "Opcion no valida"; sleep 1 ;;
@@ -330,6 +393,7 @@ menu() {
 load_settings
 case "${1:-menu}" in
   help) shift; cmd_help "$@" ;;
+  language) shift; cmd_language "$@" ;;
   version|--version|-v) cmd_version ;;
   doctor) shift; cmd_doctor "$@" ;;
   device) shift; cmd_device "$@" ;;
