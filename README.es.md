@@ -1,5 +1,17 @@
 # XCross CLI (xcm) v1.2.0 para Windows
 
+![XCross CLI logo](logo.svg)
+
+```
+█   █  ███  █   █
+ █ █ ░█ ░░░ ██ ██░
+  █ ░ █░ ░░░█░█ █░░
+ █ █ ░█░░   █░░░█░░
+█ ░ █  ███  █░░ █░░
+ ░ ░ ░  ░░░  ░░  ░░
+  ░   ░  ░░░  ░   ░
+```
+
 Interfaz de terminal inspirada en los CLI modernos usados con asistentes de programación. **No incorpora un modelo de IA**, pero ofrece una experiencia ágil con teclado, paleta de comandos y órdenes reutilizables.
 
 ## Empezar

@@ -1,5 +1,17 @@
 # XCross CLI (xcm) v1.2.0
 
+![XCross CLI logo](logo.svg)
+
+```
+█   █  ███  █   █
+ █ █ ░█ ░░░ ██ ██░
+  █ ░ █░ ░░░█░█ █░░
+ █ █ ░█░░   █░░░█░░
+█ ░ █  ███  █░░ █░░
+ ░ ░ ░  ░░░  ░░  ░░
+  ░   ░  ░░░  ░   ░
+```
+
 A terminal interface inspired by modern CLIs used with programming assistants. **It does not include an AI model**, but provides a fast keyboard-driven experience with a command palette and reusable commands.
 
 > Windows-focused (PowerShell 5.1+). For a cross-platform Flutter setup helper, see `setup-flutter.sh` (and `linux-cli.sh` for Linux).
