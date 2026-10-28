@@ -800,7 +800,7 @@ function Show-KeyMenu {
             $key = [string]$item['Key']
             $label = [string]$item['Label']
             $desc = [string]$item['Description']
-            $line = ('  {0}  {1}' -f $key.PadRight(2), $label.PadRight(30))
+            $line = ('  {0} {1}  {2}' -f [char]0x25B8, $key.PadRight(2), $label.PadRight(28))
             $desc = $desc.PadRight(34)
             if ($i -eq $index) {
                 Write-Host '    ║' -ForegroundColor DarkCyan -NoNewline
