@@ -14,6 +14,18 @@
 
 Interfaz de terminal inspirada en los CLI modernos usados con asistentes de programación. **No incorpora un modelo de IA**, pero ofrece una experiencia ágil con teclado, paleta de comandos y órdenes reutilizables.
 
+## Instalar desde GitHub (sin clonar)
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.ps1 | iex
+```
+
+**Linux / macOS (bash):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/xcm-install.sh | bash
+```
+
 ## Empezar
 
 1. Descomprime este ZIP en una carpeta permanente.
