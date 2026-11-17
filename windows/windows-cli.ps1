@@ -20,7 +20,7 @@ try {
 } catch { }
 
 $ErrorActionPreference = 'Stop'
-$script:Version = '1.2.0'
+$script:Version = '1.3.0'
 $script:SettingsDir = Join-Path $env:APPDATA 'XCrossMenu'
 $script:SettingsFile = Join-Path $script:SettingsDir 'settings.json'
 $script:Settings = @{ XcodeXip = ''; FlutterProject = ''; BundleIdMode = 'default'; Language = 'en' }
@@ -82,15 +82,23 @@ function Refresh-Path {
     $env:PATH = (($paths | Where-Object { $_ -and $_.Trim() } | Select-Object -Unique) -join ';')
 }
 
-function Invoke-Tool([string]$Tool, [string[]]$Arguments = @()) {
+function Invoke-Tool([string]$Tool, [string[]]$Arguments = @(), [switch]$HideArguments) {
     if (-not (Test-Tool $Tool)) {
         Write-Fail (Msg "Tool not found in PATH: $Tool" "No encuentro $Tool en PATH.")
         return $false
     }
-    Write-Host ("> $Tool " + ($Arguments -join ' ')) -ForegroundColor DarkGray
+    if ($HideArguments) { Write-Host "> $Tool [arguments hidden]" -ForegroundColor DarkGray }
+    else { Write-Host ("> $Tool " + ($Arguments -join ' ')) -ForegroundColor DarkGray }
+    $previousErrorPreference = $ErrorActionPreference
     try {
+        # Windows PowerShell wraps native stderr as ErrorRecord, even on success.
+        # Tools such as Git report progress there; use their exit code instead.
+        $ErrorActionPreference = 'Continue'
         # Out-Host conserva la interaccion y evita capturar stdout como retorno.
-        & $Tool @Arguments 2>&1 | Out-Host
+        & $Tool @Arguments 2>&1 | ForEach-Object {
+            if ($_ -is [System.Management.Automation.ErrorRecord]) { $_.ToString() }
+            else { $_ }
+        } | Out-Host
         $code = $LASTEXITCODE
         if ($null -ne $code -and $code -ne 0) {
             Write-Fail (Msg "$Tool exited with code $code." "$Tool termino con codigo $code.")
@@ -102,6 +110,7 @@ function Invoke-Tool([string]$Tool, [string[]]$Arguments = @()) {
         Write-Fail $_.Exception.Message
         return $false
     }
+    finally { $ErrorActionPreference = $previousErrorPreference }
 }
 
 function Load-Settings {
@@ -448,6 +457,172 @@ function Select-FlutterProject {
     return $resolved
 }
 
+function Resolve-IpaFile([string]$Path) {
+    if (-not $Path -or [IO.Path]::GetExtension($Path) -ine '.ipa' -or
+        -not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw (Msg 'Select an existing .ipa file.' 'Selecciona un archivo .ipa existente.')
+    }
+    return (Resolve-Path -LiteralPath $Path).Path
+}
+
+function Invoke-IpaCommand {
+    param([string[]]$Arguments = @())
+    if ($Arguments.Count -eq 0) { Show-IpaMenu; return $true }
+    $operation = $Arguments[0].ToLowerInvariant()
+    $allowed = @{
+        build = @('--project','--mode','--target','--flavor')
+        sign = @('--certificate','--profile','--output','--bundle-id')
+        install = @('--udid')
+    }
+    if (-not $allowed.ContainsKey($operation)) {
+        Write-Fail 'Uso: xcm ipa build|sign|install (xcm help)'; return $false
+    }
+    $options = @{}
+    $inputPath = ''
+    for ($i = 1; $i -lt $Arguments.Count; $i++) {
+        $arg = $Arguments[$i]
+        if ($arg -in $allowed[$operation]) {
+            if ($options.ContainsKey($arg) -or $i + 1 -ge $Arguments.Count -or $Arguments[$i + 1] -like '--*') {
+                Write-Fail "Valor ausente o repetido: $arg"; return $false
+            }
+            $i++
+            $options[$arg] = $Arguments[$i]
+        }
+        elseif ($arg.StartsWith('-') -or $inputPath -or $operation -eq 'build') {
+            Write-Fail "Argumento no reconocido: $arg"; return $false
+        }
+        else { $inputPath = $arg }
+    }
+    try {
+        switch ($operation) {
+            'build' {
+                $mode = if ($options['--mode']) { $options['--mode'].ToLowerInvariant() } else { 'release' }
+                if ($mode -notin @('debug','profile','release')) { throw 'Usa --mode debug|profile|release' }
+                $project = Select-FlutterProject -ExplicitPath $options['--project']
+                if (-not $project) { return $false }
+                $toolArgs = @('flutter','build','--ipa',"--$mode")
+                if ($options['--target']) { $toolArgs += @('--target', $options['--target']) }
+                if ($options['--flavor']) { $toolArgs += @('--flavor', $options['--flavor']) }
+                Push-Location -LiteralPath $project
+                try { $ok = Invoke-Tool 'xcross' $toolArgs }
+                finally { Pop-Location }
+                if ($ok) {
+                    Write-Ok (Msg 'IPA build completed; see the output path above.' 'Compilacion IPA terminada; consulta la ruta indicada arriba.')
+                    Write-Host (Msg 'For USB installation, sign the IPA with a certificate and provisioning profile first.' 'Para instalar por USB, firma primero la IPA con certificado y perfil de aprovisionamiento.')
+                }
+                return $ok
+            }
+            'sign' {
+                if (-not $inputPath) { $inputPath = (Read-Host 'IPA').Trim().Trim('"') }
+                $ipa = Resolve-IpaFile $inputPath
+                if (-not (Test-Tool 'zsign')) {
+                    throw 'Falta zsign en PATH. Windows: https://github.com/zhlynn/zsign#build'
+                }
+                $cert = $options['--certificate']
+                if (-not $cert) { $cert = (Read-Host 'Certificado con clave privada (.p12)').Trim().Trim('"') }
+                if ([IO.Path]::GetExtension($cert) -ine '.p12' -or -not (Test-Path -LiteralPath $cert -PathType Leaf)) {
+                    throw 'Se requiere un certificado .p12 con su clave privada.'
+                }
+                $cert = (Resolve-Path -LiteralPath $cert).Path
+                $profile = $options['--profile']
+                if (-not $profile) { $profile = (Read-Host 'Perfil (.mobileprovision)').Trim().Trim('"') }
+                if ([IO.Path]::GetExtension($profile) -ine '.mobileprovision' -or -not (Test-Path -LiteralPath $profile -PathType Leaf)) {
+                    throw 'Se requiere un perfil .mobileprovision valido para la app y el dispositivo.'
+                }
+                $profile = (Resolve-Path -LiteralPath $profile).Path
+                $output = $options['--output']
+                if (-not $output) { $output = Join-Path (Split-Path -Parent $ipa) (([IO.Path]::GetFileNameWithoutExtension($ipa)) + '-signed.ipa') }
+                $output = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($output)
+                if ([IO.Path]::GetExtension($output) -ine '.ipa') { throw 'La salida debe terminar en .ipa.' }
+                if ($output -ieq $ipa -or (Test-Path -LiteralPath $output)) { throw 'La salida ya existe o coincide con la IPA original. Usa --output con una ruta nueva.' }
+                if (-not (Test-Path -LiteralPath (Split-Path -Parent $output) -PathType Container)) { throw 'La carpeta de salida no existe.' }
+                $toolArgs = @('-k',$cert,'-m',$profile,'-o',$output)
+                if ($options['--bundle-id']) { $toolArgs += @('-b',$options['--bundle-id']) }
+                Write-Host (Msg 'Enter the P12 password (empty if none). It is not saved. zsign receives it as a process argument.' 'Introduce la clave del P12 (vacia si no tiene). No se guarda. zsign la recibe como argumento de proceso.')
+                $secret = Read-Host 'P12 password' -AsSecureString
+                $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret)
+                try {
+                    $password = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer)
+                    if ($password.Length) { $toolArgs += @('-p',$password) }
+                    $toolArgs += $ipa
+                    $ok = Invoke-Tool 'zsign' $toolArgs -HideArguments
+                }
+                finally {
+                    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer)
+                    $password = $null
+                    $toolArgs = $null
+                    $secret.Dispose()
+                }
+                if (-not $ok) { return $false }
+                if (-not (Test-Path -LiteralPath $output -PathType Leaf) -or (Get-Item -LiteralPath $output).Length -eq 0) {
+                    throw 'zsign no genero una IPA de salida valida.'
+                }
+                Write-Ok "IPA: $output"
+                return $true
+            }
+            'install' {
+                if (-not $inputPath) { $inputPath = (Read-Host 'IPA firmada / Signed IPA').Trim().Trim('"') }
+                $ipa = Resolve-IpaFile $inputPath
+                $devices = @(Get-UsbDevices | Where-Object { $_.ConnectionType -eq 'USB' })
+                if ($devices.Count -eq 0) { throw 'No hay iPhone por USB. Conecta, desbloquea y acepta Confiar.' }
+                $udid = $options['--udid']
+                if (-not $udid -and $devices.Count -gt 1) {
+                    foreach ($device in $devices) { Write-Host "$($device.DeviceName) | $($device.Identifier)" }
+                    $udid = (Read-Host 'UDID del iPhone / Target UDID').Trim()
+                    if (-not $udid) { throw 'Selecciona un UDID o usa --udid.' }
+                }
+                if ($udid) {
+                    $devices = @($devices | Where-Object { $_.Identifier -eq $udid -or $_.UniqueDeviceID -eq $udid })
+                    if ($devices.Count -ne 1) { throw 'El UDID no corresponde a un unico iPhone conectado por USB.' }
+                }
+                $device = $devices[0]
+                $udid = if ($device.UniqueDeviceID) { $device.UniqueDeviceID } else { $device.Identifier }
+                if (-not $udid) { throw 'No se pudo determinar el UDID.' }
+                Write-Host "$($device.DeviceName) | $udid"
+                Write-Host (Msg 'The IPA must already be signed for this device. iOS validates it during installation.' 'La IPA debe tener una firma valida para este dispositivo. iOS la valida al instalar.')
+                $ok = Invoke-Tool 'pymobiledevice3' @('apps','install','--udid',$udid,'--streaming',$ipa)
+                if ($ok) { Write-Ok (Msg 'IPA installed.' 'IPA instalada.') }
+                return $ok
+            }
+        }
+    }
+    catch { Write-Fail $_.Exception.Message; return $false }
+}
+
+function Update-CurrentProject {
+    param([string]$Path = '.')
+    if (-not (Test-Tool 'git')) { Write-Fail 'Falta Git en PATH.'; return $false }
+    try {
+        $project = (Resolve-Path -LiteralPath $Path).Path
+        if (-not (Test-Path -LiteralPath $project -PathType Container)) { throw 'Selecciona una carpeta.' }
+        $root = & git -C $project rev-parse --show-toplevel 2>$null
+        if ($LASTEXITCODE -ne 0) { throw 'La carpeta actual no pertenece a un repositorio Git.' }
+        $changes = & git -C $project status --porcelain 2>&1
+        if ($LASTEXITCODE -ne 0) { throw ($changes -join "`n") }
+        if ($changes) { throw 'Hay cambios locales. Guarda tus cambios en Git antes de actualizar.' }
+        $upstream = & git -C $project rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>$null
+        if ($LASTEXITCODE -ne 0) { throw 'La rama actual no tiene upstream o estas en detached HEAD.' }
+        Write-Host "Proyecto: $root | upstream: $upstream"
+        return (Invoke-Tool 'git' @('-C',$project,'pull','--ff-only'))
+    }
+    catch { Write-Fail $_.Exception.Message; return $false }
+}
+
+function Show-IpaMenu {
+    $items = @(
+        @{ Key='1'; Label=(Msg 'Install existing IPA' 'Instalar IPA existente'); Description=(Msg 'USB, no certificate file needed' 'USB, sin pedir certificado'); Command='install' },
+        @{ Key='2'; Label=(Msg 'Build IPA (Flutter)' 'Compilar IPA (Flutter)'); Description='release / xcross'; Command='build' },
+        @{ Key='3'; Label=(Msg 'Sign IPA (optional)' 'Firmar IPA (opcional)'); Description='zsign + P12 + mobileprovision'; Command='sign' }
+    )
+    while ($true) {
+        $choice = Show-KeyMenu -Title 'IPA' -Subtitle (Get-Location).Path -Items $items -AllowPalette
+        if ($choice -eq '__back__') { return }
+        if ($choice -eq '__palette__') { Show-PaletteThenRun; continue }
+        [void](Invoke-IpaCommand -Arguments @($choice))
+        Pause-Menu
+    }
+}
+
 function Flutter-Doctor {
     Write-Title 'Flutter doctor'
     if (-not (Test-Tool 'xcross')) { Write-Fail 'Instala xcross primero.'; return }
@@ -639,6 +814,7 @@ function Signing-Menu {
         @{ Key='3'; Label='Confiar en Apple Development'; Description='instrucciones en el iPhone'; Command='trust' },
         @{ Key='4'; Label='Autenticar Apple ID'; Description='xcross auth --apple-id'; Command='auth' },
         @{ Key='5'; Label='Modo desarrollador'; Description='revelar, consultar o activar'; Command='devmode' }
+        @{ Key='6'; Label=(Msg 'Sign an existing IPA' 'Firmar una IPA existente'); Description='zsign + P12 + mobileprovision'; Command='ipa-sign' }
     )
     while ($true) {
         $choice = Show-KeyMenu -Title 'FIRMA Y CONFIANZA' -Subtitle 'Una firma valida no equivale a desarrollador autorizado' -Items $items -AllowPalette
@@ -650,6 +826,7 @@ function Signing-Menu {
             'trust' { Show-DeveloperTrustGuide }
             'auth' { Connect-AppleId }
             'devmode' { Developer-Mode }
+            'ipa-sign' { [void](Invoke-IpaCommand -Arguments @('sign')) }
         }
         Pause-Menu
     }
@@ -694,9 +871,12 @@ function Get-MenuItems {
             @{ Key='4'; Label='Modo desarrollador'; Description='estado y activacion'; Command='devmode' },
             @{ Key='5'; Label='Abrir tunel USB'; Description='abre PowerShell con permisos'; Command='tunnel-usb' },
             @{ Key='6'; Label='Abrir tunel Wi-Fi'; Description='enlace inalambrico'; Command='tunnel-wifi' },
+            @{ Key='7'; Label='Instalar IPA existente'; Description='USB, sin pedir certificado'; Command='install-ipa' },
             @{ Key='D'; Label='Descargas y SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
             @{ Key='F'; Label='Firma y App ID'; Description='autorizacion Apple Development'; Command='signing' },
             @{ Key='P'; Label='Proyectos Flutter'; Description='cambiar proyecto, VS Code, ejecutar'; Command='projects' },
+            @{ Key='A'; Label='Compilar / firmar / instalar IPA'; Description='IPA nueva o existente'; Command='ipa' },
+            @{ Key='G'; Label='Actualizar proyecto actual'; Description='Git pull --ff-only en esta carpeta'; Command='update-project' },
             @{ Key='I'; Label='Instalar comando xcm'; Description='disponible desde cualquier carpeta'; Command='install-cli' },
             @{ Key='U'; Label='Actualizar xcm'; Description='descarga la ultima version desde GitHub'; Command='update-cli' },
             @{ Key='X'; Label='Desinstalar xcm'; Description='elimina el comando global'; Command='uninstall-cli' },
@@ -711,9 +891,12 @@ function Get-MenuItems {
         @{ Key='4'; Label='Developer mode'; Description='status and activation'; Command='devmode' },
         @{ Key='5'; Label='Open USB tunnel'; Description='opens PowerShell with permissions'; Command='tunnel-usb' },
         @{ Key='6'; Label='Open Wi-Fi tunnel'; Description='wireless link'; Command='tunnel-wifi' },
+        @{ Key='7'; Label='Install existing IPA'; Description='USB, no certificate file needed'; Command='install-ipa' },
         @{ Key='D'; Label='Downloads and SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
         @{ Key='F'; Label='Signing and App ID'; Description='Apple Development authorization'; Command='signing' },
         @{ Key='P'; Label='Flutter projects'; Description='change project, VS Code, run'; Command='projects' },
+        @{ Key='A'; Label='Build / sign / install IPA'; Description='new or existing IPA'; Command='ipa' },
+        @{ Key='G'; Label='Update current project'; Description='Git pull --ff-only in this folder'; Command='update-project' },
         @{ Key='I'; Label='Install xcm command'; Description='available from any folder'; Command='install-cli' },
         @{ Key='U'; Label='Update xcm'; Description='download latest version from GitHub'; Command='update-cli' },
         @{ Key='X'; Label='Uninstall xcm'; Description='remove global command'; Command='uninstall-cli' },
@@ -738,6 +921,9 @@ function Show-Menu {
             'downloads' { Downloads-Menu; continue }
             'signing' { Signing-Menu; continue }
             'projects' { Projects-Menu; continue }
+            'ipa' { Show-IpaMenu; continue }
+            'install-ipa' { [void](Invoke-IpaCommand -Arguments @('install')) }
+            'update-project' { [void](Update-CurrentProject) }
             'install-cli' { Install-XcmGlobal }
             'update-cli' { Update-XcmGlobal }
             'uninstall-cli' { Uninstall-XcmGlobal }
@@ -857,6 +1043,13 @@ function Show-KeyMenu {
 
 function Get-PaletteEntries {
     return @(
+        @{ Name='ipa'; Detail='Compilar, firmar e instalar IPA' },
+        @{ Name='install-ipa'; Detail='Instalar IPA por USB sin pedir certificado' },
+        @{ Name='ipa build'; Detail='Generar IPA release del proyecto Flutter actual' },
+        @{ Name='ipa sign'; Detail='Firmar IPA con P12 y mobileprovision' },
+        @{ Name='ipa install'; Detail='Instalar IPA existente por USB' },
+        @{ Name='project update'; Detail='Actualizar repositorio de la carpeta actual' },
+        @{ Name='update-cli --local'; Detail='Instalar esta copia local de xcm' },
         @{ Name='run'; Detail='Compilar y abrir Flutter por USB' },
         @{ Name='run --wifi'; Detail='Ejecutar Flutter por Wi-Fi' },
         @{ Name='doctor'; Detail='Comprobar herramientas y Flutter' },
@@ -974,6 +1167,7 @@ function Projects-Menu {
         @{Key='4'; Label='Ejecutar por USB'; Description='xcross flutter run --usb'; Command='usb'},
         @{Key='5'; Label='Ejecutar por Wi-Fi'; Description='xcross flutter run --wifi'; Command='wifi'},
         @{Key='6'; Label='Integrar VS Code'; Description='configurar archivos .vscode'; Command='vscode'}
+        @{Key='7'; Label=(Msg 'Update current repository' 'Actualizar repositorio actual'); Description='Git pull --ff-only'; Command='update'}
     )
     while($true){
         $choice=Show-KeyMenu -Title 'PROYECTOS FLUTTER' -Subtitle 'Trabaja con LUMINA o cualquier proyecto Flutter' -Items $items -AllowPalette
@@ -986,6 +1180,7 @@ function Projects-Menu {
             'usb' {Flutter-Run -Transport 'usb'}
             'wifi' {Flutter-Run -Transport 'wifi'}
             'vscode' {Flutter-Ide}
+            'update' {[void](Update-CurrentProject)}
         }
         Pause-Menu
     }
@@ -1056,6 +1251,18 @@ function Set-Language {
 }
 
 function Update-XcmGlobal {
+    param([switch]$Local)
+    if ($Local) {
+        $installer = Join-Path (Get-Location).Path 'windows\install.ps1'
+        if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
+            $installer = Join-Path (Get-Location).Path 'install.ps1'
+        }
+        if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
+            Write-Fail (Msg 'Run update-cli --local from the XCross CLI package folder.' 'Ejecuta update-cli --local desde la carpeta del paquete XCross CLI.')
+            return $false
+        }
+        return (Invoke-Tool 'powershell.exe' @('-NoProfile','-ExecutionPolicy','Bypass','-File',$installer))
+    }
     Write-Title 'Actualizar xcm'
     $url='https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1'
     Write-Host (Msg "  Downloading update from $url" "  Descargando actualizacion desde $url") -ForegroundColor DarkGray
@@ -1082,12 +1289,20 @@ function Show-XcmHelp {
   xcm sdk install [ruta]    Instalar SDK desde Xcode.xip
   xcm xcode                 Abrir descarga de Xcode.xip
   xcm install               Preparacion guiada
+  xcm install ruta.ipa      Instalar IPA existente por USB (sin pedir P12)
   xcm swift                 Instalar Swift con winget
   xcm xcross                Instalar xcross
   xcm dependencies          Ejecutar xcross setup
   xcm precache debug|all    Descargar artefactos Flutter iOS
   xcm project show|set       Proyecto activo
   xcm run [--usb|--wifi]    Ejecutar Flutter
+  xcm ipa                   Menu de compilacion, firma e instalacion
+  xcm ipa build [--project ruta] [--mode release|profile|debug]
+                [--target lib/main.dart] [--flavor nombre]
+  xcm ipa sign ruta.ipa --certificate cert.p12 --profile app.mobileprovision
+                [--output app-signed.ipa] [--bundle-id com.example.app]
+  xcm ipa install ruta.ipa [--udid UDID]
+  xcm project update [ruta] Actualizar Git desde carpeta actual (ff-only)
   xcm bundle default|original|prefixed
   xcm sign [bundle-id]      Diagnosticar firma
   xcm trust                 Guia de confianza iOS
@@ -1097,6 +1312,7 @@ function Show-XcmHelp {
   xcm install-cli           Instalar comando xcm
   xcm uninstall-cli         Desinstalar comando xcm
   xcm update-cli            Actualizar xcm desde GitHub
+  xcm update-cli --local    Instalar esta copia local de xcm
   xcm language en|es        Cambiar idioma
 '@
     }
@@ -1111,12 +1327,20 @@ function Show-XcmHelp {
   xcm sdk install [path]    Install SDK from Xcode.xip
   xcm xcode                 Open Apple Xcode.xip download
   xcm install               Guided setup
+  xcm install path.ipa      Install existing IPA over USB (no P12 prompt)
   xcm swift                 Install Swift via winget
   xcm xcross                Install xcross
   xcm dependencies          Run xcross setup
   xcm precache debug|all    Download Flutter iOS artifacts
   xcm project show|set       Active project
   xcm run [--usb|--wifi]    Run Flutter
+  xcm ipa                   Build, sign and install menu
+  xcm ipa build [--project path] [--mode release|profile|debug]
+                [--target lib/main.dart] [--flavor name]
+  xcm ipa sign path.ipa --certificate cert.p12 --profile app.mobileprovision
+                [--output app-signed.ipa] [--bundle-id com.example.app]
+  xcm ipa install path.ipa [--udid UDID]
+  xcm project update [path] Update Git from current folder (ff-only)
   xcm bundle default|original|prefixed
   xcm sign [bundle-id]      Diagnose signing
   xcm trust                 iOS trust guide
@@ -1126,6 +1350,7 @@ function Show-XcmHelp {
   xcm install-cli           Install xcm command
   xcm uninstall-cli         Uninstall xcm command
   xcm update-cli            Update xcm from GitHub
+  xcm update-cli --local    Install this local copy of xcm
   xcm language en|es        Change language
 '@
     }
@@ -1152,11 +1377,23 @@ function Invoke-XcmCommand {
     switch($v){
         {$_ -in @('help','--help','-h','ayuda')} {Show-XcmHelp;return $true}
         {$_ -in @('menu','ui')} {Show-Menu;return $true}
-        'install' {Guided-Setup;return $true}
+        'install' {
+            if ($Arguments.Count) { return (Invoke-IpaCommand -Arguments (@('install') + $Arguments)) }
+            Guided-Setup;return $true
+        }
         'swift' {[void](Install-Swift);return $true}
         'xcross' {[void](Install-Xcross);return $true}
         {$_ -in @('dependencies','deps','setup')} {[void](Install-Dependencies);return $true}
         'update' {Upgrade-Xcross;return $true}
+        'ipa' {return (Invoke-IpaCommand -Arguments $Arguments)}
+        'build' {return (Invoke-IpaCommand -Arguments (@('build') + $Arguments))}
+        'install-ipa' {return (Invoke-IpaCommand -Arguments (@('install') + $Arguments))}
+        'sign-ipa' {return (Invoke-IpaCommand -Arguments (@('sign') + $Arguments))}
+        'update-project' {
+            if ($Arguments.Count -gt 1) { Write-Fail 'Uso: xcm update-project [ruta]'; return $false }
+            $path = if ($Arguments.Count) { $Arguments[0] } else { '.' }
+            return (Update-CurrentProject -Path $path)
+        }
         'xcode' {Open-AppleDownloadPage;return $true}
         {$_ -in @('doctor','check')} {Show-Environment;Flutter-Doctor;return $true}
         {$_ -in @('device','devices','iphone')} {[void](Show-UsbDevices);return $true}
@@ -1183,6 +1420,11 @@ function Invoke-XcmCommand {
         'project' {
             $sub=if($Arguments.Count){$Arguments[0].ToLowerInvariant()}else{'show'}
             switch($sub){
+                'update' {
+                    if ($Arguments.Count -gt 2) { Write-Fail 'Uso: xcm project update [ruta]'; return $false }
+                    $path = if ($Arguments.Count -eq 2) { $Arguments[1] } else { '.' }
+                    return (Update-CurrentProject -Path $path)
+                }
                 'show' {Show-CurrentProject;return $true}
                 'set' {
                     if($Arguments.Count -gt 1){
@@ -1194,7 +1436,7 @@ function Invoke-XcmCommand {
                     else {[void](Select-FlutterProject -ForcePrompt)}
                     return $true
                 }
-                default {Write-Warn 'Uso: xcm project show|set [ruta]';return $false}
+                default {Write-Warn 'Uso: xcm project show|set|update [ruta]';return $false}
             }
         }
         'run' {
@@ -1260,7 +1502,13 @@ function Invoke-XcmCommand {
         }
         'install-cli' {Install-XcmGlobal;return $true}
         {$_ -in @('uninstall-cli','uninstall')} {Uninstall-XcmGlobal;return $true}
-        {$_ -in @('update-cli','upgrade-cli')} {Update-XcmGlobal;return $true}
+        {$_ -in @('update-cli','upgrade-cli')} {
+            if ($Arguments.Count -gt 1 -or ($Arguments.Count -eq 1 -and $Arguments[0] -ne '--local')) {
+                Write-Fail 'Uso: xcm update-cli [--local]'; return $false
+            }
+            if ($Arguments.Count) { return (Update-XcmGlobal -Local) }
+            Update-XcmGlobal;return $true
+        }
         {$_ -in @('language','lang')} {Set-Language @Arguments;return $true}
         default {Write-Fail "Comando no reconocido: $Verb";Show-XcmHelp;return $false}
     }
@@ -1274,10 +1522,8 @@ try { [Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false) }
 catch {}
 Load-Settings
 Refresh-Path
-# Windows PowerShell 5.1 can merge remaining arguments into a single value.
-if ($PSVersionTable.PSVersion.Major -le 5 -and $CommandArgs.Count -eq 1 -and $CommandArgs[0] -match '\s') {
-    $CommandArgs = @(Split-CommandTokens ([string]$CommandArgs[0]))
-}
+# Preserve the argument boundaries supplied by the shell, including paths with spaces.
+# Only the interactive command palette needs Split-CommandTokens.
 switch($Action.ToLowerInvariant()){
     'usbtunnel' {Tunnel-Command 'usb'}
     'wifitunnel' {Tunnel-Command 'wifi'}

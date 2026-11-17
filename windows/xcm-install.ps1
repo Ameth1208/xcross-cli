@@ -23,7 +23,9 @@ $files = @(
     @{ Source = 'linux/setup-flutter.sh'; Dest = 'setup-flutter.sh' },
     @{ Source = 'linux/linux-cli.sh'; Dest = 'linux-cli.sh' },
     @{ Source = 'assets/logo.svg'; Dest = 'logo.svg' },
-    @{ Source = 'README.md'; Dest = 'README.md' }
+    @{ Source = 'README.md'; Dest = 'README.md' },
+    @{ Source = 'README.es.md'; Dest = 'README.es.md' },
+    @{ Source = 'CHANGELOG.md'; Dest = 'CHANGELOG.md' }
 )
 
 New-Item -ItemType Directory -Path $target -Force | Out-Null

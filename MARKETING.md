@@ -18,6 +18,8 @@ Features:
 - Bilingual (English/Spanish)
 - xcross integration: Swift, SDK import, precache
 - USB/Wi-Fi tunnels, signing diagnostics
+- Windows: install an existing signed IPA over USB with xcm install "app.ipa" (no certificate file prompt)
+- Windows: Flutter IPA builds, optional zsign re-signing, and Git project updates
 - MIT licensed, open source
 
 Repo: https://github.com/Ameth1208/xcross-cli
@@ -25,6 +27,12 @@ Live preview: https://ameth1208.github.io/xcross-cli/
 
 Feedback welcome!
 ```
+
+## Windows 1.3 update
+
+Existing IPA installation is now one command: `xcm install "app.ipa"`. It uses pymobiledevice3 over USB without requesting a certificate file, provisioning profile or Apple ID. The IPA must already have a valid signature for the target iPhone; iOS enforces code signing. Re-signing through zsign is a separate optional operation.
+
+Also included: `xcm ipa build --mode release`, `xcm project update` for the current Git checkout, and `xcm update-cli --local` for local CLI changes. These new commands are Windows features; the Linux helper retains its existing behavior.
 
 ## Twitter / X
 

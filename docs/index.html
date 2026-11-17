@@ -436,6 +436,7 @@
       <a href="#demo" class="hover:text-white transition-colors duration-200">Hot Reload</a>
       <a href="#preview" class="hover:text-white transition-colors duration-200">Interactive TUI</a>
       <a href="#workflow" class="hover:text-white transition-colors duration-200">Workflow</a>
+      <a href="#ipa" class="hover:text-white transition-colors duration-200">Install IPA</a>
       <a href="#commands" class="hover:text-white transition-colors duration-200">Commands</a>
       <a href="#faq" class="hover:text-white transition-colors duration-200">FAQ</a>
     </nav>
@@ -457,7 +458,7 @@
     <!-- Shimmering Pill Badge -->
     <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium hero-badge text-dark-accentSoft mb-3 cursor-default">
       <span class="inline-block w-2 h-2 rounded-full bg-dark-accent animate-ping"></span>
-      <span>XCross CLI v1.2.0 • The Easiest Flutter iOS Companion</span>
+      <span>XCross CLI v1.3.0 • The Easiest Flutter iOS Companion</span>
     </div>
 
     <!-- Acknowledgement to xcross.sh & Creator -->
@@ -682,7 +683,7 @@
           <span class="w-3 h-3 rounded-full bg-red-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
           <span class="w-3 h-3 rounded-full bg-yellow-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
           <span class="w-3 h-3 rounded-full bg-green-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
-          <span class="ml-3 text-xs text-dark-muted font-mono">xcm — XCross CLI v1.2.0</span>
+          <span class="ml-3 text-xs text-dark-muted font-mono">xcm — XCross CLI v1.3.0</span>
         </div>
 
         <!-- Language toggle button -->
@@ -884,6 +885,32 @@
     </div>
   </section>
 
+  <section id="ipa" class="my-28 scroll-mt-28 max-w-[960px] mx-auto">
+    <div class="liquid-glass rounded-3xl p-6 sm:p-10 shadow-term">
+      <p class="text-xs font-mono tracking-[0.2em] text-dark-accent uppercase mb-3">New in 1.3 · Windows</p>
+      <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">Already have an IPA? Install it.</h2>
+      <p class="text-dark-muted leading-relaxed mb-6 max-w-2xl">Connect your iPhone over USB, unlock it and accept Trust. Run one command with your IPA. No certificate file, provisioning profile, Apple ID prompt or build toolchain is requested for installation.</p>
+      <div class="bg-black/50 rounded-xl p-4 border border-sky-400/20 flex flex-wrap items-center justify-between gap-4">
+        <code class="font-mono text-sm text-sky-300 break-all">xcm install "C:\Apps\my-app.ipa"</code>
+        <button type="button" onclick="copySpecificCmd('xcm install &quot;C:\\Apps\\my-app.ipa&quot;', this)" class="btn-aurora rounded-lg px-4 py-2 text-xs font-semibold" aria-label="Copy IPA installation command">Copy command</button>
+      </div>
+      <p class="text-xs text-dark-muted leading-relaxed mt-4">Requires pymobiledevice3 and Apple USB drivers. The IPA must already have a valid signature for your iPhone; iOS verifies it during installation. If several iPhones are connected, select their UDID.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 pt-6 border-t border-white/10">
+        <div>
+          <h3 class="text-white font-medium mb-2">Build from your Flutter project</h3>
+          <code class="font-mono text-xs text-sky-300">xcm ipa build --mode release</code>
+          <p class="text-xs text-dark-muted leading-relaxed mt-2">Uses the XCross toolchain. Building an IPA and signing it for a device are separate steps.</p>
+        </div>
+        <div>
+          <h3 class="text-white font-medium mb-2">Need to sign it first?</h3>
+          <code class="font-mono text-xs text-sky-300">xcm ipa sign</code>
+          <p class="text-xs text-dark-muted leading-relaxed mt-2">Optional signing uses zsign with your P12 certificate and provisioning profile. This step is unnecessary for an IPA already signed for your device.</p>
+        </div>
+      </div>
+      <p class="text-xs text-dark-muted mt-6">Working from an existing checkout? <code class="text-sky-300">xcm project update</code> pulls changes into the current repository with Git fast-forward checks. <code class="text-sky-300">xcm update-cli --local</code> installs your local CLI changes.</p>
+    </div>
+  </section>
+
   <!-- Workflow Section: 4 Steps to Running App -->
   <section id="workflow" class="my-28">
     <div class="text-center max-w-xl mx-auto mb-16">
@@ -949,22 +976,23 @@
     </div>
   </section>
 
-  <!-- Complete Commands Explorer & Search (All 24 Commands Verified from CLI Source) -->
+  <!-- Windows CLI command explorer -->
   <section id="commands" class="my-28">
     <div class="text-center max-w-xl mx-auto mb-10">
       <p class="text-xs font-mono font-medium tracking-[0.2em] text-dark-accent uppercase mb-3">Complete CLI Command Matrix</p>
       <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">Command Explorer</h2>
-      <p class="text-dark-muted text-sm">Every single command supported by the XCross CLI toolchain. Filter by category or search in real time.</p>
+      <p class="text-dark-muted text-sm">Windows CLI commands, including direct IPA installation. Filter by category or search in real time. Linux has a separate Flutter helper.</p>
     </div>
 
     <!-- Category Filter Tabs -->
     <div class="max-w-[960px] mx-auto mb-6 flex flex-wrap items-center justify-center gap-2">
       <button onclick="filterCategory('all', this)" class="cmd-cat-btn active px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/10 bg-white/10 text-white transition-all shadow-sm">
-        All <span class="ml-1 text-[10px] text-sky-400 font-mono">24</span>
+        All <span id="commandCount" class="ml-1 text-[10px] text-sky-400 font-mono"></span>
       </button>
       <button onclick="filterCategory('daily', this)" class="cmd-cat-btn px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/5 bg-white/5 text-dark-muted hover:text-white hover:bg-white/10 transition-all">
         Daily Flow
       </button>
+      <button onclick="filterCategory('ipa', this)" class="cmd-cat-btn px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/5 bg-white/5 text-dark-muted hover:text-white hover:bg-white/10 transition-all">IPA</button>
       <button onclick="filterCategory('diag', this)" class="cmd-cat-btn px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/5 bg-white/5 text-dark-muted hover:text-white hover:bg-white/10 transition-all">
         Diagnostics & Device
       </button>
@@ -989,10 +1017,59 @@
       </div>
     </div>
 
-    <!-- Commands Grid with All 24 Commands -->
+    <!-- Commands grid -->
     <div class="liquid-glass rounded-3xl p-6 sm:p-8 max-w-[960px] mx-auto shadow-term">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5" id="commandsGrid">
         
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="ipa daily">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate" title="xcm install &quot;app.ipa&quot;">xcm install &quot;app.ipa&quot;</div>
+            <div class="text-[11px] text-dark-muted mt-0.5">Install an existing signed IPA over USB; no P12 prompt</div>
+          </div>
+          <button type="button" onclick="copySpecificCmd('xcm install &quot;app.ipa&quot;', this)" class="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs" aria-label="Copy xcm install &quot;app.ipa&quot;">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="ipa toolchain">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate" title="xcm ipa build --mode release">xcm ipa build --mode release</div>
+            <div class="text-[11px] text-dark-muted mt-0.5">Build a Flutter IPA from the current project</div>
+          </div>
+          <button type="button" onclick="copySpecificCmd('xcm ipa build --mode release', this)" class="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs" aria-label="Copy xcm ipa build --mode release">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="ipa signing">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate" title="xcm ipa sign">xcm ipa sign</div>
+            <div class="text-[11px] text-dark-muted mt-0.5">Optional re-signing with zsign, P12 and a profile</div>
+          </div>
+          <button type="button" onclick="copySpecificCmd('xcm ipa sign', this)" class="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs" aria-label="Copy xcm ipa sign">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="ipa daily">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate" title="xcm ipa install &quot;app.ipa&quot;">xcm ipa install &quot;app.ipa&quot;</div>
+            <div class="text-[11px] text-dark-muted mt-0.5">USB installation; select a UDID if several devices are connected</div>
+          </div>
+          <button type="button" onclick="copySpecificCmd('xcm ipa install &quot;app.ipa&quot;', this)" class="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs" aria-label="Copy xcm ipa install &quot;app.ipa&quot;">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily system">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate" title="xcm project update">xcm project update</div>
+            <div class="text-[11px] text-dark-muted mt-0.5">Fast-forward the Git repository in the current folder</div>
+          </div>
+          <button type="button" onclick="copySpecificCmd('xcm project update', this)" class="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs" aria-label="Copy xcm project update">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="system">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate" title="xcm update-cli --local">xcm update-cli --local</div>
+            <div class="text-[11px] text-dark-muted mt-0.5">Install CLI changes from your local package folder</div>
+          </div>
+          <button type="button" onclick="copySpecificCmd('xcm update-cli --local', this)" class="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs" aria-label="Copy xcm update-cli --local">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="system">
+          <div class="min-w-0 pr-2">
+            <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate" title="xcm update-cli">xcm update-cli</div>
+            <div class="text-[11px] text-dark-muted mt-0.5">Download the latest CLI scripts from GitHub</div>
+          </div>
+          <button type="button" onclick="copySpecificCmd('xcm update-cli', this)" class="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs" aria-label="Copy xcm update-cli">Copy</button>
+        </div>
         <!-- 1. xcm doctor -->
         <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily diag">
           <div class="min-w-0 pr-2">
@@ -1282,6 +1359,14 @@
         </div>
       </div>
 
+      <div class="faq-item liquid-glass rounded-2xl p-6 cursor-pointer transition-all duration-300" onclick="toggleFaq(this)">
+        <div class="flex items-center justify-between gap-4">
+          <h3 class="text-base font-medium text-white">Do I need to provide a certificate to install an existing IPA?</h3>
+          <svg class="faq-chevron w-5 h-5 text-dark-muted transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">No certificate file is requested by <code class="text-sky-300">xcm install "app.ipa"</code>. An IPA already signed for your iPhone installs directly over USB using pymobiledevice3. iOS still requires a valid signature: unsigned, expired or incompatible packages can be rejected. Optional re-signing is a separate operation. <a href="https://support.apple.com/guide/security/app-code-signing-process-sec7c917bf14/web" class="text-sky-300 underline">Apple code signing requirements</a>.</div>
+      </div>
+
       <!-- FAQ 2 -->
       <div class="faq-item liquid-glass rounded-2xl p-6 cursor-pointer transition-all duration-300" onclick="toggleFaq(this)">
         <div class="flex items-center justify-between gap-4">
@@ -1468,7 +1553,7 @@
           </li>
           <li>
             <a href="https://github.com/Ameth1208/xcross-cli/releases" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 text-dark-faint hover:text-white transition-all hover:translate-x-0.5">
-              Releases (v1.2.0)
+              Releases
               <svg class="w-3 h-3 text-dark-faint" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7m0 0H7m10 0v10"/></svg>
             </a>
           </li>
@@ -1523,6 +1608,8 @@
 
 <!-- Interactive Scripts -->
 <script>
+document.getElementById('commandCount').textContent = document.querySelectorAll('.cmd-item').length;
+
 // --- TUI Menu Data (English & Spanish) ---
 const EN_MENU = [
   ['1', 'Run Flutter on iPhone', 'build, sign, install, hot reload', 'Building bundle... Signing with Apple Development ID... Deploying to iPhone over RSD tunnel... [OK] App running! Press "r" for hot reload.'],
@@ -1531,11 +1618,14 @@ const EN_MENU = [
   ['4', 'Developer mode', 'status and activation', 'Querying iOS security profile... Developer Mode: ENABLED. Ready for debug payload injection.'],
   ['5', 'Open USB tunnel', 'opens PowerShell with permissions', 'Spawning background RSD tunnel over port 58783... [OK] Tunnel operational. Listening for lldb / daps.'],
   ['6', 'Open Wi-Fi tunnel', 'wireless link', 'Searching Bonjour mDNS for _apple-mobdev2._tcp... Found 192.168.1.140:5353. Wireless link ready.'],
+  ['7', 'Install existing IPA', 'USB, no certificate file needed', 'Run xcm install \"app.ipa\" to install an IPA already signed for your iPhone. Installation does not request a P12 or provisioning profile.'],
+  ['A', 'Build / sign / install IPA', 'new or existing IPA', 'xcm ipa opens the IPA menu. Signing is optional for packages already signed for your device.'],
+  ['G', 'Update current project', 'git pull --ff-only', 'Run xcm project update from a clean repository with an upstream branch.'],
   ['D', 'Downloads and SDK', 'Swift, xcross, Xcode, precache', 'Checking cache... Swift 6.0: Cached. Xcode 16.0 SDK: Extracted. Precache engine: Up to date.'],
   ['F', 'Signing and App ID', 'Apple Development authorization', 'Reading free Apple Developer profile... Active provisioning profile: 7 days remaining.'],
   ['P', 'Flutter projects', 'change project, VS Code, run', 'Active project set to: ./lumina-mobile. VS Code configuration verified.'],
   ['I', 'Install xcm command', 'available from any folder', 'Copying binaries to %LOCALAPPDATA%\\Programs\\XCrossCLI... User PATH updated. Ready globally.'],
-  ['U', 'Update xcm', 'download latest version from GitHub', 'Checking github.com/Ameth1208/xcross-cli... Current v1.2.0 is already the newest release.'],
+  ['U', 'Update xcm', 'download latest version from GitHub', 'Checking github.com/Ameth1208/xcross-cli... Use xcm update-cli to download the latest scripts from GitHub.'],
   ['X', 'Uninstall xcm', 'remove global command', 'Uninstaller ready. Run "powershell -File windows/uninstall.ps1" to remove cleanly.'],
   ['L', 'Language', 'switch English/Spanish', 'Toggled language between English and Spanish.'],
   ['?', 'Commands and help', 'command list and examples', 'Displaying command palette: xcm doctor, xcm device, xcm run, xcm tunnel, xcm sign.']
@@ -1548,11 +1638,14 @@ const ES_MENU = [
   ['4', 'Modo desarrollador', 'estado y activacion', 'Consultando perfil de seguridad iOS... Modo Desarrollador: ACTIVADO. Listo para depuración.'],
   ['5', 'Abrir tunel USB', 'abre PowerShell con permisos', 'Iniciando túnel RSD en segundo plano (puerto 58783)... [OK] Túnel establecido con éxito.'],
   ['6', 'Abrir tunel Wi-Fi', 'enlace inalambrico', 'Buscando dispositivo en red local... Encontrado 192.168.1.140. Enlace inalámbrico listo.'],
+  ['7', 'Instalar IPA existente', 'USB, sin pedir certificado', 'Ejecuta xcm install \"app.ipa\" para instalar una IPA ya firmada para tu iPhone. No se pide P12 ni perfil.'],
+  ['A', 'Compilar / firmar / instalar IPA', 'IPA nueva o existente', 'xcm ipa abre el menu. La firma es opcional si el paquete ya esta firmado para tu dispositivo.'],
+  ['G', 'Actualizar proyecto actual', 'git pull --ff-only', 'Ejecuta xcm project update desde un repositorio limpio con rama upstream.'],
   ['D', 'Descargas y SDK', 'Swift, xcross, Xcode, precache', 'Verificando herramientas... Swift 6.0: Descargado. SDK iOS 16: Extraído. Precache listo.'],
   ['F', 'Firma y App ID', 'autorizacion Apple Development', 'Leyendo perfil Apple Developer... Perfil de desarrollo personal activo: 7 días restantes.'],
   ['P', 'Proyectos Flutter', 'cambiar proyecto, VS Code, ejecutar', 'Proyecto activo: ./lumina-mobile. Espacio de trabajo verificado.'],
   ['I', 'Instalar comando xcm', 'disponible desde cualquier carpeta', 'Instalando en %LOCALAPPDATA%\\Programs\\XCrossCLI... PATH actualizado. Disponible globalmente.'],
-  ['U', 'Actualizar xcm', 'descarga la ultima version desde GitHub', 'Verificando GitHub... La versión v1.2.0 ya está actualizada a la última release.'],
+  ['U', 'Actualizar xcm', 'descarga la ultima version desde GitHub', 'Verificando GitHub... Usa xcm update-cli para descargar los scripts mas recientes de GitHub.'],
   ['X', 'Desinstalar xcm', 'elimina el comando global', 'Para desinstalar ejecuta: powershell -File windows/uninstall.ps1'],
   ['L', 'Idioma', 'cambiar ingles/espanol', 'Cambiando idioma entre Inglés y Español.'],
   ['?', 'Comandos y ayuda', 'lista de comandos y ejemplos', 'Comandos directos: xcm doctor, xcm device, xcm run, xcm tunnel, xcm sign.']
