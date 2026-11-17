@@ -20,7 +20,7 @@ try {
 } catch { }
 
 $ErrorActionPreference = 'Stop'
-$script:Version = '1.3.0'
+$script:Version = '1.4.0'
 $script:SettingsDir = Join-Path $env:APPDATA 'XCrossMenu'
 $script:SettingsFile = Join-Path $script:SettingsDir 'settings.json'
 $script:Settings = @{ XcodeXip = ''; FlutterProject = ''; BundleIdMode = 'default'; Language = 'en' }
@@ -465,17 +465,135 @@ function Resolve-IpaFile([string]$Path) {
     return (Resolve-Path -LiteralPath $Path).Path
 }
 
+function Get-IpaPython {
+    foreach ($name in @('python','py')) {
+        if (Test-Tool $name) {
+            return @{ Tool=$name; Prefix=$(if ($name -eq 'py') { @('-3') } else { @() }) }
+        }
+    }
+    throw (Msg 'Python is required for IPA inspection.' 'Se necesita Python para revisar la IPA.')
+}
+
+function Get-IpaInspection([string]$Path) {
+    $python = Get-IpaPython
+    $toolArgs = @($python.Prefix) + @((Join-Path $PSScriptRoot 'ipa_inspect.py'), $Path)
+    $raw = & $python.Tool @toolArgs | Out-String
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo inspeccionar la IPA. Reinstala esta copia del CLI.' }
+    return ($raw | ConvertFrom-Json)
+}
+
+function Show-IpaInspection($Report) {
+    Write-Title (Msg 'IPA preflight' 'Revision de IPA')
+    if ($Report.name) { Write-Host "  $($Report.name) | $($Report.bundle_id)" -ForegroundColor Cyan }
+    switch ($Report.signature) {
+        'missing' { Write-Warn (Msg 'No code signature found. This IPA needs signing before installation.' 'No tiene firma de codigo. Esta IPA necesita firma antes de instalarse.') }
+        'adhoc' { Write-Warn (Msg 'Ad-hoc code signature only; this is not an Apple device signing identity.' 'Solo contiene firma ad-hoc de compilacion; no es una firma Apple para tu iPhone.') }
+        'present' { Write-Ok (Msg 'Code signature found. It will be preserved; iOS performs final validation.' 'Contiene firma. Se conserva; iOS realiza la validacion definitiva.') }
+        default { Write-Fail (Msg 'Invalid or unsupported IPA.' 'IPA invalida o no compatible.') }
+    }
+    Write-Host (Msg '  Inspection checks the main executable; it does not validate certificate trust or all embedded bundles.' '  Se revisa el ejecutable principal; no se valida la confianza del certificado ni todos los bundles internos.') -ForegroundColor DarkGray
+}
+
+function Invoke-IpaProcess([string]$Tool, [string[]]$Arguments) {
+    $logDir = Join-Path $script:SettingsDir 'logs'
+    New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+    $log = Join-Path $logDir ('ipa-' + [DateTime]::Now.ToString('yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0,8) + '.log')
+    $script:LastIpaLog = $log
+    $previousPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        Write-Host (Msg '  Working... Full details are being saved to a log.' '  Procesando... Los detalles se guardan en un registro.') -ForegroundColor Cyan
+        & $Tool @Arguments 2>&1 | ForEach-Object { $_.ToString() | Add-Content -LiteralPath $log -Encoding UTF8 }
+        $code = $LASTEXITCODE
+    }
+    finally { $ErrorActionPreference = $previousPreference }
+    $details = if (Test-Path -LiteralPath $log) { Get-Content -LiteralPath $log -Raw } else { '' }
+    foreach ($line in ($details -split "`r?`n")) {
+        if ($line.StartsWith('Signed IPA: ')) { Write-Ok $line }
+    }
+    if ($code -eq 0) { return $true }
+    if ($details -match 'No code signature found|0xe800801c') {
+        Write-Fail (Msg 'iOS rejected an unsigned executable. Signing is required.' 'iOS rechazo un ejecutable sin firma. Es necesario firmarlo.')
+    }
+    elseif ($details -match 'native function|native assets|sysv_abi_bridge') {
+        Write-Fail (Msg 'The XCross native signing library could not load. Check the installed XCross runtime.' 'No se pudo cargar la biblioteca nativa de firma. Revisa la instalacion de XCross.')
+    }
+    elseif ($details -match 'session.*expired|sign in again|No usable Apple ID|auth.*again|ADI -800|GrandSlam') {
+        Write-Fail (Msg 'XCross could not authenticate with Apple. Renew its session with: xcm auth' 'XCross no pudo autenticar con Apple. Renueva la sesion con: xcm auth')
+    }
+    elseif ($details -match 'ApplicationVerificationFailed|0xe8008015|provisioning profile') {
+        Write-Fail (Msg 'iOS could not validate the signature/profile for this device.' 'iOS no pudo validar la firma/perfil para este dispositivo.')
+    }
+    else { Write-Fail (Msg "IPA operation failed (exit $code)." "La operacion IPA fallo (codigo $code).") }
+    Write-Host "  Log: $log" -ForegroundColor Yellow
+    return $false
+}
+
+function Get-IpaDart {
+    if (Test-Tool 'dart') { return (Get-Command dart).Source }
+    if (Test-Tool 'flutter') {
+        $candidate = Join-Path (Split-Path (Get-Command flutter).Source) 'cache\dart-sdk\bin\dart.exe'
+        if (Test-Path -LiteralPath $candidate) { return $candidate }
+    }
+    throw 'No se encontro Dart. Usa el Dart incluido en Flutter para la firma automatica.'
+}
+
+function Show-IpaLog {
+    $log = $script:LastIpaLog
+    if (-not $log) {
+        $latest = Get-ChildItem -LiteralPath (Join-Path $script:SettingsDir 'logs') -Filter 'ipa-*.log' -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if ($latest) { $log = $latest.FullName }
+    }
+    if ($log -and (Test-Path -LiteralPath $log)) {
+        Write-Host "Log: $log" -ForegroundColor Cyan
+        Get-Content -LiteralPath $log | Out-Host
+    }
+    else { Write-Warn (Msg 'No IPA log found.' 'No hay registro de IPA.') }
+}
+
+function Install-UnsignedIpa([string]$Path, [string]$Udid) {
+    $dart = Get-IpaDart
+    $runtime = Join-Path $env:LOCALAPPDATA 'XCrossCLI\signing-runtime-v2.0.5'
+    $commit = '71e5089f5c2b1ce6e129fd81e7fbb8f8dad740ca'
+    if (-not (Test-Path -LiteralPath $runtime)) {
+        Write-Host (Msg '  Preparing the XCross signing engine (first run only)...' '  Preparando el motor de firma XCross (solo la primera vez)...')
+        if (-not (Invoke-Tool 'git' @('clone','--depth','1','--branch','v2.0.5','https://github.com/arxdeus/xcross.git',$runtime))) { return $false }
+    }
+    $actual = & git -C $runtime rev-parse HEAD
+    if ($LASTEXITCODE -ne 0 -or $actual -ne $commit) { throw 'El motor de firma no corresponde a la revision verificada de XCross 2.0.5.' }
+    $packages = Join-Path $runtime '.dart_tool\package_config.json'
+    if (-not (Test-Path -LiteralPath $packages)) {
+        Push-Location -LiteralPath $runtime
+        try { $ready = Invoke-Tool $dart @('pub','get','--enforce-lockfile') }
+        finally { Pop-Location }
+        if (-not $ready) { return $false }
+    }
+    $python = Get-IpaPython
+    $toolArgs = @($python.Prefix) + @((Join-Path $PSScriptRoot 'ipa_workflow.py'), $Path,
+        '--dart',$dart,'--packages',$packages,'--bridge',(Join-Path $PSScriptRoot 'xcross_ipa_bridge.dart'),'--udid',$Udid)
+    $previousMode = $env:XCROSS_BUNDLE_ID
+    try {
+        if ($script:Settings.BundleIdMode -in @('original','prefixed')) { $env:XCROSS_BUNDLE_ID = $script:Settings.BundleIdMode }
+        Write-Host (Msg '  Signing an unsigned copy using the saved XCross identity, then installing...' '  Firmando una copia con la identidad guardada de XCross e instalando...') -ForegroundColor Cyan
+        return (Invoke-IpaProcess $python.Tool $toolArgs)
+    }
+    finally { $env:XCROSS_BUNDLE_ID = $previousMode }
+}
+
 function Invoke-IpaCommand {
     param([string[]]$Arguments = @())
     if ($Arguments.Count -eq 0) { Show-IpaMenu; return $true }
     $operation = $Arguments[0].ToLowerInvariant()
+    if ($operation -eq 'logs' -and $Arguments.Count -eq 1) { Show-IpaLog; return $true }
     $allowed = @{
         build = @('--project','--mode','--target','--flavor')
         sign = @('--certificate','--profile','--output','--bundle-id')
         install = @('--udid')
+        inspect = @()
     }
     if (-not $allowed.ContainsKey($operation)) {
-        Write-Fail 'Uso: xcm ipa build|sign|install (xcm help)'; return $false
+        Write-Fail 'Uso: xcm ipa inspect|build|sign|install (xcm help)'; return $false
     }
     $options = @{}
     $inputPath = ''
@@ -495,6 +613,12 @@ function Invoke-IpaCommand {
     }
     try {
         switch ($operation) {
+            'inspect' {
+                if (-not $inputPath) { $inputPath = (Read-Host 'IPA').Trim().Trim('"') }
+                $report = Get-IpaInspection (Resolve-IpaFile $inputPath)
+                Show-IpaInspection $report
+                return ($report.issues -notcontains 'invalid_package')
+            }
             'build' {
                 $mode = if ($options['--mode']) { $options['--mode'].ToLowerInvariant() } else { 'release' }
                 if ($mode -notin @('debug','profile','release')) { throw 'Usa --mode debug|profile|release' }
@@ -561,8 +685,12 @@ function Invoke-IpaCommand {
                 return $true
             }
             'install' {
-                if (-not $inputPath) { $inputPath = (Read-Host 'IPA firmada / Signed IPA').Trim().Trim('"') }
+                if (-not $inputPath) { $inputPath = (Read-Host (Msg 'IPA path' 'Ruta de la IPA')).Trim().Trim('"') }
                 $ipa = Resolve-IpaFile $inputPath
+                $report = Get-IpaInspection $ipa
+                Show-IpaInspection $report
+                $blocking = @($report.issues | Where-Object { $_ -ne 'missing_signature' })
+                if ($blocking.Count) { throw ('IPA no instalable por este flujo: ' + ($blocking -join ', ') + '. No se cambia una firma existente.') }
                 $devices = @(Get-UsbDevices | Where-Object { $_.ConnectionType -eq 'USB' })
                 if ($devices.Count -eq 0) { throw 'No hay iPhone por USB. Conecta, desbloquea y acepta Confiar.' }
                 $udid = $options['--udid']
@@ -579,8 +707,8 @@ function Invoke-IpaCommand {
                 $udid = if ($device.UniqueDeviceID) { $device.UniqueDeviceID } else { $device.Identifier }
                 if (-not $udid) { throw 'No se pudo determinar el UDID.' }
                 Write-Host "$($device.DeviceName) | $udid"
-                Write-Host (Msg 'The IPA must already be signed for this device. iOS validates it during installation.' 'La IPA debe tener una firma valida para este dispositivo. iOS la valida al instalar.')
-                $ok = Invoke-Tool 'pymobiledevice3' @('apps','install','--udid',$udid,'--streaming',$ipa)
+                if ($report.signature -eq 'missing') { $ok = Install-UnsignedIpa -Path $ipa -Udid $udid }
+                else { $ok = Invoke-IpaProcess 'pymobiledevice3' @('apps','install','--udid',$udid,'--streaming',$ipa) }
                 if ($ok) { Write-Ok (Msg 'IPA installed.' 'IPA instalada.') }
                 return $ok
             }
@@ -610,9 +738,11 @@ function Update-CurrentProject {
 
 function Show-IpaMenu {
     $items = @(
-        @{ Key='1'; Label=(Msg 'Install existing IPA' 'Instalar IPA existente'); Description=(Msg 'USB, no certificate file needed' 'USB, sin pedir certificado'); Command='install' },
-        @{ Key='2'; Label=(Msg 'Build IPA (Flutter)' 'Compilar IPA (Flutter)'); Description='release / xcross'; Command='build' },
-        @{ Key='3'; Label=(Msg 'Sign IPA (optional)' 'Firmar IPA (opcional)'); Description='zsign + P12 + mobileprovision'; Command='sign' }
+        @{ Key='1'; Label=(Msg 'Check IPA' 'Revisar IPA'); Description=(Msg 'Read-only signature inspection' 'Revisar firma, sin instalar'); Command='inspect' },
+        @{ Key='2'; Label=(Msg 'Install IPA' 'Instalar IPA'); Description=(Msg 'Sign only if unsigned' 'Firma XCross solo si falta'); Command='install' },
+        @{ Key='3'; Label=(Msg 'Build IPA (Flutter)' 'Compilar IPA (Flutter)'); Description='release / xcross'; Command='build' },
+        @{ Key='4'; Label=(Msg 'Manual signing' 'Firma manual'); Description='zsign + P12 + mobileprovision'; Command='sign' },
+        @{ Key='5'; Label=(Msg 'Last IPA log' 'Ultimo registro IPA'); Description=(Msg 'Details of the last operation' 'Detalles de la ultima operacion'); Command='logs' }
     )
     while ($true) {
         $choice = Show-KeyMenu -Title 'IPA' -Subtitle (Get-Location).Path -Items $items -AllowPalette
@@ -871,7 +1001,7 @@ function Get-MenuItems {
             @{ Key='4'; Label='Modo desarrollador'; Description='estado y activacion'; Command='devmode' },
             @{ Key='5'; Label='Abrir tunel USB'; Description='abre PowerShell con permisos'; Command='tunnel-usb' },
             @{ Key='6'; Label='Abrir tunel Wi-Fi'; Description='enlace inalambrico'; Command='tunnel-wifi' },
-            @{ Key='7'; Label='Instalar IPA existente'; Description='USB, sin pedir certificado'; Command='install-ipa' },
+            @{ Key='7'; Label='Instalar IPA existente'; Description='revisa y firma solo si falta'; Command='install-ipa' },
             @{ Key='D'; Label='Descargas y SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
             @{ Key='F'; Label='Firma y App ID'; Description='autorizacion Apple Development'; Command='signing' },
             @{ Key='P'; Label='Proyectos Flutter'; Description='cambiar proyecto, VS Code, ejecutar'; Command='projects' },
@@ -891,7 +1021,7 @@ function Get-MenuItems {
         @{ Key='4'; Label='Developer mode'; Description='status and activation'; Command='devmode' },
         @{ Key='5'; Label='Open USB tunnel'; Description='opens PowerShell with permissions'; Command='tunnel-usb' },
         @{ Key='6'; Label='Open Wi-Fi tunnel'; Description='wireless link'; Command='tunnel-wifi' },
-        @{ Key='7'; Label='Install existing IPA'; Description='USB, no certificate file needed'; Command='install-ipa' },
+        @{ Key='7'; Label='Install existing IPA'; Description='check, sign only if unsigned'; Command='install-ipa' },
         @{ Key='D'; Label='Downloads and SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
         @{ Key='F'; Label='Signing and App ID'; Description='Apple Development authorization'; Command='signing' },
         @{ Key='P'; Label='Flutter projects'; Description='change project, VS Code, run'; Command='projects' },
@@ -925,7 +1055,7 @@ function Show-Menu {
             'install-ipa' { [void](Invoke-IpaCommand -Arguments @('install')) }
             'update-project' { [void](Update-CurrentProject) }
             'install-cli' { Install-XcmGlobal }
-            'update-cli' { Update-XcmGlobal }
+            'update-cli' { [void](Update-XcmGlobal) }
             'uninstall-cli' { Uninstall-XcmGlobal }
             'language' { Set-Language }
             'help' { Show-XcmHelp }
@@ -974,52 +1104,54 @@ function Show-Banner {
     Write-Host ''
 }
 
+function Format-MenuText([string]$Text, [int]$Width) {
+    if ($Width -le 0) { return '' }
+    if ($Text.Length -gt $Width) { return $Text.Substring(0, [Math]::Max(0, $Width - 1)) + '~' }
+    return $Text.PadRight($Width)
+}
+
 function Show-KeyMenu {
     param([string]$Title, [string]$Subtitle, [object[]]$Items, [switch]$AllowPalette)
     $index = 0
-    Clear-Host
-    Show-Banner -Title $Title -Subtitle $Subtitle
-    $top = [Console]::CursorTop
-    Write-Host '    ╔══════════════════════════════════════════════════════════════╗' -ForegroundColor DarkCyan
-    $menuStart = [Console]::CursorTop
     while ($true) {
-        [Console]::SetCursorPosition(0, $menuStart)
-        for ($i = 0; $i -lt $Items.Count; $i++) {
+        # Redraw instead of reusing cursor coordinates: wrapping and a short
+        # terminal used to corrupt the border and hide selectable rows.
+        $width = 80; $height = 40
+        try {
+            if ([Console]::WindowWidth -gt 0) { $width = [Console]::WindowWidth }
+            if ([Console]::WindowHeight -gt 0) { $height = [Console]::WindowHeight }
+        } catch {}
+        $compact = $height -lt 35 -or $width -lt 80
+        $pageSize = if ($compact) { [Math]::Max(3, $height - 9) } else { [Math]::Max(3, $height - 26) }
+        $pageStart = [int]([Math]::Floor($index / $pageSize) * $pageSize)
+        $pageEnd = [Math]::Min($Items.Count, $pageStart + $pageSize)
+        $rowWidth = [Math]::Max(12, $width - 6)
+        Clear-Host
+        if ($compact) {
+            Write-Host (Format-MenuText ("xcm / $Title") ([Math]::Max(12,$width - 2))) -ForegroundColor Cyan
+            Write-Host (Format-MenuText $Subtitle ([Math]::Max(12,$width - 2))) -ForegroundColor DarkGray
+            Write-Host ''
+        }
+        else { Show-Banner -Title $Title -Subtitle $Subtitle }
+        for ($i = $pageStart; $i -lt $pageEnd; $i++) {
             $item = $Items[$i]
-            $key = [string]$item['Key']
-            $label = [string]$item['Label']
-            $desc = [string]$item['Description']
-            $line = ('  {0} {1}  {2}' -f [char]0x25B8, $key.PadRight(2), $label.PadRight(28))
-            $desc = $desc.PadRight(34)
-            $text = ''
-            if ($i -eq $index) {
-                $text = (' >' + $line + '  ' + $desc)
-                Write-Host '    ║' -ForegroundColor DarkCyan -NoNewline
-                Write-Host $text.PadRight(64) -ForegroundColor Black -BackgroundColor Cyan -NoNewline
-                Write-Host '║' -ForegroundColor DarkCyan
-            }
-            else {
-                $text = ('   ' + $line + '  ' + $desc)
-                Write-Host '    ║' -ForegroundColor DarkGray -NoNewline
-                Write-Host $text.PadRight(64) -ForegroundColor Gray -NoNewline
-                Write-Host '║' -ForegroundColor DarkGray
-            }
+            $text = ('{0}  {1}' -f ([string]$item.Key).PadRight(2), [string]$item.Label)
+            if ($width -ge 95) { $text = $text.PadRight(40) + ' ' + [string]$item.Description }
+            $text = Format-MenuText $text $rowWidth
+            if ($i -eq $index) { Write-Host ('  > ' + $text) -ForegroundColor Black -BackgroundColor Cyan }
+            else { Write-Host ('    ' + $text) -ForegroundColor Gray }
         }
-        Write-Host '    ╚══════════════════════════════════════════════════════════════╝' -ForegroundColor DarkCyan
         Write-Host ''
-        Write-Host '    ↑↓ mover   →/ESPACIO ejecutar   1-9 acceso directo   HOME/END'.PadRight(70) -ForegroundColor DarkCyan
-        if ($AllowPalette) {
-            Write-Host '    / comandos   ESC/0 atras o salir'.PadRight(70) -ForegroundColor DarkGray
-        }
-        else { Write-Host '    ESC/0 atras'.PadRight(70) -ForegroundColor DarkGray }
+        Write-Host (Format-MenuText ('  ' + [string]$Items[$index].Description) ([Math]::Max(12,$width - 2))) -ForegroundColor DarkCyan
+        Write-Host (Format-MenuText (Msg "  $($pageStart + 1)-$pageEnd / $($Items.Count) | Up/Down: move | Enter: select" "  $($pageStart + 1)-$pageEnd / $($Items.Count) | Flechas: mover | Enter: elegir") ([Math]::Max(12,$width - 2))) -ForegroundColor DarkGray
+        if ($AllowPalette) { Write-Host (Msg '  / commands   ESC/0 back or exit' '  / comandos   ESC/0 atras o salir') -ForegroundColor DarkGray }
+        else { Write-Host (Msg '  ESC/0 back' '  ESC/0 atras') -ForegroundColor DarkGray }
         try { $keyInfo = [Console]::ReadKey($true) }
         catch {
-            $fallback=Read-Host 'Opcion'
-            foreach ($item in $Items) {
-                if ($fallback -eq [string]$item['Key']) { return [string]$item['Command'] }
-            }
+            $fallback = Read-Host (Msg 'Option' 'Opcion')
+            foreach ($item in $Items) { if ($fallback -eq [string]$item.Key) { return [string]$item.Command } }
             if ($fallback -eq '0') { return '__back__' }
-            if ($fallback -eq '/') { return '__palette__' }
+            if ($AllowPalette -and $fallback -eq '/') { return '__palette__' }
             continue
         }
         if ($keyInfo.Key -eq [ConsoleKey]::Escape) { return '__back__' }
@@ -1027,16 +1159,12 @@ function Show-KeyMenu {
         if ($keyInfo.Key -eq [ConsoleKey]::DownArrow) { $index=($index+1)%$Items.Count; continue }
         if ($keyInfo.Key -eq [ConsoleKey]::Home) { $index=0; continue }
         if ($keyInfo.Key -eq [ConsoleKey]::End) { $index=$Items.Count-1; continue }
-        if ($keyInfo.Key -in @([ConsoleKey]::RightArrow,[ConsoleKey]::Spacebar,[ConsoleKey]::Enter)) {
-            return [string]$Items[$index]['Command']
-        }
+        if ($keyInfo.Key -in @([ConsoleKey]::RightArrow,[ConsoleKey]::Spacebar,[ConsoleKey]::Enter)) { return [string]$Items[$index].Command }
         $char = [string]$keyInfo.KeyChar
         if ($char -eq '0') { return '__back__' }
         if ($AllowPalette -and $char -eq '/') { return '__palette__' }
         foreach ($item in $Items) {
-            if ($char.ToUpperInvariant() -eq ([string]$item['Key']).ToUpperInvariant()) {
-                return [string]$item['Command']
-            }
+            if ($char.ToUpperInvariant() -eq ([string]$item.Key).ToUpperInvariant()) { return [string]$item.Command }
         }
     }
 }
@@ -1044,7 +1172,8 @@ function Show-KeyMenu {
 function Get-PaletteEntries {
     return @(
         @{ Name='ipa'; Detail='Compilar, firmar e instalar IPA' },
-        @{ Name='install-ipa'; Detail='Instalar IPA por USB sin pedir certificado' },
+        @{ Name='install-ipa'; Detail='Revisar IPA, firmar si falta e instalar' },
+        @{ Name='ipa inspect'; Detail='Revisar firma de una IPA sin instalar' },
         @{ Name='ipa build'; Detail='Generar IPA release del proyecto Flutter actual' },
         @{ Name='ipa sign'; Detail='Firmar IPA con P12 y mobileprovision' },
         @{ Name='ipa install'; Detail='Instalar IPA existente por USB' },
@@ -1266,14 +1395,15 @@ function Update-XcmGlobal {
     Write-Title 'Actualizar xcm'
     $url='https://raw.githubusercontent.com/Ameth1208/xcross-cli/main/windows/xcm-install.ps1'
     Write-Host (Msg "  Downloading update from $url" "  Descargando actualizacion desde $url") -ForegroundColor DarkGray
+    $tmp=Join-Path $env:TEMP ('xcm-install-' + [guid]::NewGuid().ToString('N') + '.ps1')
     try {
-        $tmp=Join-Path $env:TEMP 'xcm-install.ps1'
         Invoke-WebRequest -Uri $url -OutFile $tmp -UseBasicParsing
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $tmp 2>&1 | Out-Host
-        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        if (-not (Invoke-Tool 'powershell.exe' @('-NoProfile','-ExecutionPolicy','Bypass','-File',$tmp))) { return $false }
         Write-Ok 'xcm actualizado.'
+        return $true
     }
-    catch { Write-Fail $_.Exception.Message }
+    catch { Write-Fail $_.Exception.Message; return $false }
+    finally { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }
 }
 
 function Show-XcmHelp {
@@ -1302,6 +1432,8 @@ function Show-XcmHelp {
   xcm ipa sign ruta.ipa --certificate cert.p12 --profile app.mobileprovision
                 [--output app-signed.ipa] [--bundle-id com.example.app]
   xcm ipa install ruta.ipa [--udid UDID]
+  xcm ipa inspect ruta.ipa  Revisar sin instalar ni cambiar la IPA
+  xcm ipa logs              Ver detalle de la ultima operacion
   xcm project update [ruta] Actualizar Git desde carpeta actual (ff-only)
   xcm bundle default|original|prefixed
   xcm sign [bundle-id]      Diagnosticar firma
@@ -1340,6 +1472,8 @@ function Show-XcmHelp {
   xcm ipa sign path.ipa --certificate cert.p12 --profile app.mobileprovision
                 [--output app-signed.ipa] [--bundle-id com.example.app]
   xcm ipa install path.ipa [--udid UDID]
+  xcm ipa inspect path.ipa  Inspect without installing or changing the IPA
+  xcm ipa logs              Show the last operation log
   xcm project update [path] Update Git from current folder (ff-only)
   xcm bundle default|original|prefixed
   xcm sign [bundle-id]      Diagnose signing
@@ -1507,7 +1641,7 @@ function Invoke-XcmCommand {
                 Write-Fail 'Uso: xcm update-cli [--local]'; return $false
             }
             if ($Arguments.Count) { return (Update-XcmGlobal -Local) }
-            Update-XcmGlobal;return $true
+            return (Update-XcmGlobal)
         }
         {$_ -in @('language','lang')} {Set-Language @Arguments;return $true}
         default {Write-Fail "Comando no reconocido: $Verb";Show-XcmHelp;return $false}

@@ -1,4 +1,4 @@
-# XCross CLI (xcm) v1.3.0
+# XCross CLI (xcm) v1.4.0
 
 ![XCross CLI logo](assets/logo.svg)
 
@@ -79,13 +79,13 @@ chmod +x linux/linux-cli.sh
 
 ## Build, sign and install IPA files (Windows)
 
-Already have an IPA signed for your iPhone? Install it directly:
+Install an existing IPA using your saved XCross signing configuration:
 
 ```powershell
 xcm install "C:\Apps\my-app.ipa"
 ```
 
-Installation only needs `pymobiledevice3`, Apple USB drivers and an unlocked, trusted iPhone connected over USB. It does not ask for a P12 certificate, provisioning profile, Apple ID, Xcode or Flutter project. iOS validates the signature already in the package; unsigned or incompatible IPAs can still be rejected. Press **7** in the main menu for direct installation. `xcm install` without arguments keeps the guided setup.
+The CLI inspects the main executable first. An existing signature is preserved and the package installs directly through `pymobiledevice3`. An unsigned package is provisioned and signed with the saved XCross identity, then installed. No manual P12 is requested. Existing signatures are never automatically replaced; ad-hoc signatures, encrypted binaries and incompatible platforms are explained and stopped. iOS performs final validation. Connect an unlocked, trusted iPhone over USB. Press **7** for this workflow. `xcm install` without arguments keeps the guided setup.
 
 Open `xcm ipa` or run:
 
@@ -115,3 +115,18 @@ xcm update-cli --local
 `project update` (alias `update-project`) updates the Git repository in the current directory, including non-Flutter projects. It requires a clean working tree and an upstream branch, then runs `git pull --ff-only`. Divergent history fails without merging or discarding local work. The saved Flutter project does not affect this command.
 
 Run `update-cli --local` from this package's root or its `windows` folder to install the local scripts into `%LOCALAPPDATA%\Programs\XCrossCLI` and register the user PATH. This activates local changes without publishing. `xcm update-cli` still downloads from GitHub; `xcm update` updates XCross itself. Without a global installation, use `.\windows\xcm.cmd` instead of `xcm` from this folder.
+
+## Inspection and automatic signing
+
+```powershell
+xcm ipa inspect ".\app.ipa"
+xcm ipa logs
+```
+
+Inspection is read-only and checks signature presence in the main executable, not trust, expiry or every embedded bundle. Installation errors are summarized; full details remain in `%APPDATA%\XCrossMenu\logs`. Menus now paginate and adapt labels to terminal width.
+
+Automatic signing uses the native XCross 2.0.5 engine pinned to commit `71e5089f5c2b1ce6e129fd81e7fbb8f8dad740ca` and its existing credentials. It needs installed XCross, Git and Dart 3.10+ (Flutter's bundled Dart is detected). The first run downloads the pinned sources and lockfile-verified dependencies. It does not build the app or require its project. The adapter loads the native library bundled with installed XCross on Windows. If the Apple session is unusable, renew it with `xcm auth`.
+
+The original IPA stays intact. The signed copy is saved beside it as `app-xcross-signed.ipa` (with a unique suffix when that path exists). XCross may qualify the bundle identifier with the team's prefix according to its configuration. Verified by signing/installing a real unsigned IPA and then reinstalling its signed copy on a USB iPhone; app launch and app functionality were not tested.
+
+`windows/xcross_ipa_bridge.dart` is AGPL-3.0-only and uses the XCross engine (AGPL-3.0). The remaining CLI retains its MIT license.

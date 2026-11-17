@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.0 — Check, sign only if unsigned, install
+
+- Inspect the IPA's main Mach-O executable before transferring it to an iPhone; distinguish missing, ad-hoc and present signatures.
+- Automatically sign unsigned IPA copies with the saved XCross identity and native provisioning engine. Preserve existing signatures, and never overwrite the original IPA.
+- Cache the XCross 2.0.5 signing sources at a fixed commit and use Flutter's Dart when available; no manual P12 is needed for this flow.
+- Add `xcm ipa inspect` and `xcm ipa logs`, actionable error summaries, and local diagnostic logs instead of raw tracebacks.
+- Replace overflowing menu borders with paginated options and width-aware labels.
+- Verified a real unsigned IPA was provisioned, signed and installed on an attached iPhone. Then verified direct installation of the signed output without re-signing. App launch/functionality was not tested.
+- Add host-side parser and safe-extraction regression tests.
+
 ## 1.3.0 — Windows CLI
 
 - Install an existing signed IPA over USB using `xcm install "app.ipa"`, `xcm install-ipa`, or menu option 7. Installation does not request a P12, provisioning profile or Apple ID. iOS still validates the package's existing signature.

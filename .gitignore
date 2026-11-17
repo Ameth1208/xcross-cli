@@ -12,3 +12,7 @@ settings.json
 
 # Logs
 *.log
+
+# Python helper caches
+__pycache__/
+*.pyc

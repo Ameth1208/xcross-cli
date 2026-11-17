@@ -458,7 +458,7 @@
     <!-- Shimmering Pill Badge -->
     <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium hero-badge text-dark-accentSoft mb-3 cursor-default">
       <span class="inline-block w-2 h-2 rounded-full bg-dark-accent animate-ping"></span>
-      <span>XCross CLI v1.3.0 • The Easiest Flutter iOS Companion</span>
+      <span>XCross CLI v1.4.0 • The Easiest Flutter iOS Companion</span>
     </div>
 
     <!-- Acknowledgement to xcross.sh & Creator -->
@@ -683,7 +683,7 @@
           <span class="w-3 h-3 rounded-full bg-red-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
           <span class="w-3 h-3 rounded-full bg-yellow-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
           <span class="w-3 h-3 rounded-full bg-green-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
-          <span class="ml-3 text-xs text-dark-muted font-mono">xcm — XCross CLI v1.3.0</span>
+          <span class="ml-3 text-xs text-dark-muted font-mono">xcm — XCross CLI v1.4.0</span>
         </div>
 
         <!-- Language toggle button -->
@@ -887,14 +887,14 @@
 
   <section id="ipa" class="my-28 scroll-mt-28 max-w-[960px] mx-auto">
     <div class="liquid-glass rounded-3xl p-6 sm:p-10 shadow-term">
-      <p class="text-xs font-mono tracking-[0.2em] text-dark-accent uppercase mb-3">New in 1.3 · Windows</p>
+      <p class="text-xs font-mono tracking-[0.2em] text-dark-accent uppercase mb-3">New in 1.4 · Windows</p>
       <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">Already have an IPA? Install it.</h2>
-      <p class="text-dark-muted leading-relaxed mb-6 max-w-2xl">Connect your iPhone over USB, unlock it and accept Trust. Run one command with your IPA. No certificate file, provisioning profile, Apple ID prompt or build toolchain is requested for installation.</p>
+      <p class="text-dark-muted leading-relaxed mb-6 max-w-2xl">Connect your iPhone over USB, unlock it and accept Trust. Run one command with your IPA. The CLI checks the main executable first: an existing signature is preserved; an unsigned IPA is signed using your saved XCross identity before installation. No manual P12 is requested.</p>
       <div class="bg-black/50 rounded-xl p-4 border border-sky-400/20 flex flex-wrap items-center justify-between gap-4">
         <code class="font-mono text-sm text-sky-300 break-all">xcm install "C:\Apps\my-app.ipa"</code>
         <button type="button" onclick="copySpecificCmd('xcm install &quot;C:\\Apps\\my-app.ipa&quot;', this)" class="btn-aurora rounded-lg px-4 py-2 text-xs font-semibold" aria-label="Copy IPA installation command">Copy command</button>
       </div>
-      <p class="text-xs text-dark-muted leading-relaxed mt-4">Requires pymobiledevice3 and Apple USB drivers. The IPA must already have a valid signature for your iPhone; iOS verifies it during installation. If several iPhones are connected, select their UDID.</p>
+      <p class="text-xs text-dark-muted leading-relaxed mt-4">Requires pymobiledevice3 and Apple USB drivers. Unsigned IPAs use the XCross signing engine with Git and Dart (Flutter's Dart is detected). iOS verifies the resulting signature during installation. If several iPhones are connected, select their UDID.</p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 pt-6 border-t border-white/10">
         <div>
           <h3 class="text-white font-medium mb-2">Build from your Flutter project</h3>
@@ -902,9 +902,9 @@
           <p class="text-xs text-dark-muted leading-relaxed mt-2">Uses the XCross toolchain. Building an IPA and signing it for a device are separate steps.</p>
         </div>
         <div>
-          <h3 class="text-white font-medium mb-2">Need to sign it first?</h3>
-          <code class="font-mono text-xs text-sky-300">xcm ipa sign</code>
-          <p class="text-xs text-dark-muted leading-relaxed mt-2">Optional signing uses zsign with your P12 certificate and provisioning profile. This step is unnecessary for an IPA already signed for your device.</p>
+          <h3 class="text-white font-medium mb-2">Sign only when needed</h3>
+          <code class="font-mono text-xs text-sky-300">xcm ipa inspect "app.ipa"</code>
+          <p class="text-xs text-dark-muted leading-relaxed mt-2">Unsigned packages are signed automatically with your XCross session. Manual P12 signing remains available through zsign. Existing signatures are never automatically replaced.</p>
         </div>
       </div>
       <p class="text-xs text-dark-muted mt-6">Working from an existing checkout? <code class="text-sky-300">xcm project update</code> pulls changes into the current repository with Git fast-forward checks. <code class="text-sky-300">xcm update-cli --local</code> installs your local CLI changes.</p>
@@ -1024,7 +1024,7 @@
         <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="ipa daily">
           <div class="min-w-0 pr-2">
             <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate" title="xcm install &quot;app.ipa&quot;">xcm install &quot;app.ipa&quot;</div>
-            <div class="text-[11px] text-dark-muted mt-0.5">Install an existing signed IPA over USB; no P12 prompt</div>
+            <div class="text-[11px] text-dark-muted mt-0.5">Check IPA, sign only if unsigned, then install over USB</div>
           </div>
           <button type="button" onclick="copySpecificCmd('xcm install &quot;app.ipa&quot;', this)" class="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs" aria-label="Copy xcm install &quot;app.ipa&quot;">Copy</button>
         </div>
@@ -1045,7 +1045,7 @@
         <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="ipa daily">
           <div class="min-w-0 pr-2">
             <div class="font-mono text-xs sm:text-sm text-sky-400 font-semibold truncate" title="xcm ipa install &quot;app.ipa&quot;">xcm ipa install &quot;app.ipa&quot;</div>
-            <div class="text-[11px] text-dark-muted mt-0.5">USB installation; select a UDID if several devices are connected</div>
+            <div class="text-[11px] text-dark-muted mt-0.5">Preserve an existing signature; select a UDID for multiple devices</div>
           </div>
           <button type="button" onclick="copySpecificCmd('xcm ipa install &quot;app.ipa&quot;', this)" class="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs" aria-label="Copy xcm ipa install &quot;app.ipa&quot;">Copy</button>
         </div>
@@ -1069,6 +1069,14 @@
             <div class="text-[11px] text-dark-muted mt-0.5">Download the latest CLI scripts from GitHub</div>
           </div>
           <button type="button" onclick="copySpecificCmd('xcm update-cli', this)" class="shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs" aria-label="Copy xcm update-cli">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between gap-3" data-category="ipa diag">
+          <div class="min-w-0"><div class="font-mono text-xs text-sky-400 font-semibold break-words">xcm ipa inspect &quot;app.ipa&quot;</div><div class="text-[11px] text-dark-muted mt-1">Read-only signature inspection before installation</div></div>
+          <button type="button" onclick="copySpecificCmd('xcm ipa inspect &quot;app.ipa&quot;',this)" class="p-1.5 rounded-lg bg-white/10 text-xs" aria-label="Copy xcm ipa inspect &quot;app.ipa&quot;">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between gap-3" data-category="ipa diag">
+          <div class="min-w-0"><div class="font-mono text-xs text-sky-400 font-semibold break-words">xcm ipa logs</div><div class="text-[11px] text-dark-muted mt-1">View the latest IPA operation log</div></div>
+          <button type="button" onclick="copySpecificCmd('xcm ipa logs',this)" class="p-1.5 rounded-lg bg-white/10 text-xs" aria-label="Copy xcm ipa logs">Copy</button>
         </div>
         <!-- 1. xcm doctor -->
         <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="daily diag">
@@ -1364,7 +1372,7 @@
           <h3 class="text-base font-medium text-white">Do I need to provide a certificate to install an existing IPA?</h3>
           <svg class="faq-chevron w-5 h-5 text-dark-muted transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
-        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">No certificate file is requested by <code class="text-sky-300">xcm install "app.ipa"</code>. An IPA already signed for your iPhone installs directly over USB using pymobiledevice3. iOS still requires a valid signature: unsigned, expired or incompatible packages can be rejected. Optional re-signing is a separate operation. <a href="https://support.apple.com/guide/security/app-code-signing-process-sec7c917bf14/web" class="text-sky-300 underline">Apple code signing requirements</a>.</div>
+        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">No manual certificate file is requested by <code class="text-sky-300">xcm install "app.ipa"</code>. A signed IPA installs directly; an unsigned IPA is signed using the saved XCross identity and a profile provisioned for your iPhone. Existing signatures are preserved. iOS still validates the result, and expired or incompatible signatures can be rejected. Use <code class="text-sky-300">xcm ipa inspect "app.ipa"</code> for a read-only check and <code class="text-sky-300">xcm ipa logs</code> for error details. <a href="https://support.apple.com/guide/security/app-code-signing-process-sec7c917bf14/web" class="text-sky-300 underline">Apple code signing requirements</a>.</div>
       </div>
 
       <!-- FAQ 2 -->
@@ -1618,7 +1626,7 @@ const EN_MENU = [
   ['4', 'Developer mode', 'status and activation', 'Querying iOS security profile... Developer Mode: ENABLED. Ready for debug payload injection.'],
   ['5', 'Open USB tunnel', 'opens PowerShell with permissions', 'Spawning background RSD tunnel over port 58783... [OK] Tunnel operational. Listening for lldb / daps.'],
   ['6', 'Open Wi-Fi tunnel', 'wireless link', 'Searching Bonjour mDNS for _apple-mobdev2._tcp... Found 192.168.1.140:5353. Wireless link ready.'],
-  ['7', 'Install existing IPA', 'USB, no certificate file needed', 'Run xcm install \"app.ipa\" to install an IPA already signed for your iPhone. Installation does not request a P12 or provisioning profile.'],
+  ['7', 'Install existing IPA', 'check, sign only if unsigned', 'Run xcm install \"app.ipa\" to install an IPA already signed for your iPhone. Unsigned packages use the saved XCross identity; existing signatures stay unchanged.'],
   ['A', 'Build / sign / install IPA', 'new or existing IPA', 'xcm ipa opens the IPA menu. Signing is optional for packages already signed for your device.'],
   ['G', 'Update current project', 'git pull --ff-only', 'Run xcm project update from a clean repository with an upstream branch.'],
   ['D', 'Downloads and SDK', 'Swift, xcross, Xcode, precache', 'Checking cache... Swift 6.0: Cached. Xcode 16.0 SDK: Extracted. Precache engine: Up to date.'],
@@ -1638,7 +1646,7 @@ const ES_MENU = [
   ['4', 'Modo desarrollador', 'estado y activacion', 'Consultando perfil de seguridad iOS... Modo Desarrollador: ACTIVADO. Listo para depuración.'],
   ['5', 'Abrir tunel USB', 'abre PowerShell con permisos', 'Iniciando túnel RSD en segundo plano (puerto 58783)... [OK] Túnel establecido con éxito.'],
   ['6', 'Abrir tunel Wi-Fi', 'enlace inalambrico', 'Buscando dispositivo en red local... Encontrado 192.168.1.140. Enlace inalámbrico listo.'],
-  ['7', 'Instalar IPA existente', 'USB, sin pedir certificado', 'Ejecuta xcm install \"app.ipa\" para instalar una IPA ya firmada para tu iPhone. No se pide P12 ni perfil.'],
+  ['7', 'Instalar IPA existente', 'revisa, firma solo si falta', 'Ejecuta xcm install \"app.ipa\" para instalar una IPA ya firmada para tu iPhone. Si falta firma se usa la identidad guardada en XCross; si ya tiene se conserva.'],
   ['A', 'Compilar / firmar / instalar IPA', 'IPA nueva o existente', 'xcm ipa abre el menu. La firma es opcional si el paquete ya esta firmado para tu dispositivo.'],
   ['G', 'Actualizar proyecto actual', 'git pull --ff-only', 'Ejecuta xcm project update desde un repositorio limpio con rama upstream.'],
   ['D', 'Descargas y SDK', 'Swift, xcross, Xcode, precache', 'Verificando herramientas... Swift 6.0: Descargado. SDK iOS 16: Extraído. Precache listo.'],

@@ -1,4 +1,4 @@
-# XCross CLI (xcm) v1.3.0 para Windows
+# XCross CLI (xcm) v1.4.0 para Windows
 
 ![XCross CLI logo](assets/logo.svg)
 
@@ -55,13 +55,13 @@ xcm update
 
 ## Compilar, firmar e instalar IPA en Windows
 
-Si ya tienes una IPA firmada para tu iPhone, instala directamente:
+Instala una IPA existente con la configuracion de firma guardada en XCross:
 
 ```powershell
 xcm install "C:\Apps\mi-app.ipa"
 ```
 
-Solo necesitas `pymobiledevice3`, los controladores USB de Apple y el iPhone conectado, desbloqueado y con Confiar aceptado. No se pide certificado `.p12`, perfil, Apple ID, Xcode ni proyecto Flutter para instalar. iOS valida la firma que ya contiene la IPA; esto no permite instalar un paquete sin firma valida. La opcion **7** del menu abre esta instalacion directa. `xcm install` sin argumentos conserva la preparacion guiada.
+Primero se inspecciona el ejecutable principal. Si contiene firma, se conserva y se instala directamente con `pymobiledevice3`. Si no tiene firma, se utiliza la sesion y la identidad de XCross para aprovisionar la app, firmar una copia e instalarla. No se pide un P12 manual. Una firma existente nunca se reemplaza automaticamente; una firma ad-hoc, un binario cifrado o una plataforma incompatible se explican y se detienen. iOS realiza la validacion definitiva. Conecta y desbloquea el iPhone por USB y acepta Confiar. La opcion **7** abre este flujo. `xcm install` sin argumentos conserva la preparacion guiada.
 
 Desde la carpeta del proyecto Flutter, abre `xcm ipa` o ejecuta:
 
@@ -77,7 +77,7 @@ xcm ipa install ".\mi-app-signed.ipa" --udid "UDID-DEL-IPHONE"
 
 `sign` requiere [zsign para Windows](https://github.com/zhlynn/zsign#build) en PATH, un certificado `.p12` con clave privada y un perfil `.mobileprovision` compatible con la app, sus permisos y el dispositivo. XCross 2.0.5 no expone un comando independiente de firma de IPA. La clave del P12 se pide oculta y no se guarda ni se imprime; zsign la recibe como argumento del proceso. `--bundle-id` permite cambiar el identificador cuando el perfil lo admite. La salida predeterminada es `nombre-signed.ipa` junto a la original; se rechazan rutas de salida que ya existan. Apps con extensiones que necesitan perfiles separados requieren una configuracion de firma mas especifica con zsign.
 
-`install` instala una IPA existente con `pymobiledevice3 apps install --streaming`, sin compilarla ni modificar su firma. Conecta el iPhone por USB, desbloquealo y acepta Confiar. Si hay varios iPhone, el CLI solicita el UDID; tambien puedes pasarlo con `--udid`. iOS valida la firma y el perfil durante la instalacion. Una IPA cifrada de App Store no se convierte en instalable mediante este flujo.
+Si ya contiene firma, `install` usa `pymobiledevice3 apps install --streaming`, sin compilarla ni modificar esa firma. Si falta, utiliza primero la firma automatica de XCross. Conecta el iPhone por USB, desbloquealo y acepta Confiar. Si hay varios iPhone, el CLI solicita el UDID; tambien puedes pasarlo con `--udid`. iOS valida la firma y el perfil durante la instalacion. Una IPA cifrada de App Store no se convierte en instalable mediante este flujo.
 
 Las rutas relativas de IPA, certificados y perfiles parten de la carpeta donde ejecutas el comando. `xcm sign` conserva su funcion anterior de diagnostico; para firmar usa `xcm ipa sign` o `xcm sign-ipa`. Tambien existen `xcm build` y `xcm install-ipa`.
 
@@ -94,3 +94,18 @@ xcm update-cli --local
 `update-cli --local`, ejecutado desde la carpeta de este paquete o su subcarpeta `windows`, copia esta version a `%LOCALAPPDATA%\Programs\XCrossCLI` y registra `xcm` en el PATH del usuario. Es util para activar cambios locales sin publicarlos. `xcm update-cli` sigue descargando desde GitHub; `xcm update` actualiza la herramienta XCross.
 
 Sin instalar globalmente, reemplaza `xcm` por `.\windows\xcm.cmd` desde esta carpeta.
+
+## Diagnostico y firma automatica
+
+```powershell
+xcm ipa inspect ".\app.ipa"
+xcm ipa logs
+```
+
+La inspeccion es de solo lectura y comprueba presencia de firma en el ejecutable principal; no garantiza confianza, vigencia ni todas las extensiones. Los errores de instalacion se resumen en pantalla y el detalle queda en `%APPDATA%\XCrossMenu\logs`. El menu pagina las opciones y adapta el texto al ancho disponible.
+
+La firma automatica utiliza el motor nativo de XCross 2.0.5, fijado al commit `71e5089f5c2b1ce6e129fd81e7fbb8f8dad740ca`, y sus credenciales existentes. Requiere XCross instalado, Git y Dart 3.10+ (se detecta el Dart de Flutter). La primera ejecucion descarga el codigo y las dependencias verificadas por su lockfile; no compila la aplicacion ni necesita su proyecto. El adaptador reutiliza la biblioteca nativa instalada con XCross en Windows. Si la sesion Apple no es utilizable, renuevala con `xcm auth`.
+
+La IPA original se conserva y la copia firmada se guarda junto a ella como `app-xcross-signed.ipa` (con un sufijo unico si ya existe). El identificador puede recibir el prefijo del equipo segun la configuracion de XCross. Se verifico con una IPA real sin firma y luego reinstalando su copia firmada en un iPhone USB. No se verifico la apertura ni el funcionamiento interno de esa app.
+
+El adaptador `windows/xcross_ipa_bridge.dart` se licencia AGPL-3.0-only y usa el motor XCross (AGPL-3.0); el resto del CLI conserva su licencia MIT.

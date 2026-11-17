@@ -6,8 +6,12 @@ $source = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not (Test-Path -LiteralPath (Join-Path $source 'windows-cli.ps1'))) {
     throw 'No se encontro windows-cli.ps1 junto al instalador.'
 }
+$files = @('windows-cli.ps1','ipa_inspect.py','ipa_workflow.py','xcross_ipa_bridge.dart','xcm.cmd','start.cmd','install.ps1','uninstall.ps1')
+foreach ($file in $files) {
+    if (-not (Test-Path -LiteralPath (Join-Path $source $file) -PathType Leaf)) { throw "Paquete incompleto: $file" }
+}
 New-Item -ItemType Directory -Path $target -Force | Out-Null
-foreach($file in @('windows-cli.ps1','xcm.cmd','start.cmd','install.ps1','uninstall.ps1')) {
+foreach($file in $files) {
     $srcFile = Join-Path $source $file
     $dstFile = Join-Path $target $file
     if ($srcFile -ine $dstFile) { Copy-Item -LiteralPath $srcFile -Destination $dstFile -Force }

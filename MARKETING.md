@@ -34,6 +34,10 @@ Existing IPA installation is now one command: `xcm install "app.ipa"`. It uses p
 
 Also included: `xcm ipa build --mode release`, `xcm project update` for the current Git checkout, and `xcm update-cli --local` for local CLI changes. These new commands are Windows features; the Linux helper retains its existing behavior.
 
+## Windows 1.4 update
+
+`xcm install "app.ipa"` now checks the IPA first: signed packages retain their signature; unsigned packages are provisioned and signed using the saved XCross identity before USB installation. No manual P12 is requested. The original file is preserved, signing produces a separate IPA, and iOS performs final signature validation. Git, Dart and an installed, authenticated XCross are needed for automatic signing. Menus adapt to terminal size; `xcm ipa inspect` and `xcm ipa logs` explain package and device errors.
+
 ## Twitter / X
 
 ```

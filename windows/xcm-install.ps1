@@ -16,6 +16,9 @@ $target = Join-Path $env:LOCALAPPDATA 'Programs\XCrossCLI'
 
 $files = @(
     @{ Source = 'windows/windows-cli.ps1'; Dest = 'windows-cli.ps1' },
+    @{ Source = 'windows/ipa_inspect.py'; Dest = 'ipa_inspect.py' },
+    @{ Source = 'windows/ipa_workflow.py'; Dest = 'ipa_workflow.py' },
+    @{ Source = 'windows/xcross_ipa_bridge.dart'; Dest = 'xcross_ipa_bridge.dart' },
     @{ Source = 'windows/xcm.cmd'; Dest = 'xcm.cmd' },
     @{ Source = 'windows/start.cmd'; Dest = 'start.cmd' },
     @{ Source = 'windows/install.ps1'; Dest = 'install.ps1' },
@@ -29,17 +32,32 @@ $files = @(
 )
 
 New-Item -ItemType Directory -Path $target -Force | Out-Null
+$stage = Join-Path ([IO.Path]::GetTempPath()) ('xcm-stage-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $stage | Out-Null
+try {
 foreach ($item in $files) {
     $src  = $item.Source
     $destName = $item.Dest
     $url  = "$base/$src"
-    $dest = Join-Path $target $destName
+    $dest = Join-Path $stage $destName
     Write-Host "Descargando $destName ..." -ForegroundColor DarkGray
     try {
         Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing
     }
     catch {
-        Write-Warning "No se pudo descargar $destName : $($_.Exception.Message)"
+        throw "No se pudo descargar $destName. Se conserva la instalacion anterior: $($_.Exception.Message)"
+    }
+}
+$tokens = $null; $parseErrors = $null
+[void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $stage 'windows-cli.ps1'), [ref]$tokens, [ref]$parseErrors)
+if ($parseErrors.Count) { throw 'El CLI descargado contiene errores de sintaxis; no se instalara.' }
+foreach ($item in $files) { Copy-Item -LiteralPath (Join-Path $stage $item.Dest) -Destination (Join-Path $target $item.Dest) -Force }
+}
+finally {
+    $resolvedStage = [IO.Path]::GetFullPath($stage)
+    $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'
+    if ($resolvedStage.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCase) -and (Split-Path -Leaf $resolvedStage) -like 'xcm-stage-*') {
+        Remove-Item -LiteralPath $resolvedStage -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
