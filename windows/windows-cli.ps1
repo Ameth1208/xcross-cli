@@ -20,7 +20,7 @@ try {
 } catch { }
 
 $ErrorActionPreference = 'Stop'
-$script:Version = '1.5.0'
+$script:Version = '1.5.1'
 $script:SettingsDir = Join-Path $env:APPDATA 'XCrossMenu'
 $script:SettingsFile = Join-Path $script:SettingsDir 'settings.json'
 $script:Settings = @{ XcodeXip = ''; FlutterProject = ''; BundleIdMode = 'default'; Language = 'en' }
@@ -430,6 +430,8 @@ function Connect-AppleId {
 function Get-ProjectKind([string]$Path) {
     if (-not $Path -or -not (Test-Path -LiteralPath $Path -PathType Container)) { return 'unknown' }
     if (Test-Path -LiteralPath (Join-Path $Path 'pubspec.yaml') -PathType Leaf) { return 'flutter' }
+    if ((Test-Path -LiteralPath (Join-Path $Path 'Package.swift') -PathType Leaf) -and
+        (Test-Path -LiteralPath (Join-Path $Path 'xtool.yml') -PathType Leaf)) { return 'xtool' }
     # Prefer an app project over a sibling library Package.swift.
     if (@(Get-ChildItem -LiteralPath $Path -Directory | Where-Object { $_.Extension -in @('.xcodeproj','.xcworkspace') }).Count) { return 'xcode' }
     if (Test-Path -LiteralPath (Join-Path $Path 'Package.swift') -PathType Leaf) { return 'swift' }
@@ -482,8 +484,8 @@ function Select-FlutterProject {
 }
 
 function Show-XcodeLimitation {
-    Write-Fail (Msg 'Native Xcode apps are not supported by this Windows backend. Installing Swift or the Darwin SDK does not add xcodebuild support.' 'Este backend de Windows no compila apps Xcode nativas. Instalar Swift o el SDK Darwin no agrega soporte para xcodebuild.')
-    Write-Host (Msg 'Build on macOS with Xcode, or download a published IPA. Installation requires a valid signature for your device, including its extensions.' 'Compila en macOS con Xcode, o descarga una IPA publicada. La instalacion requiere firma valida para tu dispositivo, incluidas las extensiones.')
+    Write-Fail (Msg 'This Xcode project needs a SwiftPM + xtool.yml adaptation for cross-compilation; xcm does not convert it automatically.' 'Este proyecto Xcode necesita adaptacion a SwiftPM + xtool.yml para compilacion cruzada; xcm no lo convierte automaticamente.')
+    Write-Host (Msg 'xtool builds Swift iOS apps through WSL. You can also install a published IPA with xcm install PATH.ipa --backend xtool.' 'xtool compila apps Swift iOS mediante WSL. Tambien puedes instalar una IPA publicada con xcm install RUTA.ipa --backend xtool.')
     Write-Host 'iKoda: xcm download ipa --repo Ivorisnoob/iKoda --asset Koda.ipa --output .\Koda.ipa'
 }
 
@@ -517,6 +519,11 @@ function Invoke-ProjectCommand {
     $project = Select-Project -ExplicitPath $path
     if (-not $project) { return $false }
     $kind = Get-ProjectKind $project
+    if ($kind -eq 'xtool') {
+        $backendArgs = @($Operation) + $Arguments
+        if ($Arguments -notcontains '--project') { $backendArgs += @('--project',$project) }
+        return (Invoke-XtoolCommand -Arguments $backendArgs)
+    }
     if ($kind -eq 'xcode') { Show-XcodeLimitation; return $false }
     if ($kind -eq 'flutter') {
         if ($hasSwiftOption) { Write-Fail 'Swift options require Package.swift.'; return $false }
@@ -548,6 +555,7 @@ function Test-ProjectEnvironment {
     $kind = Get-ProjectKind $project
     Write-Title "Doctor: $kind"
     Write-Host $project
+    if ($kind -eq 'xtool') { return (Invoke-XtoolCommand -Arguments @('doctor')) }
     if ($kind -eq 'xcode') { Show-XcodeLimitation; return $false }
     if ($kind -eq 'swift') {
         if (-not (Invoke-Tool 'swift' @('--version'))) { return $false }
@@ -578,7 +586,7 @@ function Test-XcmEnvironment {
         }
         else { Write-Ok (Msg 'No optional XCross config; using PATH discovery.' 'Sin configuracion opcional XCross; se usa PATH.') }
     }
-    Write-Warn (Msg 'Host checks only. Run doctor in a Flutter project to check the Darwin SDK, signing and device requirements.' 'Solo se revisa el host. Ejecuta doctor en un proyecto Flutter para comprobar SDK Darwin, firma y requisitos del dispositivo.')
+    Write-Warn (Msg 'Host tools only. For Swift iOS or IPA signing run: xcm xtool doctor. For Flutter iOS run doctor in its project.' 'Solo herramientas del host. Para Swift iOS o firma de IPA usa: xcm xtool doctor. Para Flutter iOS ejecuta doctor en su proyecto.')
     return $ok
 }
 
@@ -620,7 +628,7 @@ function Get-ReleaseIpa {
         Write-Host "SHA256: $hash"
         Show-IpaInspection $report
         if ($report.signature -eq 'adhoc') {
-            Write-Warn (Msg 'Re-sign for your device before installing. The automatic install flow preserves existing signatures, including ad-hoc signatures. Apps with extensions need matching profiles for each bundle.' 'Firma de nuevo para tu dispositivo antes de instalar. El instalador automatico conserva las firmas existentes, incluidas las ad hoc. Las extensiones necesitan sus perfiles correspondientes.')
+            Write-Warn (Msg 'Device signing is required. Use xcm install PATH.ipa --backend xtool to provision, re-sign and install through WSL.' 'Se necesita firma para el dispositivo. Usa xcm install RUTA.ipa --backend xtool para aprovisionar, firmar e instalar mediante WSL.')
         }
         else { Write-Host "xcm install `"$destination`"" }
         return $true
@@ -654,13 +662,16 @@ function Get-IpaInspection([string]$Path) {
     return ($raw | ConvertFrom-Json)
 }
 
-function Show-IpaInspection($Report) {
+function Show-IpaInspection($Report, [switch]$ReSign) {
     Write-Title (Msg 'IPA preflight' 'Revision de IPA')
     if ($Report.name) { Write-Host "  $($Report.name) | $($Report.bundle_id)" -ForegroundColor Cyan }
     switch ($Report.signature) {
         'missing' { Write-Warn (Msg 'No code signature found. This IPA needs signing before installation.' 'No tiene firma de codigo. Esta IPA necesita firma antes de instalarse.') }
         'adhoc' { Write-Warn (Msg 'Ad-hoc code signature only; this is not an Apple device signing identity.' 'Solo contiene firma ad-hoc de compilacion; no es una firma Apple para tu iPhone.') }
-        'present' { Write-Ok (Msg 'Code signature found. It will be preserved; iOS performs final validation.' 'Contiene firma. Se conserva; iOS realiza la validacion definitiva.') }
+        'present' {
+            if ($ReSign) { Write-Ok (Msg 'Code signature found. The selected xtool flow will replace it on a temporary copy.' 'Contiene firma. El flujo xtool seleccionado la reemplazara en una copia temporal.') }
+            else { Write-Ok (Msg 'Code signature found. It will be preserved; iOS performs final validation.' 'Contiene firma. Se conserva; iOS realiza la validacion definitiva.') }
+        }
         default { Write-Fail (Msg 'Invalid or unsupported IPA.' 'IPA invalida o no compatible.') }
     }
     Write-Host (Msg '  Inspection checks the main executable; it does not validate certificate trust or all embedded bundles.' '  Se revisa el ejecutable principal; no se valida la confianza del certificado ni todos los bundles internos.') -ForegroundColor DarkGray
@@ -753,6 +764,26 @@ function Install-UnsignedIpa([string]$Path, [string]$Udid) {
     finally { $env:XCROSS_BUNDLE_ID = $previousMode }
 }
 
+function Invoke-XtoolCommand {
+    param([string[]]$Arguments = @())
+    try {
+        $python = Get-IpaPython
+        $helper = Join-Path $PSScriptRoot 'xtool_workflow.py'
+        if (-not (Test-Path -LiteralPath $helper -PathType Leaf)) { throw 'Falta xtool_workflow.py. Actualiza xcm con update-cli.' }
+        $toolArgs = @($python.Prefix) + @($helper) + $Arguments
+        # Display stdout via Out-Host rather than swallowing it into the boolean
+        # return value. stdin stays interactive; authentication is never logged.
+        $ok = Invoke-Tool $python.Tool $toolArgs
+        if ($Arguments.Count -and $Arguments[0] -in @('install','build','run')) {
+            $latest = Get-ChildItem -LiteralPath (Join-Path $script:SettingsDir 'logs') -Filter 'ipa-*-xtool-*.log' -ErrorAction SilentlyContinue |
+                Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            if ($latest) { $script:LastIpaLog = $latest.FullName }
+        }
+        return $ok
+    }
+    catch { Write-Fail $_.Exception.Message; return $false }
+}
+
 function Invoke-IpaCommand {
     param([string[]]$Arguments = @())
     if ($Arguments.Count -eq 0) { Show-IpaMenu; return $true }
@@ -761,7 +792,8 @@ function Invoke-IpaCommand {
     $allowed = @{
         build = @('--project','--mode','--target','--flavor')
         sign = @('--certificate','--profile','--output','--bundle-id')
-        install = @('--udid')
+        install = @('--udid','--backend')
+        'install-xtool' = @('--udid')
         inspect = @()
     }
     if (-not $allowed.ContainsKey($operation)) {
@@ -812,7 +844,8 @@ function Invoke-IpaCommand {
                 if (-not $inputPath) { $inputPath = (Read-Host 'IPA').Trim().Trim('"') }
                 $ipa = Resolve-IpaFile $inputPath
                 if (-not (Test-Tool 'zsign')) {
-                    throw 'Falta zsign en PATH. Windows: https://github.com/zhlynn/zsign#build'
+                    Write-Warn (Msg 'Manual signing requires zsign + P12 + profile. For Apple ID signing without P12, use IPA menu option 4 or xcm install PATH.ipa --backend xtool.' 'La firma manual requiere zsign + P12 + perfil. Para firmar con Apple ID sin P12, usa la opcion 4 del menu IPA o xcm install RUTA.ipa --backend xtool.')
+                    throw 'Falta zsign en PATH (opcional). Alternativa: xcm xtool install-tool, xcm xtool auth.'
                 }
                 $cert = $options['--certificate']
                 if (-not $cert) { $cert = (Read-Host 'Certificado con clave privada (.p12)').Trim().Trim('"') }
@@ -856,13 +889,24 @@ function Invoke-IpaCommand {
                 Write-Ok "IPA: $output"
                 return $true
             }
-            'install' {
+            {$_ -in @('install','install-xtool')} {
                 if (-not $inputPath) { $inputPath = (Read-Host (Msg 'IPA path' 'Ruta de la IPA')).Trim().Trim('"') }
                 $ipa = Resolve-IpaFile $inputPath
                 $report = Get-IpaInspection $ipa
-                Show-IpaInspection $report
+                $backend = if ($operation -eq 'install-xtool') { 'xtool' } elseif ($options['--backend']) { $options['--backend'].ToLowerInvariant() } else { 'auto' }
+                if ($backend -notin @('auto','xcross','xtool')) { throw 'Usa --backend auto|xcross|xtool.' }
+                Show-IpaInspection $report -ReSign:($backend -eq 'xtool')
+                $blocking = @($report.issues | Where-Object { $_ -notin @('missing_signature','adhoc_signature') })
+                if ($blocking.Count) { throw ('IPA incompatible: ' + ($blocking -join ', ')) }
+                if ($backend -eq 'xtool' -or ($backend -eq 'auto' -and $report.signature -eq 'adhoc')) {
+                    Write-Warn (Msg 'xtool will provision and RE-SIGN a temporary copy, including supported extensions. Original IPA is preserved.' 'xtool aprovisionara y REEMPLAZARA la firma de una copia temporal, incluidas extensiones compatibles. La IPA original se conserva.')
+                    if ($backend -eq 'auto' -and -not (Confirm-Yes (Msg 'Sign and install with xtool in WSL?' 'Firmar e instalar con xtool en WSL?'))) { return $false }
+                    $backendArgs = @('install',$ipa)
+                    if ($options['--udid']) { $backendArgs += @('--udid',$options['--udid']) }
+                    return (Invoke-XtoolCommand -Arguments $backendArgs)
+                }
                 $blocking = @($report.issues | Where-Object { $_ -ne 'missing_signature' })
-                if ($blocking.Count) { throw ('IPA no instalable por este flujo: ' + ($blocking -join ', ') + '. No se cambia una firma existente.') }
+                if ($blocking.Count) { throw ('Firma ad hoc no admitida por XCross. Usa xcm install "' + $ipa + '" --backend xtool.') }
                 $devices = @(Get-UsbDevices | Where-Object { $_.ConnectionType -eq 'USB' })
                 if ($devices.Count -eq 0) { throw 'No hay iPhone por USB. Conecta, desbloquea y acepta Confiar.' }
                 $udid = $options['--udid']
@@ -911,16 +955,21 @@ function Update-CurrentProject {
 function Show-IpaMenu {
     $items = @(
         @{ Key='1'; Label=(Msg 'Check IPA' 'Revisar IPA'); Description=(Msg 'Read-only signature inspection' 'Revisar firma, sin instalar'); Command='inspect' },
-        @{ Key='2'; Label=(Msg 'Install IPA' 'Instalar IPA'); Description=(Msg 'Sign only if unsigned' 'Firma XCross solo si falta'); Command='install' },
+        @{ Key='2'; Label=(Msg 'Install IPA (auto)' 'Instalar IPA (auto)'); Description=(Msg 'Ad-hoc: xtool / other: XCross' 'Ad hoc: xtool / otras: XCross'); Command='install' },
         @{ Key='3'; Label=(Msg 'Build IPA (Flutter)' 'Compilar IPA (Flutter)'); Description='release / xcross'; Command='build' },
-        @{ Key='4'; Label=(Msg 'Manual signing' 'Firma manual'); Description='zsign + P12 + mobileprovision'; Command='sign' },
-        @{ Key='5'; Label=(Msg 'Last IPA log' 'Ultimo registro IPA'); Description=(Msg 'Details of the last operation' 'Detalles de la ultima operacion'); Command='logs' }
+        @{ Key='4'; Label=(Msg 'Sign + install (xtool)' 'Firmar + instalar (xtool)'); Description='WSL + Apple ID / no P12'; Command='install-xtool' },
+        @{ Key='5'; Label=(Msg 'Last IPA log' 'Ultimo registro IPA'); Description=(Msg 'Details of the last operation' 'Detalles de la ultima operacion'); Command='logs' },
+        @{ Key='6'; Label=(Msg 'Manual signing (optional)' 'Firma manual (opcional)'); Description='zsign + P12 + mobileprovision'; Command='sign' },
+        @{ Key='7'; Label=(Msg 'Install xtool in WSL' 'Instalar xtool en WSL'); Description='AppImage + SHA256'; Command='xtool-setup' },
+        @{ Key='8'; Label=(Msg 'Apple login (xtool)' 'Autenticar Apple (xtool)'); Description='Apple ID / 2FA'; Command='xtool-auth' },
+        @{ Key='9'; Label=(Msg 'Check xtool / devices' 'Revisar xtool / dispositivos'); Description='WSL / signing / iPhone'; Command='xtool-doctor' }
     )
     while ($true) {
         $choice = Show-KeyMenu -Title 'IPA' -Subtitle (Get-Location).Path -Items $items -AllowPalette
         if ($choice -eq '__back__') { return }
         if ($choice -eq '__palette__') { Show-PaletteThenRun; continue }
-        [void](Invoke-IpaCommand -Arguments @($choice))
+        if ($choice -like 'xtool-*') { [void](Invoke-XtoolCommand -Arguments @($choice.Substring(6))) }
+        else { [void](Invoke-IpaCommand -Arguments @($choice)) }
         Pause-Menu
     }
 }
@@ -1589,7 +1638,12 @@ function Update-XcmGlobal {
 }
 
 function Show-XcmHelp {
-    Write-Host (Msg 'Projects: Flutter iOS, SwiftPM on Windows; native Xcode apps require macOS/Xcode.' 'Proyectos: Flutter iOS, SwiftPM en Windows; apps Xcode nativas requieren macOS/Xcode.')
+    Write-Host '  xcm xtool install-tool | auth | connect-usb | devices | doctor'
+    Write-Host '  xcm install PATH.ipa --backend xtool [--udid UDID]'
+    Write-Host '  xcm xtool build|run --project PATH [--configuration debug|release]'
+    Write-Host '  xcm xtool sdk PATH-TO-Xcode.xip'
+    Write-Host '  xcm xtool --distro Ubuntu-24.04 doctor'
+    Write-Host (Msg 'Projects: Flutter iOS, SwiftPM on Windows, Swift iOS via xtool/WSL; Xcode projects need adaptation.' 'Proyectos: Flutter iOS, SwiftPM en Windows, Swift iOS con xtool/WSL; proyectos Xcode necesitan adaptacion.')
     Write-Host '  xcm run|build --project PATH [--product NAME] [--configuration debug|release]'
     Write-Host '  xcm run --project PATH --product NAME --args ARG1 ARG2'
     Write-Host '  xcm doctor --project PATH | xcm doctor --environment'
@@ -1698,6 +1752,7 @@ function Invoke-XcmCommand {
     param([string]$Verb, [string[]]$Arguments=@())
     $v=$Verb.TrimStart('/').ToLowerInvariant()
     switch($v){
+        'xtool' {return (Invoke-XtoolCommand -Arguments $Arguments)}
         {$_ -in @('version','--version')} {Write-Host "XCross CLI (Windows) v$script:Version"; return $true}
         {$_ -in @('help','--help','-h','ayuda')} {Show-XcmHelp;return $true}
         {$_ -in @('menu','ui')} {Show-Menu;return $true}

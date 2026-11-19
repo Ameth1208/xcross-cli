@@ -6,7 +6,7 @@ $source = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not (Test-Path -LiteralPath (Join-Path $source 'windows-cli.ps1'))) {
     throw 'No se encontro windows-cli.ps1 junto al instalador.'
 }
-$files = @('windows-cli.ps1','ipa_inspect.py','ipa_workflow.py','xcross_ipa_bridge.dart','xcm.cmd','start.cmd','install.ps1','uninstall.ps1')
+$files = @('windows-cli.ps1','ipa_inspect.py','ipa_workflow.py','xtool_workflow.py','xtool-usb.ps1','xcross_ipa_bridge.dart','xcm.cmd','start.cmd','install.ps1','uninstall.ps1')
 foreach ($file in $files) {
     if (-not (Test-Path -LiteralPath (Join-Path $source $file) -PathType Leaf)) { throw "Paquete incompleto: $file" }
     if ((Get-Item -LiteralPath (Join-Path $source $file)).Length -eq 0) { throw "Archivo vacio: $file" }

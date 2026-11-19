@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.5.1 — Install compiled ad-hoc IPAs with xtool
+
+- Add an official xtool AppImage backend through WSL, with release size/SHA256
+  verification before replacing the managed executable. No FUSE is required.
+- Offer provisioning, re-signing and installation for compiled ad-hoc IPAs such
+  as Koda. Keep the original archive and preserve the direct XCross path for
+  existing device signatures. Explicit `--backend xtool` selects re-signing.
+- Replace IPA menu option 4 with Apple ID signing and installation through xtool;
+  retain zsign/P12 signing as an optional advanced action.
+- Add interactive xtool login without credential logging, host/device diagnostics,
+  IPA logs, and a WSL-only USB relay to Apple's Windows device service. Relay setup
+  requires UAC and permits only the selected WSL client's IP.
+- Route SwiftPM projects with `xtool.yml` to the iOS backend; other SwiftPM projects
+  still run on Windows. Existing Xcode projects require adaptation, not an automatic
+  conversion. Swift Linux and a Darwin SDK are required only for source builds.
+- Use patch versions within 1.5.x for small fixes.
+
 ## 1.5.0 — Project detection and maintenance on Windows
 
 - Detect Flutter, SwiftPM and Xcode roots while preserving saved project settings.

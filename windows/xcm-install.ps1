@@ -18,6 +18,8 @@ $files = @(
     @{ Source = 'windows/windows-cli.ps1'; Dest = 'windows-cli.ps1' },
     @{ Source = 'windows/ipa_inspect.py'; Dest = 'ipa_inspect.py' },
     @{ Source = 'windows/ipa_workflow.py'; Dest = 'ipa_workflow.py' },
+    @{ Source = 'windows/xtool_workflow.py'; Dest = 'xtool_workflow.py' },
+    @{ Source = 'windows/xtool-usb.ps1'; Dest = 'xtool-usb.ps1' },
     @{ Source = 'windows/xcross_ipa_bridge.dart'; Dest = 'xcross_ipa_bridge.dart' },
     @{ Source = 'windows/xcm.cmd'; Dest = 'xcm.cmd' },
     @{ Source = 'windows/start.cmd'; Dest = 'start.cmd' },

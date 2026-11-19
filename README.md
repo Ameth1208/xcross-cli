@@ -1,6 +1,56 @@
-# XCross CLI (xcm) v1.5.0
+# XCross CLI (xcm) v1.5.1
 
 ![XCross CLI logo](assets/logo.svg)
+
+## Install compiled ad-hoc IPAs with xtool (1.5.1)
+
+Koda.ipa is already compiled, but its ad-hoc signature still needs device signing.
+Use the new [xtool](https://github.com/xtool-org/xtool) backend through WSL without
+zsign or a manual P12:
+
+```powershell
+xcm update-cli
+xcm version
+xcm xtool install-tool
+xcm xtool auth
+xcm xtool connect-usb
+xcm xtool devices
+xcm xtool doctor
+xcm install ".\Koda.ipa" --backend xtool
+```
+
+An installed WSL distribution is required. The installer verifies the official
+AppImage's size and GitHub SHA256 before replacing the managed binary under
+`~/.local/share/xcross-cli/xtool`. It does not change Linux PATH or require FUSE.
+Login runs interactively without recording credentials; xtool and XCross sessions
+are independent. `connect-usb` requests UAC to relay the Windows Apple Mobile Device
+Service (iTunes/Apple Devices) to the WSL interface on port 27015. Its firewall rule
+allows only that distribution's IP; rerun if the IP changes. Unlock and trust the
+iPhone. USBIPD or an explicit `USBMUXD_SOCKET_ADDRESS` in WSL are alternatives.
+Remove the relay and its firewall rule with `xcm xtool disconnect-usb`.
+Select a distribution with `$env:XCM_WSL_DISTRO = 'Ubuntu-24.04'` or, for example,
+`xcm xtool --distro Ubuntu-24.04 doctor`.
+
+IPA menu **4** now signs and installs using xtool. Menu **6** retains manual zsign
+signing. Automatic installation offers xtool for ad-hoc signatures; explicitly
+selecting `--backend xtool` authorizes provisioning/re-signing a temporary copy,
+including supported extensions. The original archive stays unchanged; this flow
+does not export a signed IPA. Apple account limits, capabilities and extension
+compatibility still apply. `--backend xcross` keeps the earlier behavior. See
+`xcm ipa logs` for installation logs; preflight errors print directly.
+
+Installing an existing IPA needs neither Swift Linux nor Xcode.xip. Source builds
+require Swift and a Darwin SDK inside WSL, and a project adapted with both
+`Package.swift` and `xtool.yml`:
+
+```powershell
+xcm xtool sdk "C:\Downloads\Xcode.xip"
+xcm xtool build --project "C:\repos\xtool-app" --configuration release
+xcm xtool run --project "C:\repos\xtool-app"
+```
+
+`xcm run/build` also detects these projects. This does not automatically convert
+iKoda's existing Xcode project to SwiftPM.
 
 ## Swift projects and maintenance (Windows)
 
@@ -8,7 +58,8 @@ Project selection and `run`, `build`, and `doctor` detect Flutter (`pubspec.yaml
 SwiftPM (`Package.swift`), and native Xcode projects (`.xcodeproj` / `.xcworkspace`
 at the selected root). Selection prefers `--project`, then the current directory,
 then the saved project; existing settings remain compatible. Select the actual
-project directory inside a monorepo.
+project directory inside a monorepo. A SwiftPM root with `xtool.yml` uses xtool's
+iOS backend through WSL instead of running on Windows.
 
 SwiftPM builds and runs **on Windows**, requiring Windows-compatible dependencies.
 Libraries can be built; running requires an executable product. This does not add
@@ -49,7 +100,8 @@ installation validates package completeness and PowerShell syntax before copying
 [iKoda](https://github.com/Ivorisnoob/iKoda) is a native Xcode app with SwiftUI and
 extensions. The current Windows XCross backend has no native Xcode project build
 command. The CLI detects that limitation and returns an error instead of treating
-the app or its core library as Flutter. Source builds require macOS/Xcode. To
+the app or its core library as Flutter. Building the unmodified project uses
+Xcode; building without a Mac requires adapting the app and extensions to xtool. To
 download an already published IPA:
 
 ```powershell
@@ -61,10 +113,9 @@ This downloads the exact asset from the latest stable release, checks its size a
 GitHub SHA256 when available, inspects the IPA, and refuses existing output paths.
 It requires Internet and Python, respects public GitHub API limits, warns when no
 checksum is published, and does not install on a device. iKoda v0.4 was verified
-to have an **ad-hoc signature**: it needs device signing, including its extensions,
-using a compatible signing workflow such as the AltStore/SideStore flow documented
-by iKoda. `xcm install` preserves existing signatures and rejects ad-hoc signatures;
-downloading alone does not make this IPA installable. Inspection covers the main
+to have an **ad-hoc signature**: it needs device signing, including its extensions.
+Use the xtool flow above in 1.5.1, or a compatible AltStore/SideStore workflow.
+Downloading alone does not make this IPA installable. Inspection covers the main
 executable, not all extensions.
 
 ![XCross CLI demo](docs/cli-demo.gif)

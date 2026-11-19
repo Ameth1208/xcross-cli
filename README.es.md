@@ -1,6 +1,59 @@
-# XCross CLI (xcm) v1.5.0 para Windows
+# XCross CLI (xcm) v1.5.1 para Windows
 
 ![XCross CLI logo](assets/logo.svg)
+
+## Instalar Koda ya compilada (1.5.1)
+
+Una IPA ya compilada puede tener firma **ad hoc**: aun necesita una identidad y
+perfiles validos para tu iPhone. Ya no hace falta zsign ni un P12 manual para este
+flujo: xcm integra [xtool](https://github.com/xtool-org/xtool) mediante WSL.
+
+```powershell
+xcm update-cli
+xcm version
+xcm xtool install-tool
+xcm xtool auth
+xcm xtool connect-usb
+xcm xtool devices
+xcm xtool doctor
+xcm install ".\Koda.ipa" --backend xtool
+```
+
+Necesitas una distribucion WSL instalada. `install-tool` descarga el AppImage
+oficial para la arquitectura de WSL, verifica tamano y SHA256 y lo instala en
+`~/.local/share/xcross-cli/xtool`. No modifica el PATH de Linux y no necesita FUSE.
+`auth` solicita Apple ID/2FA dentro de tu terminal; su salida no se registra y la
+sesion es independiente de XCross. No compartas las credenciales por el chat.
+
+`connect-usb` muestra UAC para enlazar el servicio Apple Mobile Device de Windows
+(iTunes/Apple Devices) con WSL. El relay escucha solo en la interfaz WSL, puerto
+27015, y la regla de firewall permite solo el IP de esa distribucion. Repite el
+comando si cambia su IP. Desbloquea el iPhone y acepta Confiar. Tambien puedes usar
+`xcm xtool disconnect-usb` para eliminar el relay y su regla de firewall. Puedes usar
+USBIPD o configurar `USBMUXD_SOCKET_ADDRESS` en WSL. Si usas varias distribuciones,
+establece `$env:XCM_WSL_DISTRO = 'Ubuntu-24.04'` o ejecuta, por ejemplo,
+`xcm xtool --distro Ubuntu-24.04 doctor`.
+
+En el menu IPA, **4 = Firmar + instalar (xtool)**; **6 = firma manual con zsign**.
+`xcm install Koda.ipa` detecta la firma ad hoc y ofrece xtool. La seleccion explicita
+`--backend xtool` autoriza reemplazar la firma de una copia temporal y aprovisionar
+sus extensiones compatibles; conserva la IPA original y no genera una IPA firmada
+exportable. Las credenciales, limites de la cuenta y permisos de Apple pueden
+impedir la instalacion; no se garantiza compatibilidad con todas las extensiones.
+`--backend xcross` conserva el flujo anterior. Los errores quedan en `xcm ipa logs`;
+los errores anteriores al inicio de instalacion se muestran en pantalla.
+
+**Instalar una IPA no necesita Swift Linux ni Xcode.xip.** Para compilar una app
+Swift iOS, selecciona un proyecto adaptado con `Package.swift` y `xtool.yml`:
+
+```powershell
+xcm xtool sdk "C:\Downloads\Xcode.xip"
+xcm xtool build --project "C:\repos\mi-app-xtool" --configuration release
+xcm xtool run --project "C:\repos\mi-app-xtool"
+```
+
+Estos comandos requieren Swift y el SDK Darwin **dentro de WSL**; `xcm run/build`
+tambien detecta `xtool.yml`. No convierten automaticamente `Koda.xcodeproj` a SwiftPM.
 
 ## Swift y mantenimiento del entorno (Windows)
 
@@ -8,7 +61,8 @@
 (`pubspec.yaml`), Swift Package Manager (`Package.swift`) y proyectos Xcode
 (`.xcodeproj` / `.xcworkspace` en la carpeta seleccionada). Se mantiene la ruta
 guardada anteriormente. Prioridad: `--project`, carpeta actual y proyecto guardado.
-En un monorepositorio, selecciona la carpeta concreta del proyecto.
+En un monorepositorio, selecciona la carpeta concreta del proyecto. Los proyectos
+con `Package.swift` y `xtool.yml` usan el backend iOS xtool de WSL.
 
 Los paquetes Swift se compilan y ejecutan **en Windows**, con sus dependencias
 compatibles con Windows. Una biblioteca se puede compilar, pero `run` requiere
@@ -53,7 +107,8 @@ anteriores si falla la copia. La instalacion local valida el paquete antes de co
 SwiftUI y extensiones. El backend actual de XCross no expone un flujo para compilar
 proyectos Xcode nativos desde Windows. `run`, `build` y `doctor` explican esta
 limitacion y devuelven error; no intentan ejecutarlo como Flutter o como su
-biblioteca `KodaCore`. Compilar el repositorio requiere un entorno macOS/Xcode.
+biblioteca `KodaCore`. Compilar el repositorio sin adaptarlo sigue usando Xcode;
+la alternativa sin Mac requiere adaptar su app y extensiones al formato xtool.
 
 Puedes descargar una IPA publicada sin compilar el repositorio:
 
@@ -67,11 +122,10 @@ tamano y el SHA256 de GitHub cuando existe, inspecciona la IPA y nunca sobrescri
 el destino ni instala en el telefono. Necesita Internet y Python para inspeccionar;
 GitHub aplica limites a su API publica. Si falta SHA256, muestra la limitacion.
 
-La IPA de iKoda v0.4 comprobada contiene firma **ad hoc**. Requiere volver a firmar
-la app y sus extensiones para tu iPhone, por ejemplo con el flujo AltStore/SideStore
-documentado por iKoda. `xcm install` conserva firmas existentes y rechaza firmas
-ad hoc: descargar esta IPA no la hace instalable automaticamente. La inspeccion
-del ejecutable principal tampoco valida todas sus extensiones.
+La IPA de iKoda v0.4 comprobada contiene firma **ad hoc**. Usa el flujo xtool de
+1.5.1 descrito arriba para volver a firmarla e instalarla. Tambien existen los
+flujos AltStore/SideStore documentados por iKoda. Descargarla no la hace instalable
+automaticamente. La inspeccion del ejecutable principal no valida sus extensiones.
 
 
 Interfaz de terminal inspirada en los CLI modernos usados con asistentes de programación. **No incorpora un modelo de IA**, pero ofrece una experiencia ágil con teclado, paleta de comandos y órdenes reutilizables.
