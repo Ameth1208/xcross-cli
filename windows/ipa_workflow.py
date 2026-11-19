@@ -1,4 +1,4 @@
-"""Prepare an unsigned IPA copy for the native XCross signing/install engine."""
+"""Prepare an unsigned or explicitly selected ad-hoc IPA copy for XCross."""
 
 import argparse
 from pathlib import Path, PurePosixPath
@@ -70,11 +70,18 @@ def main():
     parser.add_argument("--packages", required=True)
     parser.add_argument("--bridge", required=True)
     parser.add_argument("--udid", required=True)
+    parser.add_argument("--resign-adhoc", action="store_true",
+                        help="Allow replacing an ad-hoc compilation signature on a temporary copy")
     args = parser.parse_args()
     try:
         report = inspect_ipa(args.ipa)
-        if report["signature"] != "missing" or report["issues"] != ["missing_signature"]:
-            raise PackageError("Automatic signing is only allowed for an unsigned iPhone IPA")
+        allowed = {"missing_signature"}
+        signatures = {"missing"}
+        if args.resign_adhoc:
+            allowed.add("adhoc_signature")
+            signatures.add("adhoc")
+        if report["signature"] not in signatures or set(report["issues"]) - allowed:
+            raise PackageError("Native signing requires an unsigned IPA or explicit --resign-adhoc; existing device signatures are preserved")
         original = Path(args.ipa).resolve()
         output = original.with_name(original.stem + "-xcross-signed.ipa")
         if output.exists():

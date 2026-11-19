@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Adapter to the pinned XCross 2.0.5 signing engine (AGPL-3.0).
+// Adapter to the pinned XCross 2.1.2 signing engine (AGPL-3.0).
 // No credentials are exported or copied by this adapter.
 import 'dart:io';
 import 'dart:ffi';

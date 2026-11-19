@@ -20,7 +20,7 @@ try {
 } catch { }
 
 $ErrorActionPreference = 'Stop'
-$script:Version = '1.5.2'
+$script:Version = '1.5.3'
 $script:SettingsDir = Join-Path $env:APPDATA 'XCrossMenu'
 $script:SettingsFile = Join-Path $script:SettingsDir 'settings.json'
 $script:Settings = @{ XcodeXip = ''; FlutterProject = ''; BundleIdMode = 'default'; Language = 'en'; SetupWorkflow = '' }
@@ -625,6 +625,36 @@ function Test-XcmEnvironment {
     return $ok
 }
 
+function Test-CurrentIpaFolder {
+    return ($null -ne (Get-ChildItem -LiteralPath (Get-Location).Path -Filter '*.ipa' -File -ErrorAction SilentlyContinue | Select-Object -First 1))
+}
+
+function Test-XcrossSavedIdentity {
+    $root = Join-Path $env:APPDATA 'xcross'
+    return ((Test-Path -LiteralPath (Join-Path $root 'grandslam-session.json') -PathType Leaf) -or
+        (Test-Path -LiteralPath (Join-Path $root 'appstoreconnect.json') -PathType Leaf))
+}
+
+function Test-IpaEnvironment {
+    Write-Title (Msg 'Doctor: IPA installation (XCross)' 'Doctor: instalacion de IPA (XCross)')
+    $ok = $true
+    foreach ($tool in @('xcross','git','pymobiledevice3')) {
+        if (Test-Tool $tool) { Write-Ok "$tool disponible" }
+        else { Write-Fail "$tool no encontrado"; $ok = $false }
+    }
+    try { [void](Get-IpaDart); Write-Ok 'Dart disponible para el adaptador de firma' }
+    catch { Write-Fail $_.Exception.Message; $ok = $false }
+    try { [void](Get-IpaPython); Write-Ok 'Python disponible para revisar la IPA' }
+    catch { Write-Fail $_.Exception.Message; $ok = $false }
+    if (Test-XcrossSavedIdentity) { Write-Ok (Msg 'Saved XCross identity available; no second login required.' 'Sesion XCross guardada disponible; no se necesita otro acceso.') }
+    else { Write-Fail (Msg 'No saved XCross identity. Run xcm init ipa.' 'Falta sesion XCross. Ejecuta xcm init ipa.'); $ok = $false }
+    $devices = @(Get-UsbDevices | Where-Object { $_.ConnectionType -eq 'USB' })
+    if ($devices.Count) { foreach ($device in $devices) { Write-Ok ("iPhone USB: " + $device.DeviceName) } }
+    else { Write-Fail (Msg 'No USB iPhone: connect, unlock and accept Trust.' 'No hay iPhone USB: conecta, desbloquea y acepta Confiar.'); $ok = $false }
+    if ($ok) { Write-Ok (Msg 'Ready for xcm install "app.ipa". Apple validates provisioning during installation.' 'Preparado para xcm install "app.ipa". Apple valida el aprovisionamiento al instalar.') }
+    return $ok
+}
+
 function Get-ReleaseIpa {
     param([string[]]$Arguments)
     $stage = $null
@@ -663,7 +693,7 @@ function Get-ReleaseIpa {
         Write-Host "SHA256: $hash"
         Show-IpaInspection $report
         if ($report.signature -eq 'adhoc') {
-            Write-Warn (Msg 'Device signing is required. Use xcm install PATH.ipa --backend xtool to provision, re-sign and install through WSL.' 'Se necesita firma para el dispositivo. Usa xcm install RUTA.ipa --backend xtool para aprovisionar, firmar e instalar mediante WSL.')
+            Write-Warn (Msg 'Device signing is required. xcm install PATH.ipa reuses your saved XCross identity to sign a copy and install.' 'Se necesita firma para el dispositivo. xcm install RUTA.ipa usa tu sesion guardada de XCross para firmar una copia e instalar.')
         }
         else { Write-Host "xcm install `"$destination`"" }
         return $true
@@ -721,7 +751,11 @@ function Invoke-IpaProcess([string]$Tool, [string[]]$Arguments) {
     try {
         $ErrorActionPreference = 'Continue'
         Write-Host (Msg '  Working... Full details are being saved to a log.' '  Procesando... Los detalles se guardan en un registro.') -ForegroundColor Cyan
-        & $Tool @Arguments 2>&1 | ForEach-Object { $_.ToString() | Add-Content -LiteralPath $log -Encoding UTF8 }
+        & $Tool @Arguments 2>&1 | ForEach-Object {
+            $line = $_.ToString()
+            $line | Add-Content -LiteralPath $log -Encoding UTF8
+            if ($line -match 'Signing app|Installing to device|Provisioning|^Installed:') { Write-Host $line -ForegroundColor DarkCyan }
+        }
         $code = $LASTEXITCODE
     }
     finally { $ErrorActionPreference = $previousPreference }
@@ -748,7 +782,12 @@ function Invoke-IpaProcess([string]$Tool, [string[]]$Arguments) {
 }
 
 function Get-IpaDart {
-    if (Test-Tool 'dart') { return (Get-Command dart).Source }
+    if (Test-Tool 'dart') {
+        $command = (Get-Command dart).Source
+        $native = Join-Path (Split-Path $command) 'cache\dart-sdk\bin\dart.exe'
+        if (Test-Path -LiteralPath $native -PathType Leaf) { return $native }
+        if ([IO.Path]::GetExtension($command) -ieq '.exe') { return $command }
+    }
     if (Test-Tool 'flutter') {
         $candidate = Join-Path (Split-Path (Get-Command flutter).Source) 'cache\dart-sdk\bin\dart.exe'
         if (Test-Path -LiteralPath $candidate) { return $candidate }
@@ -770,16 +809,16 @@ function Show-IpaLog {
     else { Write-Warn (Msg 'No IPA log found.' 'No hay registro de IPA.') }
 }
 
-function Install-UnsignedIpa([string]$Path, [string]$Udid) {
+function Install-NativeIpa([string]$Path, [string]$Udid, [switch]$ResignAdhoc) {
     $dart = Get-IpaDart
-    $runtime = Join-Path $env:LOCALAPPDATA 'XCrossCLI\signing-runtime-v2.0.5'
-    $commit = '71e5089f5c2b1ce6e129fd81e7fbb8f8dad740ca'
+    $runtime = Join-Path $env:LOCALAPPDATA 'XCrossCLI\signing-runtime-v2.1.2'
+    $commit = '29af3b65f302e6cb1ca653cb78b1f9a096e091ca'
     if (-not (Test-Path -LiteralPath $runtime)) {
         Write-Host (Msg '  Preparing the XCross signing engine (first run only)...' '  Preparando el motor de firma XCross (solo la primera vez)...')
-        if (-not (Invoke-Tool 'git' @('clone','--depth','1','--branch','v2.0.5','https://github.com/arxdeus/xcross.git',$runtime))) { return $false }
+        if (-not (Invoke-Tool 'git' @('clone','--depth','1','--branch','v2.1.2','https://github.com/arxdeus/xcross.git',$runtime))) { return $false }
     }
     $actual = & git -C $runtime rev-parse HEAD
-    if ($LASTEXITCODE -ne 0 -or $actual -ne $commit) { throw 'El motor de firma no corresponde a la revision verificada de XCross 2.0.5.' }
+    if ($LASTEXITCODE -ne 0 -or $actual -ne $commit) { throw 'El motor de firma no corresponde a la revision verificada de XCross 2.1.2.' }
     $packages = Join-Path $runtime '.dart_tool\package_config.json'
     if (-not (Test-Path -LiteralPath $packages)) {
         Push-Location -LiteralPath $runtime
@@ -790,10 +829,11 @@ function Install-UnsignedIpa([string]$Path, [string]$Udid) {
     $python = Get-IpaPython
     $toolArgs = @($python.Prefix) + @((Join-Path $PSScriptRoot 'ipa_workflow.py'), $Path,
         '--dart',$dart,'--packages',$packages,'--bridge',(Join-Path $PSScriptRoot 'xcross_ipa_bridge.dart'),'--udid',$Udid)
+    if ($ResignAdhoc) { $toolArgs += '--resign-adhoc' }
     $previousMode = $env:XCROSS_BUNDLE_ID
     try {
         if ($script:Settings.BundleIdMode -in @('original','prefixed')) { $env:XCROSS_BUNDLE_ID = $script:Settings.BundleIdMode }
-        Write-Host (Msg '  Signing an unsigned copy using the saved XCross identity, then installing...' '  Firmando una copia con la identidad guardada de XCross e instalando...') -ForegroundColor Cyan
+        Write-Host (Msg '  Signing a temporary copy using your saved XCross identity, then installing. No new login required.' '  Firmando una copia temporal con tu sesion guardada de XCross e instalando. Sin pedir otro acceso.') -ForegroundColor Cyan
         return (Invoke-IpaProcess $python.Tool $toolArgs)
     }
     finally { $env:XCROSS_BUNDLE_ID = $previousMode }
@@ -935,15 +975,13 @@ function Invoke-IpaCommand {
                 Show-IpaInspection $report -ReSign:($backend -eq 'xtool')
                 $blocking = @($report.issues | Where-Object { $_ -notin @('missing_signature','adhoc_signature') })
                 if ($blocking.Count) { throw ('IPA incompatible: ' + ($blocking -join ', ')) }
-                if ($backend -eq 'xtool' -or ($backend -eq 'auto' -and $report.signature -eq 'adhoc')) {
+                if ($backend -eq 'xtool') {
                     Write-Warn (Msg 'xtool will provision and RE-SIGN a temporary copy, including supported extensions. Original IPA is preserved.' 'xtool aprovisionara y REEMPLAZARA la firma de una copia temporal, incluidas extensiones compatibles. La IPA original se conserva.')
                     if ($backend -eq 'auto' -and -not (Confirm-Yes (Msg 'Sign and install with xtool in WSL?' 'Firmar e instalar con xtool en WSL?'))) { return $false }
                     $backendArgs = @('install',$ipa)
                     if ($options['--udid']) { $backendArgs += @('--udid',$options['--udid']) }
                     return (Invoke-XtoolCommand -Arguments $backendArgs)
                 }
-                $blocking = @($report.issues | Where-Object { $_ -ne 'missing_signature' })
-                if ($blocking.Count) { throw ('Firma ad hoc no admitida por XCross. Usa xcm install "' + $ipa + '" --backend xtool.') }
                 $devices = @(Get-UsbDevices | Where-Object { $_.ConnectionType -eq 'USB' })
                 if ($devices.Count -eq 0) { throw 'No hay iPhone por USB. Conecta, desbloquea y acepta Confiar.' }
                 $udid = $options['--udid']
@@ -960,7 +998,7 @@ function Invoke-IpaCommand {
                 $udid = if ($device.UniqueDeviceID) { $device.UniqueDeviceID } else { $device.Identifier }
                 if (-not $udid) { throw 'No se pudo determinar el UDID.' }
                 Write-Host "$($device.DeviceName) | $udid"
-                if ($report.signature -eq 'missing') { $ok = Install-UnsignedIpa -Path $ipa -Udid $udid }
+                if ($report.signature -in @('missing','adhoc')) { $ok = Install-NativeIpa -Path $ipa -Udid $udid -ResignAdhoc:($report.signature -eq 'adhoc') }
                 else { $ok = Invoke-IpaProcess 'pymobiledevice3' @('apps','install','--udid',$udid,'--streaming',$ipa) }
                 if ($ok) { Write-Ok (Msg 'IPA installed.' 'IPA instalada.') }
                 return $ok
@@ -992,7 +1030,7 @@ function Update-CurrentProject {
 function Show-IpaMenu {
     $items = @(
         @{ Key='1'; Label=(Msg 'Check IPA' 'Revisar IPA'); Description=(Msg 'Read-only signature inspection' 'Revisar firma, sin instalar'); Command='inspect' },
-        @{ Key='2'; Label=(Msg 'Install IPA (auto)' 'Instalar IPA (auto)'); Description=(Msg 'Ad-hoc: xtool / other: XCross' 'Ad hoc: xtool / otras: XCross'); Command='install' },
+        @{ Key='2'; Label=(Msg 'Install IPA' 'Instalar IPA'); Description=(Msg 'Reuse your saved XCross identity' 'Usar tu sesion guardada de XCross'); Command='install' },
         @{ Key='3'; Label=(Msg 'Build IPA (Flutter)' 'Compilar IPA (Flutter)'); Description='release / xcross'; Command='build' },
         @{ Key='4'; Label=(Msg 'Sign + install (xtool)' 'Firmar + instalar (xtool)'); Description='WSL + Apple ID / no P12'; Command='install-xtool' },
         @{ Key='5'; Label=(Msg 'Last IPA log' 'Ultimo registro IPA'); Description=(Msg 'Details of the last operation' 'Detalles de la ultima operacion'); Command='logs' },
@@ -1270,7 +1308,7 @@ function Initialize-Xcm {
             'flutter' { 'flutter' }
             'swift' { 'swift' }
             {$_ -in @('xtool','xcode')} { 'ipa' }
-            default { $script:Settings.SetupWorkflow }
+            default { if (Test-CurrentIpaFolder) { 'ipa' } else { $script:Settings.SetupWorkflow } }
         }
     }
     if (-not $mode) {
@@ -1286,9 +1324,10 @@ function Initialize-Xcm {
     if (-not $check) { $script:Settings.SetupWorkflow = $mode; Save-Settings }
     switch ($mode) {
         'ipa' {
-            $toolArgs = @('init')
-            if ($check) { $toolArgs += '--check' }
-            return (Invoke-XtoolCommand -Arguments $toolArgs)
+            if ($check) { return (Test-IpaEnvironment) }
+            if (-not (Test-Tool 'xcross') -and -not (Install-Xcross)) { return $false }
+            if (-not (Test-XcrossSavedIdentity) -and -not (Connect-AppleId)) { return $false }
+            return (Test-IpaEnvironment)
         }
         'flutter' {
             if ($check) { return (Test-ProjectEnvironment) }
@@ -1910,7 +1949,7 @@ function Invoke-XcmCommand {
         'xcode' {Open-AppleDownloadPage;return $true}
         {$_ -in @('doctor','check','verify')} {
             if ($Arguments.Count -eq 0 -and (Get-ProjectKind (Get-Location).Path) -eq 'unknown') {
-                if ($script:Settings.SetupWorkflow -eq 'ipa') { return (Invoke-XtoolCommand -Arguments @('doctor')) }
+                if ((Test-CurrentIpaFolder) -or $script:Settings.SetupWorkflow -eq 'ipa') { return (Test-IpaEnvironment) }
                 if ($script:Settings.SetupWorkflow -eq 'swift') { return (Invoke-Tool 'swift' @('--version')) }
             }
             if ($Arguments.Count -eq 1 -and $Arguments[0] -eq '--environment') { return (Test-XcmEnvironment) }

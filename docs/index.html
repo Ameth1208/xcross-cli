@@ -458,7 +458,7 @@
     <!-- Shimmering Pill Badge -->
     <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium hero-badge text-dark-accentSoft mb-3 cursor-default">
       <span class="inline-block w-2 h-2 rounded-full bg-dark-accent animate-ping"></span>
-      <span>XCross CLI v1.5.2 • The Easiest Flutter iOS Companion</span>
+      <span>XCross CLI v1.5.3 • The Easiest Flutter iOS Companion</span>
     </div>
 
     <!-- Acknowledgement to xcross.sh & Creator -->
@@ -683,7 +683,7 @@
           <span class="w-3 h-3 rounded-full bg-red-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
           <span class="w-3 h-3 rounded-full bg-yellow-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
           <span class="w-3 h-3 rounded-full bg-green-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
-          <span class="ml-3 text-xs text-dark-muted font-mono">xcm — XCross CLI v1.5.2</span>
+          <span class="ml-3 text-xs text-dark-muted font-mono">xcm — XCross CLI v1.5.3</span>
         </div>
 
         <!-- Language toggle button -->
@@ -889,7 +889,7 @@
     <div class="liquid-glass rounded-3xl p-6 sm:p-10 shadow-term">
       <p class="text-xs font-mono tracking-[0.2em] text-dark-accent uppercase mb-3">New in 1.4 · Windows</p>
       <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">Already have an IPA? Install it.</h2>
-      <p class="text-dark-muted leading-relaxed mb-6 max-w-2xl">Connect your iPhone over USB, unlock it and accept Trust. The CLI checks your IPA first: device signatures are preserved; unsigned packages use your saved XCross identity. Ad-hoc packages offer xtool in WSL to provision, re-sign and install. No manual P12 is requested.</p>
+      <p class="text-dark-muted leading-relaxed mb-6 max-w-2xl">Connect your iPhone over USB, unlock it and accept Trust. The CLI checks your IPA first: device signatures are preserved; unsigned packages use your saved XCross identity. Ad-hoc packages reuse the saved XCross identity for provisioning, re-signing and installation. No manual P12 is requested.</p>
       <div class="bg-black/50 rounded-xl p-4 border border-sky-400/20 flex flex-wrap items-center justify-between gap-4">
         <code class="font-mono text-sm text-sky-300 break-all">xcm install "C:\Apps\my-app.ipa"</code>
         <button type="button" onclick="copySpecificCmd('xcm install &quot;C:\\Apps\\my-app.ipa&quot;', this)" class="btn-aurora rounded-lg px-4 py-2 text-xs font-semibold" aria-label="Copy IPA installation command">Copy command</button>
@@ -904,7 +904,7 @@
         <div>
           <h3 class="text-white font-medium mb-2">Sign only when needed</h3>
           <code class="font-mono text-xs text-sky-300">xcm ipa inspect "app.ipa"</code>
-          <p class="text-xs text-dark-muted leading-relaxed mt-2">Unsigned packages use your XCross session. Select xtool to re-sign a compiled ad-hoc IPA using Apple ID. Manual P12 signing with zsign is optional. The original archive stays unchanged.</p>
+          <p class="text-xs text-dark-muted leading-relaxed mt-2">Unsigned packages use your XCross session. Compiled ad-hoc IPAs also reuse the same XCross session. Manual P12 signing with zsign is optional. The original archive stays unchanged.</p>
         </div>
       </div>
       <p class="text-xs text-dark-muted mt-6">Working from an existing checkout? <code class="text-sky-300">xcm project update</code> pulls changes into the current repository with Git fast-forward checks. <code class="text-sky-300">xcm update-cli --local</code> installs your local CLI changes.</p>
@@ -978,7 +978,7 @@
 
   <section id="swift-maintenance" class="my-28 scroll-mt-28 max-w-[960px] mx-auto" aria-labelledby="swift-maintenance-title">
     <div class="mb-8">
-      <p class="text-xs font-mono tracking-[0.2em] text-dark-accent uppercase mb-3">New in Windows v1.5.2</p>
+      <p class="text-xs font-mono tracking-[0.2em] text-dark-accent uppercase mb-3">New in Windows v1.5.3</p>
       <h2 id="swift-maintenance-title" class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">Prepare once. Run when ready.</h2>
       <p class="text-dark-muted leading-relaxed max-w-2xl">Start with xcm init. It detects your workflow and guides missing preparation steps. Everyday commands stay up front; detailed tools remain under Advanced and help --all.</p>
     </div>
@@ -1008,16 +1008,16 @@
 xcm version
 xcm doctor --environment
 xcm update --check</code></pre>
-      <p class="text-xs text-dark-muted mt-4 leading-relaxed">Expect xcm 1.5.2 on Windows. <code>update-cli</code> updates this helper; <code>update</code> updates the XCross engine. New here? Use the <a href="#install" class="text-sky-300 underline">one-line installer</a>. <code>download all</code> opens guided setup; obtain Xcode.xip manually from Apple.</p>
+      <p class="text-xs text-dark-muted mt-4 leading-relaxed">Expect xcm 1.5.3 on Windows. <code>update-cli</code> updates this helper; <code>update</code> updates the XCross engine. New here? Use the <a href="#install" class="text-sky-300 underline">one-line installer</a>. <code>download all</code> opens guided setup; obtain Xcode.xip manually from Apple.</p>
     </div>
     <aside class="mt-5 rounded-2xl border border-amber-300/20 bg-amber-300/5 p-6">
-      <h3 class="text-white font-medium mb-2">Install Koda.ipa with xtool</h3>
-      <p class="text-sm text-dark-muted leading-relaxed mb-4">Already compiled does not mean signed for your iPhone. Version 1.5.2 can provision, re-sign and install an ad-hoc IPA using xtool in WSL. No zsign or manual P12 is needed. IPA menu option 4 opens this flow; manual signing remains optional under option 6.</p>
+      <h3 class="text-white font-medium mb-2">Install Koda.ipa with your saved identity</h3>
+      <p class="text-sm text-dark-muted leading-relaxed mb-4">Already compiled does not mean signed for your iPhone. Version 1.5.3 reuses your existing Windows XCross session to provision, re-sign and install an ad-hoc IPA. No zsign or manual P12 is needed. Use Install IPA; xtool and manual signing remain advanced alternatives.</p>
       <pre class="overflow-x-auto text-xs sm:text-sm font-mono text-sky-300 pb-2"><code>xcm download ipa --repo Ivorisnoob/iKoda --asset Koda.ipa --output .\Koda.ipa</code></pre>
       <pre class="overflow-x-auto text-xs sm:text-sm font-mono text-sky-300 pb-2 mt-4"><code>xcm init ipa
 xcm install ".\Koda.ipa"</code></pre>
-      <p class="text-xs text-dark-muted mt-3">Init reuses xtool, a cached login and an existing USB connection. Apple login explains when to type your email, hidden password and 2FA code, and when to press Enter. Run <code>xcm init ipa --check</code> to diagnose without setup changes.</p>
-      <p class="text-xs text-dark-muted mt-3">Requires an installed WSL distribution and Apple's Windows device service. USB relay setup requests UAC and only permits your WSL client's IP. Login runs in your terminal without credential logging. The original IPA stays unchanged; Apple account limits and extension compatibility still apply. Installing an existing IPA needs neither Swift Linux nor Xcode.xip.</p>
+      <p class="text-xs text-dark-muted mt-3">Init reuses XCross, its cached identity and the existing Windows USB connection. Apple login explains when to type your email, hidden password and 2FA code, and when to press Enter. Run <code>xcm init ipa --check</code> to diagnose without setup changes.</p>
+      <p class="text-xs text-dark-muted mt-3">Already authenticated with XCross? No new Apple login or WSL setup is needed. The original IPA stays unchanged and a signed copy is saved. Apple account limits and extension compatibility still apply. Koda v0.4 was signed and installed over USB with both extensions; playback was not tested.</p>
     </aside>
   </section>
 
@@ -1071,7 +1071,7 @@ xcm install ".\Koda.ipa"</code></pre>
           <button type="button" onclick="copySpecificCmd('xcm init',this)" class="p-1.5 rounded-lg bg-white/10 text-xs" aria-label="Copy init command">Copy</button>
         </div>
         <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between gap-3" data-category="ipa signing swift">
-          <div class="min-w-0"><div class="font-mono text-xs text-sky-400 font-semibold break-words">xcm install Koda.ipa --backend xtool</div><div class="text-[11px] text-dark-muted mt-1">Provision, re-sign and install through WSL; no manual P12</div></div>
+          <div class="min-w-0"><div class="font-mono text-xs text-sky-400 font-semibold break-words">xcm install Koda.ipa --backend xtool</div><div class="text-[11px] text-dark-muted mt-1">Optional alternative with an independent WSL session</div></div>
           <button type="button" onclick="copySpecificCmd('xcm install Koda.ipa --backend xtool',this)" class="p-1.5 rounded-lg bg-white/10 text-xs" aria-label="Copy xtool IPA install command">Copy</button>
         </div>
         <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between gap-3" data-category="swift toolchain">
@@ -1458,7 +1458,7 @@ xcm install ".\Koda.ipa"</code></pre>
           <h3 class="text-base font-medium text-white">Do I need to provide a certificate to install an existing IPA?</h3>
           <svg class="faq-chevron w-5 h-5 text-dark-muted transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
-        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">No manual certificate file is required. Device-signed IPAs install directly; unsigned IPAs use your saved XCross identity. An ad-hoc IPA such as Koda needs device signing: use <code class="text-sky-300">xcm install "Koda.ipa" --backend xtool</code> after xtool login and WSL USB setup. xtool re-signs a temporary copy; the original stays unchanged. iOS still validates the result. Use <code class="text-sky-300">xcm ipa inspect "app.ipa"</code> for a read-only check and <code class="text-sky-300">xcm ipa logs</code> for details. <a href="https://support.apple.com/guide/security/app-code-signing-process-sec7c917bf14/web" class="text-sky-300 underline">Apple code signing requirements</a>.</div>
+        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">No manual certificate file is required. Device-signed IPAs install directly; unsigned and ad-hoc IPAs reuse your saved XCross identity. For Koda, use <code class="text-sky-300">xcm install "Koda.ipa"</code>. No second Apple login or WSL setup is needed. A temporary copy is signed and installed; the original stays unchanged. iOS still validates the result. Use <code class="text-sky-300">xcm ipa inspect "app.ipa"</code> for a read-only check and <code class="text-sky-300">xcm ipa logs</code> for details. <a href="https://support.apple.com/guide/security/app-code-signing-process-sec7c917bf14/web" class="text-sky-300 underline">Apple code signing requirements</a>.</div>
       </div>
 
       <!-- FAQ 2 -->
@@ -1706,9 +1706,9 @@ document.getElementById('commandCount').textContent = document.querySelectorAll(
 
 // --- TUI Menu Data (English & Spanish) ---
 const EN_MENU = [
-  ['N', 'Prepare environment', 'xcm init', 'One preparation assistant: select IPA, Flutter or local Swift. IPA setup reuses xtool, a cached login and a working USB connection.'],
+  ['N', 'Prepare environment', 'xcm init', 'One preparation assistant: select IPA, Flutter or local Swift. IPA setup reuses XCross, its cached identity and the working Windows USB connection.'],
   ['1', 'Run project', 'xcm run', 'Run the selected Flutter project, local Swift package or adapted xtool iOS project.'],
-  ['7', 'Install IPA', 'xcm install app.ipa', 'Inspect the compiled IPA. Ad-hoc packages offer device signing with xtool; the original archive stays unchanged.'],
+  ['7', 'Install IPA', 'xcm install app.ipa', 'Inspect the compiled IPA. Unsigned and ad-hoc packages use the saved XCross identity to sign a copy; the original archive stays unchanged.'],
   ['2', 'Check environment', 'xcm doctor', 'Check the selected workflow. xcm init ipa --check checks IPA readiness without installing or logging in.'],
   ['P', 'Projects', 'xcm project', 'Select, inspect or update your project.'],
   ['U', 'Update xcm', 'xcm update-cli', 'Update this helper. Engine updates remain available under Advanced tools.'],
@@ -1718,9 +1718,9 @@ const EN_MENU = [
 ];
 
 const ES_MENU = [
-  ['N', 'Preparar entorno', 'xcm init', 'Un asistente: IPA, Flutter o Swift local. Para IPA reutiliza xtool, la sesion guardada y la conexion USB existente.'],
+  ['N', 'Preparar entorno', 'xcm init', 'Un asistente: IPA, Flutter o Swift local. Para IPA reutiliza XCross, su sesion guardada y la conexion USB de Windows.'],
   ['1', 'Ejecutar proyecto', 'xcm run', 'Ejecuta Flutter, un paquete Swift local o un proyecto iOS adaptado a xtool.'],
-  ['7', 'Instalar IPA', 'xcm install app.ipa', 'Revisa la IPA compilada. Si tiene firma ad hoc, ofrece firmar para tu iPhone con xtool sin cambiar el archivo original.'],
+  ['7', 'Instalar IPA', 'xcm install app.ipa', 'Revisa la IPA compilada. Sin firma o con firma ad hoc, usa la sesion XCross para firmar una copia sin cambiar el archivo original.'],
   ['2', 'Comprobar entorno', 'xcm doctor', 'Revisa el flujo elegido. xcm init ipa --check comprueba sin instalar ni iniciar sesion.'],
   ['P', 'Proyectos', 'xcm project', 'Selecciona, revisa o actualiza el proyecto.'],
   ['U', 'Actualizar xcm', 'xcm update-cli', 'Actualiza este CLI. La actualizacion del motor queda en herramientas avanzadas.'],

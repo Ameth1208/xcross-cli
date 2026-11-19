@@ -110,12 +110,20 @@ class Wsl:
         print(f"Log: {path}", flush=True)
         with path.open("w", encoding="utf-8") as target:
             with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process:
+                recent = ""
+                awaiting_revocation = False
                 try:
                     while chunk := process.stdout.read1(4096):
                         text = chunk.decode("utf-8", errors="replace")
                         target.write(text)
                         target.flush()
                         print(text, end="", flush=True)
+                        recent = (recent + text)[-2048:]
+                        if not awaiting_revocation and "certificates must be revoked" in recent:
+                            awaiting_revocation = True
+                            print("\n[!] NO HA TERMINADO: xtool espera confirmacion para revocar certificados existentes.", flush=True)
+                            print("Escribe no y pulsa Enter, o Ctrl+C para cancelar. yes + Enter autoriza la revocacion.", flush=True)
+                            print('Para reutilizar la identidad de XCross sin este cambio: xcm install "Koda.ipa" --backend xcross', flush=True)
                     return process.wait()
                 except BaseException:
                     process.terminate()

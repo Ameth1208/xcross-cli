@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.5.3 — Reuse the existing XCross session for compiled IPAs
+
+- Sign unsigned and ad-hoc IPA copies with the existing Windows XCross identity
+  instead of automatically switching ad-hoc IPAs to xtool and requiring a second
+  Apple login. Existing device signatures remain on the direct installation path.
+- Pin the native adapter to XCross 2.1.2, commit
+  `29af3b65f302e6cb1ca653cb78b1f9a096e091ca`, including embedded extension and
+  App Group provisioning. Ad-hoc re-signing is explicitly enabled on a temporary
+  copy; the original IPA is unchanged and a signed output copy is saved.
+- Make `doctor` recognize IPA files in the current folder before falling back to
+  a saved Flutter project. `init ipa` reuses the native XCross tools and session.
+- Keep xtool as an explicitly selected alternative and Swift iOS build backend.
+  Explain when its installer is waiting for certificate revocation confirmation;
+  no confirmation is sent automatically.
+- Verified Koda v0.4 was signed and installed over USB with the saved XCross Apple
+  identity, including Share and Widgets extensions, without a new login or
+  certificate revocation. Confirmed its installed metadata and the original SHA256.
+  App launch and playback were not tested.
+
 ## 1.5.2 — One preparation command and clearer Apple login
 
 - Add `xcm init` with IPA, Flutter and local Swift workflows. Remember the chosen

@@ -1,6 +1,23 @@
-# XCross CLI (xcm) v1.5.2
+# XCross CLI (xcm) v1.5.3
 
 ![XCross CLI logo](assets/logo.svg)
+
+## XCross is already set up: install directly
+
+```powershell
+xcm install ".\Koda.ipa"
+```
+
+As of 1.5.3, compiled unsigned/ad-hoc IPAs reuse the saved Windows XCross identity.
+No second Apple login, WSL, xtool, zsign or manual P12 is required for this path.
+The adapter pins XCross 2.1.2, provisions the app and supported embedded extensions,
+signs a temporary copy and installs over USB. The original stays unchanged and a
+`Koda-xcross-signed.ipa` copy is saved, with a suffix if the name already exists.
+
+In a folder containing IPA files, `doctor` checks this workflow before selecting a
+saved Flutter project. `init ipa` also reuses XCross. Apple validates compatibility
+and account limits while signing. Koda v0.4 was installed with its Share/Widgets
+extensions and its installed metadata was verified. Launch/playback was not tested.
 
 ## Everyday use: prepare once, then work
 
@@ -11,10 +28,10 @@ xcm install ".\Koda.ipa"
 
 `init` detects the current project or remembers the selected workflow. Without
 context it offers IPA installation, Flutter iOS and local Swift. Use `xcm init ipa`
-for Koda: it installs xtool only when missing, asks for Apple login only without a
-cached session, configures the USB link only when the iPhone is not already visible,
-and checks readiness. It does not install the app or download Swift Linux/an SDK
-for an existing IPA. `xcm init ipa --check` diagnoses without making those changes.
+for Koda: it checks XCross, its saved identity, signing tools and the USB iPhone,
+asking for Apple login only without a saved identity. It does not install the app
+or download Swift Linux/an SDK for an existing IPA. `xcm init ipa --check` diagnoses
+without making those changes.
 
 `xcm init flutter` opens Flutter preparation; `xcm init swift` prepares local Swift.
 `setup`, argument-free `install` and `download all` are compatibility entry points
@@ -28,11 +45,11 @@ attached console without recording its input/output. XCross (Flutter) and xtool
 (IPA) keep separate sessions; logging into one does not authenticate the other.
 Renew an existing xtool login explicitly with `xcm xtool auth --refresh`.
 
-## Install compiled ad-hoc IPAs with xtool (1.5.1)
+## Advanced alternative: install compiled IPAs with xtool
 
 Koda.ipa is already compiled, but its ad-hoc signature still needs device signing.
 Use the new [xtool](https://github.com/xtool-org/xtool) backend through WSL without
-zsign or a manual P12:
+zsign or a manual P12. XCross is the default; xtool must be explicitly selected:
 
 ```powershell
 xcm update-cli
@@ -58,7 +75,7 @@ Select a distribution with `$env:XCM_WSL_DISTRO = 'Ubuntu-24.04'` or, for exampl
 `xcm xtool --distro Ubuntu-24.04 doctor`.
 
 IPA menu **4** now signs and installs using xtool. Menu **6** retains manual zsign
-signing. Automatic installation offers xtool for ad-hoc signatures; explicitly
+signing. Automatic installation reuses XCross for ad-hoc signatures; explicitly
 selecting `--backend xtool` authorizes provisioning/re-signing a temporary copy,
 including supported extensions. The original archive stays unchanged; this flow
 does not export a signed IPA. Apple account limits, capabilities and extension
@@ -140,7 +157,7 @@ GitHub SHA256 when available, inspects the IPA, and refuses existing output path
 It requires Internet and Python, respects public GitHub API limits, warns when no
 checksum is published, and does not install on a device. iKoda v0.4 was verified
 to have an **ad-hoc signature**: it needs device signing, including its extensions.
-Use the xtool flow above in 1.5.1, or a compatible AltStore/SideStore workflow.
+Use the default saved XCross identity in 1.5.3, or explicitly select an alternative.
 Downloading alone does not make this IPA installable. Inspection covers the main
 executable, not all extensions.
 
@@ -227,7 +244,7 @@ Install an existing IPA using your saved XCross signing configuration:
 xcm install "C:\Apps\my-app.ipa"
 ```
 
-The CLI inspects the main executable first. An existing device signature is preserved and installed through `pymobiledevice3`. Unsigned packages use the saved XCross identity for provisioning, signing a copy and installation. Ad-hoc packages offer xtool to re-sign and install through WSL; `--backend xtool` explicitly selects that flow. No manual P12 is requested. Encrypted binaries and incompatible platforms are rejected. iOS performs final validation. Connect an unlocked, trusted iPhone over USB. Press **7** in the main menu for this workflow. `xcm install` without arguments keeps the guided setup.
+The CLI inspects the main executable first. An existing device signature is preserved and installed through `pymobiledevice3`. Unsigned/ad-hoc packages use the saved XCross identity for provisioning, signing a copy and installation. `--backend xtool` explicitly selects the WSL alternative. No manual P12 is requested. Encrypted binaries and incompatible platforms are rejected. iOS performs final validation. Connect an unlocked, trusted iPhone over USB. Press **7** in the main menu for this workflow. `xcm install` without arguments keeps the guided setup.
 
 Open `xcm ipa` or run:
 
@@ -240,7 +257,7 @@ xcm ipa install ".\my-app-signed.ipa" --udid "IPHONE-UDID"
 
 Build uses `xcross flutter build --ipa` with `debug`, `profile` or `release` (default). Project resolution prefers `--project`, then the current Flutter folder, then the saved project. Building requires the XCross iOS toolchain; the resulting IPA still needs a valid development or distribution signature for device installation.
 
-Signing existing IPAs requires [zsign for Windows](https://github.com/zhlynn/zsign#build) on PATH, a `.p12` containing the private key, and a compatible `.mobileprovision` profile. XCross 2.0.5 has no standalone IPA signing command. The P12 password is prompted securely and never saved or printed; zsign receives it as a process argument. Optional `--bundle-id` changes the identifier if the profile permits it. Output defaults to `name-signed.ipa` beside the original; existing output files are rejected. Apps with extensions needing separate profiles require more specific signing configuration through zsign.
+Signing existing IPAs requires [zsign for Windows](https://github.com/zhlynn/zsign#build) on PATH, a `.p12` containing the private key, and a compatible `.mobileprovision` profile. XCross 2.1.2 has no standalone IPA signing command. The P12 password is prompted securely and never saved or printed; zsign receives it as a process argument. Optional `--bundle-id` changes the identifier if the profile permits it. Output defaults to `name-signed.ipa` beside the original; existing output files are rejected. Apps with extensions needing separate profiles require more specific signing configuration through zsign.
 
 Install uses `pymobiledevice3 apps install --streaming` for an existing signed IPA. Connect and unlock your iPhone over USB and accept Trust. Omit `--udid` for a single connected device; multiple devices require a selection. iOS validates the signature and profile during installation. This does not make encrypted App Store packages installable.
 
@@ -267,7 +284,7 @@ xcm ipa logs
 
 Inspection is read-only and checks signature presence in the main executable, not trust, expiry or every embedded bundle. Installation errors are summarized; full details remain in `%APPDATA%\XCrossMenu\logs`. Menus now paginate and adapt labels to terminal width.
 
-Automatic signing uses the native XCross 2.0.5 engine pinned to commit `71e5089f5c2b1ce6e129fd81e7fbb8f8dad740ca` and its existing credentials. It needs installed XCross, Git and Dart 3.10+ (Flutter's bundled Dart is detected). The first run downloads the pinned sources and lockfile-verified dependencies. It does not build the app or require its project. The adapter loads the native library bundled with installed XCross on Windows. If the Apple session is unusable, renew it with `xcm auth`.
+Automatic signing uses the native XCross 2.1.2 engine pinned to commit `29af3b65f302e6cb1ca653cb78b1f9a096e091ca` and its existing credentials. It needs installed XCross, Git and Dart 3.10+ (Flutter's bundled Dart is detected). The first run downloads the pinned sources and lockfile-verified dependencies. It does not build the app or require its project. The adapter loads the native library bundled with installed XCross on Windows. If the Apple session is unusable, renew it with `xcm auth`.
 
 The original IPA stays intact. The signed copy is saved beside it as `app-xcross-signed.ipa` (with a unique suffix when that path exists). XCross may qualify the bundle identifier with the team's prefix according to its configuration. Verified by signing/installing a real unsigned IPA and then reinstalling its signed copy on a USB iPhone; app launch and app functionality were not tested.
 
