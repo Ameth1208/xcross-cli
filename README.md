@@ -201,7 +201,7 @@ Install an existing IPA using your saved XCross signing configuration:
 xcm install "C:\Apps\my-app.ipa"
 ```
 
-The CLI inspects the main executable first. An existing signature is preserved and the package installs directly through `pymobiledevice3`. An unsigned package is provisioned and signed with the saved XCross identity, then installed. No manual P12 is requested. Existing signatures are never automatically replaced; ad-hoc signatures, encrypted binaries and incompatible platforms are explained and stopped. iOS performs final validation. Connect an unlocked, trusted iPhone over USB. Press **7** for this workflow. `xcm install` without arguments keeps the guided setup.
+The CLI inspects the main executable first. An existing device signature is preserved and installed through `pymobiledevice3`. Unsigned packages use the saved XCross identity for provisioning, signing a copy and installation. Ad-hoc packages offer xtool to re-sign and install through WSL; `--backend xtool` explicitly selects that flow. No manual P12 is requested. Encrypted binaries and incompatible platforms are rejected. iOS performs final validation. Connect an unlocked, trusted iPhone over USB. Press **7** in the main menu for this workflow. `xcm install` without arguments keeps the guided setup.
 
 Open `xcm ipa` or run:
 

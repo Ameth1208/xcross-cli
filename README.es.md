@@ -186,7 +186,7 @@ Instala una IPA existente con la configuracion de firma guardada en XCross:
 xcm install "C:\Apps\mi-app.ipa"
 ```
 
-Primero se inspecciona el ejecutable principal. Si contiene firma, se conserva y se instala directamente con `pymobiledevice3`. Si no tiene firma, se utiliza la sesion y la identidad de XCross para aprovisionar la app, firmar una copia e instalarla. No se pide un P12 manual. Una firma existente nunca se reemplaza automaticamente; una firma ad-hoc, un binario cifrado o una plataforma incompatible se explican y se detienen. iOS realiza la validacion definitiva. Conecta y desbloquea el iPhone por USB y acepta Confiar. La opcion **7** abre este flujo. `xcm install` sin argumentos conserva la preparacion guiada.
+Primero se inspecciona el ejecutable principal. Una firma de dispositivo existente se conserva y se instala con `pymobiledevice3`. Si falta firma, se usa la identidad guardada de XCross para aprovisionar, firmar una copia e instalarla. Si la firma es ad hoc, se ofrece xtool para volver a firmar e instalar mediante WSL; `--backend xtool` selecciona ese flujo explicitamente. No se pide un P12 manual. Los binarios cifrados y las plataformas incompatibles se rechazan. iOS realiza la validacion definitiva. Conecta y desbloquea el iPhone por USB y acepta Confiar. La opcion **7** del menu principal abre este flujo. `xcm install` sin argumentos conserva la preparacion guiada.
 
 Desde la carpeta del proyecto Flutter, abre `xcm ipa` o ejecuta:
 

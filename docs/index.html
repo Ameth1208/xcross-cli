@@ -889,7 +889,7 @@
     <div class="liquid-glass rounded-3xl p-6 sm:p-10 shadow-term">
       <p class="text-xs font-mono tracking-[0.2em] text-dark-accent uppercase mb-3">New in 1.4 · Windows</p>
       <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">Already have an IPA? Install it.</h2>
-      <p class="text-dark-muted leading-relaxed mb-6 max-w-2xl">Connect your iPhone over USB, unlock it and accept Trust. Run one command with your IPA. The CLI checks the main executable first: an existing signature is preserved; an unsigned IPA is signed using your saved XCross identity before installation. No manual P12 is requested.</p>
+      <p class="text-dark-muted leading-relaxed mb-6 max-w-2xl">Connect your iPhone over USB, unlock it and accept Trust. The CLI checks your IPA first: device signatures are preserved; unsigned packages use your saved XCross identity. Ad-hoc packages offer xtool in WSL to provision, re-sign and install. No manual P12 is requested.</p>
       <div class="bg-black/50 rounded-xl p-4 border border-sky-400/20 flex flex-wrap items-center justify-between gap-4">
         <code class="font-mono text-sm text-sky-300 break-all">xcm install "C:\Apps\my-app.ipa"</code>
         <button type="button" onclick="copySpecificCmd('xcm install &quot;C:\\Apps\\my-app.ipa&quot;', this)" class="btn-aurora rounded-lg px-4 py-2 text-xs font-semibold" aria-label="Copy IPA installation command">Copy command</button>
@@ -904,7 +904,7 @@
         <div>
           <h3 class="text-white font-medium mb-2">Sign only when needed</h3>
           <code class="font-mono text-xs text-sky-300">xcm ipa inspect "app.ipa"</code>
-          <p class="text-xs text-dark-muted leading-relaxed mt-2">Unsigned packages are signed automatically with your XCross session. Manual P12 signing remains available through zsign. Existing signatures are never automatically replaced.</p>
+          <p class="text-xs text-dark-muted leading-relaxed mt-2">Unsigned packages use your XCross session. Select xtool to re-sign a compiled ad-hoc IPA using Apple ID. Manual P12 signing with zsign is optional. The original archive stays unchanged.</p>
         </div>
       </div>
       <p class="text-xs text-dark-muted mt-6">Working from an existing checkout? <code class="text-sky-300">xcm project update</code> pulls changes into the current repository with Git fast-forward checks. <code class="text-sky-300">xcm update-cli --local</code> installs your local CLI changes.</p>
@@ -1456,7 +1456,7 @@ xcm install ".\Koda.ipa" --backend xtool</code></pre>
           <h3 class="text-base font-medium text-white">Do I need to provide a certificate to install an existing IPA?</h3>
           <svg class="faq-chevron w-5 h-5 text-dark-muted transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
-        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">No manual certificate file is requested by <code class="text-sky-300">xcm install "app.ipa"</code>. A signed IPA installs directly; an unsigned IPA is signed using the saved XCross identity and a profile provisioned for your iPhone. Existing signatures are preserved. iOS still validates the result, and expired or incompatible signatures can be rejected. Use <code class="text-sky-300">xcm ipa inspect "app.ipa"</code> for a read-only check and <code class="text-sky-300">xcm ipa logs</code> for error details. <a href="https://support.apple.com/guide/security/app-code-signing-process-sec7c917bf14/web" class="text-sky-300 underline">Apple code signing requirements</a>.</div>
+        <div class="faq-answer mt-3 text-sm text-dark-muted leading-relaxed font-light">No manual certificate file is required. Device-signed IPAs install directly; unsigned IPAs use your saved XCross identity. An ad-hoc IPA such as Koda needs device signing: use <code class="text-sky-300">xcm install "Koda.ipa" --backend xtool</code> after xtool login and WSL USB setup. xtool re-signs a temporary copy; the original stays unchanged. iOS still validates the result. Use <code class="text-sky-300">xcm ipa inspect "app.ipa"</code> for a read-only check and <code class="text-sky-300">xcm ipa logs</code> for details. <a href="https://support.apple.com/guide/security/app-code-signing-process-sec7c917bf14/web" class="text-sky-300 underline">Apple code signing requirements</a>.</div>
       </div>
 
       <!-- FAQ 2 -->
