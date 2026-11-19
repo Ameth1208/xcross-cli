@@ -1,6 +1,10 @@
-# XCross CLI (xcm) v1.5.3
+# XCross CLI (xcm) v1.5.4
 
 ![XCross CLI logo](assets/logo.svg)
+
+Version 1.5.4 restores the complete main menu, help and `/` command palette.
+`init` remains an additional option. The original XCM text logo appears in compact
+terminals and help too; menu pagination reserves room for it.
 
 ## XCross is already set up: install directly
 
@@ -35,8 +39,8 @@ without making those changes.
 
 `xcm init flutter` opens Flutter preparation; `xcm init swift` prepares local Swift.
 `setup`, argument-free `install` and `download all` are compatibility entry points
-to the same assistant. Default help and the main menu focus on everyday commands;
-use Advanced tools or `xcm help --all` for detailed actions. Outside recognized
+to the same assistant. Default help, the main menu and the palette show the full
+command list; `xcm help --all` remains compatible. Outside recognized
 projects, `doctor` remembers a selected IPA workflow.
 
 Apple login now explains email + Enter, hidden password + Enter and 2FA + Enter

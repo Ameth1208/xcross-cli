@@ -1,6 +1,10 @@
-# XCross CLI (xcm) v1.5.3 para Windows
+# XCross CLI (xcm) v1.5.4 para Windows
 
 ![XCross CLI logo](assets/logo.svg)
+
+En 1.5.4 se restaura la lista completa en el menu, `xcm help` y la paleta `/`.
+`init` es una opcion adicional. El logo de texto XCM aparece tambien en terminales
+compactos y en la ayuda; las opciones se paginan cuando falta espacio.
 
 ## Ya tienes XCross preparado: instala directamente
 
@@ -37,8 +41,8 @@ para una IPA ya compilada.
 `xcm init ipa --check` solo comprueba. `xcm init flutter` abre la preparacion Flutter
 y `xcm init swift` prepara el compilador local. `setup`, `install` sin archivo y
 `download all` conservan compatibilidad como accesos al mismo asistente. Los pasos
-tecnicos siguen disponibles en **Herramientas avanzadas** y `xcm help --all`; la
-ayuda normal muestra los comandos de uso habitual. `doctor` recuerda el flujo IPA
+tecnicos siguen visibles en el menu principal y `xcm help`; `help --all` conserva
+compatibilidad con la misma lista completa. `doctor` recuerda el flujo IPA
 cuando no se ejecuta dentro de un proyecto reconocido.
 
 El acceso Apple muestra instrucciones numeradas: correo + Enter, contrasena + Enter

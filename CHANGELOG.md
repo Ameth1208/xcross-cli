@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.4 — Restore the full command list and XCM logo
+
+- Restore all previous main menu options, with `init` as an additional option.
+- Show the full command list by default in help and the command palette.
+- Restore the original XCM text logo in compact terminals and help as well as
+  the full banner; paginate the menu to reserve room for it.
+- Keep the native XCross IPA installation and contextual diagnostics from 1.5.3.
+
 ## 1.5.3 — Reuse the existing XCross session for compiled IPAs
 
 - Sign unsigned and ad-hoc IPA copies with the existing Windows XCross identity

@@ -458,7 +458,7 @@
     <!-- Shimmering Pill Badge -->
     <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium hero-badge text-dark-accentSoft mb-3 cursor-default">
       <span class="inline-block w-2 h-2 rounded-full bg-dark-accent animate-ping"></span>
-      <span>XCross CLI v1.5.3 • The Easiest Flutter iOS Companion</span>
+      <span>XCross CLI v1.5.4 • The Easiest Flutter iOS Companion</span>
     </div>
 
     <!-- Acknowledgement to xcross.sh & Creator -->
@@ -683,7 +683,7 @@
           <span class="w-3 h-3 rounded-full bg-red-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
           <span class="w-3 h-3 rounded-full bg-yellow-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
           <span class="w-3 h-3 rounded-full bg-green-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
-          <span class="ml-3 text-xs text-dark-muted font-mono">xcm — XCross CLI v1.5.3</span>
+          <span class="ml-3 text-xs text-dark-muted font-mono">xcm — XCross CLI v1.5.4</span>
         </div>
 
         <!-- Language toggle button -->
@@ -978,9 +978,9 @@
 
   <section id="swift-maintenance" class="my-28 scroll-mt-28 max-w-[960px] mx-auto" aria-labelledby="swift-maintenance-title">
     <div class="mb-8">
-      <p class="text-xs font-mono tracking-[0.2em] text-dark-accent uppercase mb-3">New in Windows v1.5.3</p>
+      <p class="text-xs font-mono tracking-[0.2em] text-dark-accent uppercase mb-3">New in Windows v1.5.4</p>
       <h2 id="swift-maintenance-title" class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">Prepare once. Run when ready.</h2>
-      <p class="text-dark-muted leading-relaxed max-w-2xl">Start with xcm init. It detects your workflow and guides missing preparation steps. Everyday commands stay up front; detailed tools remain under Advanced and help --all.</p>
+      <p class="text-dark-muted leading-relaxed max-w-2xl">Use any command directly, or start with xcm init for guided preparation. The complete command list stays visible in the menu, help and command palette.</p>
     </div>
     <div class="grid md:grid-cols-3 gap-4">
       <article class="liquid-glass rounded-2xl p-6">
@@ -1008,11 +1008,11 @@
 xcm version
 xcm doctor --environment
 xcm update --check</code></pre>
-      <p class="text-xs text-dark-muted mt-4 leading-relaxed">Expect xcm 1.5.3 on Windows. <code>update-cli</code> updates this helper; <code>update</code> updates the XCross engine. New here? Use the <a href="#install" class="text-sky-300 underline">one-line installer</a>. <code>download all</code> opens guided setup; obtain Xcode.xip manually from Apple.</p>
+      <p class="text-xs text-dark-muted mt-4 leading-relaxed">Expect xcm 1.5.4 on Windows. <code>update-cli</code> updates this helper; <code>update</code> updates the XCross engine. New here? Use the <a href="#install" class="text-sky-300 underline">one-line installer</a>. <code>download all</code> opens guided setup; obtain Xcode.xip manually from Apple.</p>
     </div>
     <aside class="mt-5 rounded-2xl border border-amber-300/20 bg-amber-300/5 p-6">
       <h3 class="text-white font-medium mb-2">Install Koda.ipa with your saved identity</h3>
-      <p class="text-sm text-dark-muted leading-relaxed mb-4">Already compiled does not mean signed for your iPhone. Version 1.5.3 reuses your existing Windows XCross session to provision, re-sign and install an ad-hoc IPA. No zsign or manual P12 is needed. Use Install IPA; xtool and manual signing remain advanced alternatives.</p>
+      <p class="text-sm text-dark-muted leading-relaxed mb-4">Already compiled does not mean signed for your iPhone. Version 1.5.4 reuses your existing Windows XCross session to provision, re-sign and install an ad-hoc IPA. No zsign or manual P12 is needed. Use Install IPA; xtool and manual signing remain advanced alternatives.</p>
       <pre class="overflow-x-auto text-xs sm:text-sm font-mono text-sky-300 pb-2"><code>xcm download ipa --repo Ivorisnoob/iKoda --asset Koda.ipa --output .\Koda.ipa</code></pre>
       <pre class="overflow-x-auto text-xs sm:text-sm font-mono text-sky-300 pb-2 mt-4"><code>xcm init ipa
 xcm install ".\Koda.ipa"</code></pre>
@@ -1706,28 +1706,47 @@ document.getElementById('commandCount').textContent = document.querySelectorAll(
 
 // --- TUI Menu Data (English & Spanish) ---
 const EN_MENU = [
-  ['N', 'Prepare environment', 'xcm init', 'One preparation assistant: select IPA, Flutter or local Swift. IPA setup reuses XCross, its cached identity and the working Windows USB connection.'],
-  ['1', 'Run project', 'xcm run', 'Run the selected Flutter project, local Swift package or adapted xtool iOS project.'],
-  ['7', 'Install IPA', 'xcm install app.ipa', 'Inspect the compiled IPA. Unsigned and ad-hoc packages use the saved XCross identity to sign a copy; the original archive stays unchanged.'],
-  ['2', 'Check environment', 'xcm doctor', 'Check the selected workflow. xcm init ipa --check checks IPA readiness without installing or logging in.'],
-  ['P', 'Projects', 'xcm project', 'Select, inspect or update your project.'],
-  ['U', 'Update xcm', 'xcm update-cli', 'Update this helper. Engine updates remain available under Advanced tools.'],
-  ['A', 'Advanced tools', 'SDK / tunnels / signing', 'Detailed tools remain available: use xcm help --all. Older commands still work as compatibility aliases.'],
-  ['L', 'Language', 'en / es', 'Switch between English and Spanish.'],
-  ['?', 'Help', 'xcm help', 'Everyday commands: init, install, run, build, doctor, project and update-cli.']
+  ["1","Run project on iPhone","build, sign, install, hot reload","build, sign, install, hot reload. Menu preview; run xcm in your terminal."],
+  ["2","Environment diagnostics","Flutter / Swift / IPA","Flutter / Swift / IPA. Menu preview; run xcm in your terminal."],
+  ["3","Detect iPhone","USB and iOS version","USB and iOS version. Menu preview; run xcm in your terminal."],
+  ["4","Developer mode","status and activation","status and activation. Menu preview; run xcm in your terminal."],
+  ["5","Open USB tunnel","opens PowerShell with permissions","opens PowerShell with permissions. Menu preview; run xcm in your terminal."],
+  ["6","Open Wi-Fi tunnel","wireless link","wireless link. Menu preview; run xcm in your terminal."],
+  ["7","Install existing IPA","check, sign only if unsigned","check, sign only if unsigned. Menu preview; run xcm in your terminal."],
+  ["D","Downloads and SDK","Swift, xcross, Xcode, precache","Swift, xcross, Xcode, precache. Menu preview; run xcm in your terminal."],
+  ["F","Signing and App ID","Apple Development authorization","Apple Development authorization. Menu preview; run xcm in your terminal."],
+  ["P","Flutter / Swift projects","change project, VS Code, run","change project, VS Code, run. Menu preview; run xcm in your terminal."],
+  ["A","Build / sign / install IPA","new or existing IPA","new or existing IPA. Menu preview; run xcm in your terminal."],
+  ["G","Update current project","Git pull --ff-only in this folder","Git pull --ff-only in this folder. Menu preview; run xcm in your terminal."],
+  ["I","Install xcm command","available from any folder","available from any folder. Menu preview; run xcm in your terminal."],
+  ["U","Update xcm","download latest version from GitHub","download latest version from GitHub. Menu preview; run xcm in your terminal."],
+  ["X","Uninstall xcm","remove global command","remove global command. Menu preview; run xcm in your terminal."],
+  ["L","Language","switch English/Spanish","switch English/Spanish. Menu preview; run xcm in your terminal."],
+  ["?","Commands and help","command list and examples","command list and examples. Menu preview; run xcm in your terminal."],
+  ["N","Prepare environment","xcm init","xcm init. Menu preview; run xcm in your terminal."]
 ];
 
 const ES_MENU = [
-  ['N', 'Preparar entorno', 'xcm init', 'Un asistente: IPA, Flutter o Swift local. Para IPA reutiliza XCross, su sesion guardada y la conexion USB de Windows.'],
-  ['1', 'Ejecutar proyecto', 'xcm run', 'Ejecuta Flutter, un paquete Swift local o un proyecto iOS adaptado a xtool.'],
-  ['7', 'Instalar IPA', 'xcm install app.ipa', 'Revisa la IPA compilada. Sin firma o con firma ad hoc, usa la sesion XCross para firmar una copia sin cambiar el archivo original.'],
-  ['2', 'Comprobar entorno', 'xcm doctor', 'Revisa el flujo elegido. xcm init ipa --check comprueba sin instalar ni iniciar sesion.'],
-  ['P', 'Proyectos', 'xcm project', 'Selecciona, revisa o actualiza el proyecto.'],
-  ['U', 'Actualizar xcm', 'xcm update-cli', 'Actualiza este CLI. La actualizacion del motor queda en herramientas avanzadas.'],
-  ['A', 'Herramientas avanzadas', 'SDK / tuneles / firma', 'Usa xcm help --all para ver los comandos tecnicos. Los comandos anteriores siguen funcionando como alias.'],
-  ['L', 'Idioma', 'en / es', 'Cambia entre ingles y espanol.'],
-  ['?', 'Ayuda', 'xcm help', 'Comandos habituales: init, install, run, build, doctor, project y update-cli.']
+  ["1","Ejecutar proyecto en iPhone","compilar, firmar, instalar, hot reload","compilar, firmar, instalar, hot reload. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["2","Diagnostico del entorno","Flutter / Swift / IPA","Flutter / Swift / IPA. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["3","Detectar iPhone","USB y version de iOS","USB y version de iOS. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["4","Modo desarrollador","estado y activacion","estado y activacion. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["5","Abrir tunel USB","abre PowerShell con permisos","abre PowerShell con permisos. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["6","Abrir tunel Wi-Fi","enlace inalambrico","enlace inalambrico. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["7","Instalar IPA existente","revisa y firma solo si falta","revisa y firma solo si falta. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["D","Descargas y SDK","Swift, xcross, Xcode, precache","Swift, xcross, Xcode, precache. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["F","Firma y App ID","autorizacion Apple Development","autorizacion Apple Development. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["P","Proyectos Flutter / Swift","cambiar proyecto, VS Code, ejecutar","cambiar proyecto, VS Code, ejecutar. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["A","Compilar / firmar / instalar IPA","IPA nueva o existente","IPA nueva o existente. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["G","Actualizar proyecto actual","Git pull --ff-only en esta carpeta","Git pull --ff-only en esta carpeta. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["I","Instalar comando xcm","disponible desde cualquier carpeta","disponible desde cualquier carpeta. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["U","Actualizar xcm","descarga la ultima version desde GitHub","descarga la ultima version desde GitHub. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["X","Desinstalar xcm","elimina el comando global","elimina el comando global. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["L","Idioma","cambiar ingles/espanol","cambiar ingles/espanol. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["?","Comandos y ayuda","lista de comandos y ejemplos","lista de comandos y ejemplos. Demostracion del menu; ejecuta xcm en tu terminal."],
+  ["N","Preparar entorno","xcm init","xcm init. Demostracion del menu; ejecuta xcm en tu terminal."]
 ];
+
 let currentLang = 'en';
 let selectedIndex = 0;
 

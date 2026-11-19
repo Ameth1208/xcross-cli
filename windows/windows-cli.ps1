@@ -20,7 +20,7 @@ try {
 } catch { }
 
 $ErrorActionPreference = 'Stop'
-$script:Version = '1.5.3'
+$script:Version = '1.5.4'
 $script:SettingsDir = Join-Path $env:APPDATA 'XCrossMenu'
 $script:SettingsFile = Join-Path $script:SettingsDir 'settings.json'
 $script:Settings = @{ XcodeXip = ''; FlutterProject = ''; BundleIdMode = 'default'; Language = 'en'; SetupWorkflow = '' }
@@ -1341,24 +1341,15 @@ function Initialize-Xcm {
 }
 
 function Get-MenuItems {
-    return @(
-        @{Key='N'; Label=(Msg 'Prepare environment' 'Preparar entorno'); Description='xcm init'; Command='init'},
-        @{Key='1'; Label=(Msg 'Run project' 'Ejecutar proyecto'); Description='xcm run'; Command='run'},
-        @{Key='7'; Label=(Msg 'Install IPA' 'Instalar IPA'); Description='xcm install app.ipa'; Command='install-ipa'},
-        @{Key='2'; Label=(Msg 'Check environment' 'Comprobar entorno'); Description='xcm doctor'; Command='doctor'},
-        @{Key='P'; Label=(Msg 'Projects' 'Proyectos'); Description='xcm project'; Command='projects'},
-        @{Key='U'; Label=(Msg 'Update xcm' 'Actualizar xcm'); Description='xcm update-cli'; Command='update-cli'},
-        @{Key='A'; Label=(Msg 'Advanced tools' 'Herramientas avanzadas'); Description='SDK / tunnels / signing'; Command='advanced'},
-        @{Key='L'; Label=(Msg 'Language' 'Idioma'); Description='en / es'; Command='language'},
-        @{Key='?'; Label=(Msg 'Help' 'Ayuda'); Description='xcm help'; Command='help'}
-    )
+    $prepare = @{Key='N'; Label=(Msg 'Prepare environment' 'Preparar entorno'); Description='xcm init'; Command='init'}
+    return @(Get-AdvancedMenuItems) + @($prepare)
 }
 
 function Get-AdvancedMenuItems {
     if ($script:Language -eq 'es') {
         return @(
             @{ Key='1'; Label='Ejecutar proyecto en iPhone'; Description='compilar, firmar, instalar, hot reload'; Command='run' },
-            @{ Key='2'; Label='Diagnostico de Flutter'; Description='xcross flutter doctor'; Command='doctor' },
+            @{ Key='2'; Label='Diagnostico del entorno'; Description='Flutter / Swift / IPA'; Command='doctor' },
             @{ Key='3'; Label='Detectar iPhone'; Description='USB y version de iOS'; Command='device' },
             @{ Key='4'; Label='Modo desarrollador'; Description='estado y activacion'; Command='devmode' },
             @{ Key='5'; Label='Abrir tunel USB'; Description='abre PowerShell con permisos'; Command='tunnel-usb' },
@@ -1378,7 +1369,7 @@ function Get-AdvancedMenuItems {
     }
     return @(
         @{ Key='1'; Label='Run project on iPhone'; Description='build, sign, install, hot reload'; Command='run' },
-        @{ Key='2'; Label='Flutter diagnostics'; Description='xcross flutter doctor'; Command='doctor' },
+        @{ Key='2'; Label='Environment diagnostics'; Description='Flutter / Swift / IPA'; Command='doctor' },
         @{ Key='3'; Label='Detect iPhone'; Description='USB and iOS version'; Command='device' },
         @{ Key='4'; Label='Developer mode'; Description='status and activation'; Command='devmode' },
         @{ Key='5'; Label='Open USB tunnel'; Description='opens PowerShell with permissions'; Command='tunnel-usb' },
@@ -1433,8 +1424,7 @@ function Show-Menu {
 # ----------------------------------------------
 # XCM Console UI and standalone command router.
 # ----------------------------------------------
-function Show-Banner {
-    param([string]$Title, [string]$Subtitle)
+function Show-XcmLogo {
     $logo = @'
 █   █  ███  █   █
  █ █ ░█ ░░░ ██ ██░
@@ -1444,10 +1434,15 @@ function Show-Banner {
  ░ ░ ░  ░░░  ░░  ░░
   ░   ░  ░░░  ░   ░
 '@
-    Write-Host ''
     foreach ($line in ($logo -split "`r?`n")) {
         if ($line.Trim() -ne '') { Write-Host ("    " + $line) -ForegroundColor Cyan }
     }
+}
+
+function Show-Banner {
+    param([string]$Title, [string]$Subtitle)
+    Write-Host ''
+    Show-XcmLogo
     Write-Host ''
     Write-Host '    xcm' -NoNewline -ForegroundColor Cyan
     Write-Host '  /  XCross Console' -NoNewline -ForegroundColor White
@@ -1487,12 +1482,14 @@ function Show-KeyMenu {
             if ([Console]::WindowHeight -gt 0) { $height = [Console]::WindowHeight }
         } catch {}
         $compact = $height -lt 35 -or $width -lt 80
-        $pageSize = if ($compact) { [Math]::Max(3, $height - 10) } else { [Math]::Max(3, $height - 27) }
+        $pageSize = if ($compact) { [Math]::Max(1, $height - 18) } else { [Math]::Max(3, $height - 27) }
         $pageStart = [int]([Math]::Floor($index / $pageSize) * $pageSize)
         $pageEnd = [Math]::Min($Items.Count, $pageStart + $pageSize)
         $rowWidth = [Math]::Max(12, $width - 6)
         Clear-Host
         if ($compact) {
+            Show-XcmLogo
+            Write-Host ''
             Write-Host (Format-MenuText ("xcm / $Title") ([Math]::Max(12,$width - 2))) -ForegroundColor Cyan
             Write-Host (Format-MenuText $Subtitle ([Math]::Max(12,$width - 2))) -ForegroundColor DarkGray
             Write-Host ''
@@ -1585,7 +1582,6 @@ function Show-CommandPalette {
     $buffer=''
     $selected=0
     $commands=Get-PaletteEntries
-    $everyday = @('init','install','run','build','doctor','project show','project set','project update','update-cli','help','help --all')
     while ($true) {
         $q=$buffer.Trim()
         if ($q) {
@@ -1593,14 +1589,24 @@ function Show-CommandPalette {
                 $_.Name -match [regex]::Escape($q) -or $_.Detail -match [regex]::Escape($q)
             })
         }
-        else { $matches=@($commands | Where-Object { $_.Name -in $everyday }) }
+        else { $matches=@($commands) }
         if ($selected -ge $matches.Count) { $selected=0 }
         Clear-Host
-        if ($script:Language -eq 'es') { Show-Banner -Title 'PALETA DE COMANDOS' -Subtitle 'Escribe para filtrar; sin Enter para seleccionar' } else { Show-Banner -Title 'COMMAND PALETTE' -Subtitle 'Type to filter commands; no Enter to select' }
+        $height=40; $width=80
+        try {
+            if ([Console]::WindowHeight -gt 0) { $height=[Console]::WindowHeight }
+            if ([Console]::WindowWidth -gt 0) { $width=[Console]::WindowWidth }
+        } catch {}
+        $compact=$height -lt 32 -or $width -lt 80
+        if ($compact) { Show-XcmLogo; Write-Host (Msg 'COMMAND PALETTE' 'PALETA DE COMANDOS') -ForegroundColor Cyan }
+        elseif ($script:Language -eq 'es') { Show-Banner -Title 'PALETA DE COMANDOS' -Subtitle 'Escribe para filtrar; sin Enter para seleccionar' }
+        else { Show-Banner -Title 'COMMAND PALETTE' -Subtitle 'Type to filter commands; no Enter to select' }
         Write-Host ('    / ' + $buffer + '_') -ForegroundColor Cyan
         Write-Host ''
-        $limit=[Math]::Min(11,$matches.Count)
-        for($i=0;$i -lt $limit;$i++){
+        $reserved=if($compact){15}else{24}
+        $limit=[Math]::Min([Math]::Min(11,[Math]::Max(1,$height-$reserved)),$matches.Count)
+        $first=[Math]::Max(0,$selected-$limit+1)
+        for($i=$first;$i -lt [Math]::Min($matches.Count,$first+$limit);$i++){
             $cmd=$matches[$i]
             $line=('  /' + ([string]$cmd.Name).PadRight(25) + ' ' + [string]$cmd.Detail)
             if($i -eq $selected){ Write-Host ('  > '+$line) -BackgroundColor DarkCyan -ForegroundColor White }
@@ -1784,21 +1790,9 @@ function Update-XcmGlobal {
 
 function Show-XcmHelp {
     param([switch]$All)
-    if (-not $All) {
-        Write-Title (Msg 'Everyday commands' 'Comandos habituales')
-        Write-Host '  xcm init [ipa|flutter|swift] [--check]'
-        Write-Host (Msg '      Prepare tools, login and USB for the selected workflow.' '      Preparar herramientas, sesion y USB segun el flujo elegido.')
-        Write-Host '  xcm install "app.ipa"'
-        Write-Host '  xcm run | build'
-        Write-Host '  xcm doctor'
-        Write-Host '  xcm project show|set|update [PATH]'
-        Write-Host '  xcm update-cli'
-        Write-Host '  xcm language en|es'
-        Write-Host '  xcm version'
-        Write-Host (Msg '  Advanced commands and compatibility aliases: xcm help --all' '  Comandos avanzados y alias compatibles: xcm help --all')
-        return
-    }
+    Show-Banner -Title (Msg 'All commands' 'Todos los comandos') -Subtitle 'Flutter / Swift / IPA'
     Write-Host '  xcm init [ipa|flutter|swift] [--check]'
+    Write-Host '  xcm version'
     Write-Host '  xcm xtool install-tool | auth [--refresh] | connect-usb | devices | doctor'
     Write-Host '  xcm install PATH.ipa --backend xtool [--udid UDID]'
     Write-Host '  xcm xtool build|run --project PATH [--configuration debug|release]'
