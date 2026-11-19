@@ -20,7 +20,7 @@ try {
 } catch { }
 
 $ErrorActionPreference = 'Stop'
-$script:Version = '1.4.0'
+$script:Version = '1.5.0'
 $script:SettingsDir = Join-Path $env:APPDATA 'XCrossMenu'
 $script:SettingsFile = Join-Path $script:SettingsDir 'settings.json'
 $script:Settings = @{ XcodeXip = ''; FlutterProject = ''; BundleIdMode = 'default'; Language = 'en' }
@@ -427,8 +427,17 @@ function Connect-AppleId {
     if (Confirm-Yes "Conectar $email ?") { [void](Invoke-Tool 'xcross' @('auth', '--apple-id', $email)) }
 }
 
-function Select-FlutterProject {
-    param([switch]$ForcePrompt, [string]$ExplicitPath = '')
+function Get-ProjectKind([string]$Path) {
+    if (-not $Path -or -not (Test-Path -LiteralPath $Path -PathType Container)) { return 'unknown' }
+    if (Test-Path -LiteralPath (Join-Path $Path 'pubspec.yaml') -PathType Leaf) { return 'flutter' }
+    # Prefer an app project over a sibling library Package.swift.
+    if (@(Get-ChildItem -LiteralPath $Path -Directory | Where-Object { $_.Extension -in @('.xcodeproj','.xcworkspace') }).Count) { return 'xcode' }
+    if (Test-Path -LiteralPath (Join-Path $Path 'Package.swift') -PathType Leaf) { return 'swift' }
+    return 'unknown'
+}
+
+function Select-Project {
+    param([switch]$ForcePrompt, [string]$ExplicitPath = '', [switch]$Optional)
     $default = ''
     if ($ExplicitPath) {
         $default = $ExplicitPath
@@ -436,25 +445,188 @@ function Select-FlutterProject {
     elseif ($script:ProjectOverride) {
         $default = $script:ProjectOverride
     }
-    elseif (Test-Path -LiteralPath (Join-Path (Get-Location).Path 'pubspec.yaml') -PathType Leaf) {
+    elseif ((Get-ProjectKind (Get-Location).Path) -ne 'unknown') {
         $default = (Get-Location).Path
     }
-    elseif ($script:Settings.FlutterProject -and (Test-Path -LiteralPath (Join-Path $script:Settings.FlutterProject 'pubspec.yaml') -PathType Leaf)) {
+    elseif ($script:Settings.FlutterProject -and (Get-ProjectKind $script:Settings.FlutterProject) -ne 'unknown') {
         $default = $script:Settings.FlutterProject
     }
     if ($ForcePrompt) {
         if ($default) { Write-Host "  Proyecto actual: $default" -ForegroundColor DarkCyan }
-        $entered = Read-Host '  Ruta del proyecto Flutter (vacío = detectado)'
+        $entered = Read-Host '  Project path / Ruta (Flutter, Package.swift, Xcode)'
         if ($entered.Trim()) { $default = $entered.Trim().Trim('"').Trim("'") }
     }
-    if (-not $default -or -not (Test-Path -LiteralPath (Join-Path $default 'pubspec.yaml') -PathType Leaf)) {
-        Write-Fail (Msg 'pubspec.yaml not found. Use: xcm project set "C:\path\project"' 'No se encontro pubspec.yaml. Usa: xcm project set "C:\ruta\proyecto"')
+    if ((Get-ProjectKind $default) -eq 'unknown') {
+        if ($Optional) {
+            Write-Warn (Msg 'No project selected. Setup will check host tools only.' 'Sin proyecto seleccionado. La preparacion comprobara solo el host.')
+            return $null
+        }
+        Write-Fail (Msg 'No project found: expected pubspec.yaml, Package.swift or an Xcode project. Use xcm project set PATH.' 'No se encontro pubspec.yaml, Package.swift ni un proyecto Xcode. Usa xcm project set RUTA.')
         return $null
     }
     $resolved = (Resolve-Path -LiteralPath $default).Path
     $script:Settings.FlutterProject = $resolved
     Save-Settings
     return $resolved
+}
+
+function Select-FlutterProject {
+    param([switch]$ForcePrompt, [string]$ExplicitPath = '')
+    $project = Select-Project -ForcePrompt:$ForcePrompt -ExplicitPath $ExplicitPath
+    if (-not $project) { return $null }
+    if ((Get-ProjectKind $project) -ne 'flutter') {
+        Write-Fail (Msg 'This command requires a Flutter project.' 'Este comando requiere un proyecto Flutter.')
+        return $null
+    }
+    return $project
+}
+
+function Show-XcodeLimitation {
+    Write-Fail (Msg 'Native Xcode apps are not supported by this Windows backend. Installing Swift or the Darwin SDK does not add xcodebuild support.' 'Este backend de Windows no compila apps Xcode nativas. Instalar Swift o el SDK Darwin no agrega soporte para xcodebuild.')
+    Write-Host (Msg 'Build on macOS with Xcode, or download a published IPA. Installation requires a valid signature for your device, including its extensions.' 'Compila en macOS con Xcode, o descarga una IPA publicada. La instalacion requiere firma valida para tu dispositivo, incluidas las extensiones.')
+    Write-Host 'iKoda: xcm download ipa --repo Ivorisnoob/iKoda --asset Koda.ipa --output .\Koda.ipa'
+}
+
+function Invoke-ProjectCommand {
+    param([ValidateSet('run','build')][string]$Operation, [string[]]$Arguments = @())
+    $path = ''; $product = ''; $swiftArgs = @(); $appArgs = @(); $flutterArgs = @(); $hasDeviceOption = $false; $hasSwiftOption = $false
+    for ($i = 0; $i -lt $Arguments.Count; $i++) {
+        $arg = $Arguments[$i]
+        if ($arg -in @('--args','--')) {
+            if ($Operation -ne 'run') { Write-Fail '--args is only supported by run.'; return $false }
+            $hasSwiftOption = $true
+            if ($i + 1 -lt $Arguments.Count) { $appArgs = $Arguments[($i+1)..($Arguments.Count-1)] }
+            break
+        }
+        if ($arg -in @('--project','--product','--configuration')) {
+            if ($i + 1 -ge $Arguments.Count -or $Arguments[$i+1].StartsWith('-')) { Write-Fail "Falta valor para $arg"; return $false }
+            $i++; $value = $Arguments[$i]
+            if ($arg -eq '--project') { $path = $value }
+            elseif ($arg -eq '--configuration') {
+                if ($value -notin @('debug','release')) { Write-Fail 'Usa --configuration debug|release'; return $false }
+                $hasSwiftOption = $true; $swiftArgs += @('--configuration',$value)
+            }
+            else {
+                $hasSwiftOption = $true
+                # Executable must follow all SwiftPM options, before application arguments.
+                $product = $value
+            }
+        }
+        else { $flutterArgs += $arg; $hasDeviceOption = $true }
+    }
+    $project = Select-Project -ExplicitPath $path
+    if (-not $project) { return $false }
+    $kind = Get-ProjectKind $project
+    if ($kind -eq 'xcode') { Show-XcodeLimitation; return $false }
+    if ($kind -eq 'flutter') {
+        if ($hasSwiftOption) { Write-Fail 'Swift options require Package.swift.'; return $false }
+        $previous = $script:ProjectOverride
+        try {
+            $script:ProjectOverride = $project
+            if ($Operation -eq 'build') { return (Invoke-IpaCommand -Arguments (@('build') + $flutterArgs)) }
+            # Keep the established Flutter argument parser.
+            return (Invoke-XcmCommand -Verb 'flutter-run' -Arguments $flutterArgs)
+        }
+        finally { $script:ProjectOverride = $previous }
+    }
+    if ($hasDeviceOption) { Write-Fail 'SwiftPM runs on this PC. Use --product, --configuration and --args for app arguments; USB/Wi-Fi and Dart options are Flutter-only.'; return $false }
+    $toolArgs = @($Operation,'--package-path',$project)
+    if ($product -and $Operation -eq 'build') { $toolArgs += @('--product',$product) }
+    $toolArgs += $swiftArgs
+    if ($product -and $Operation -eq 'run') { $toolArgs += $product }
+    if ($appArgs.Count -and -not $product) { Write-Fail 'Use --product NAME before --args application arguments.'; return $false }
+    $toolArgs += $appArgs
+    Push-Location -LiteralPath $project
+    try { return (Invoke-Tool 'swift' $toolArgs) }
+    finally { Pop-Location }
+}
+
+function Test-ProjectEnvironment {
+    param([string]$Path = '')
+    $project = Select-Project -ExplicitPath $Path
+    if (-not $project) { return $false }
+    $kind = Get-ProjectKind $project
+    Write-Title "Doctor: $kind"
+    Write-Host $project
+    if ($kind -eq 'xcode') { Show-XcodeLimitation; return $false }
+    if ($kind -eq 'swift') {
+        if (-not (Invoke-Tool 'swift' @('--version'))) { return $false }
+        Write-Warn (Msg 'Checking the package manifest only; this does not prove its dependencies build on Windows.' 'Se comprueba el manifiesto; esto no garantiza que sus dependencias compilen en Windows.')
+        return (Invoke-Tool 'swift' @('package','--package-path',$project,'dump-package'))
+    }
+    Push-Location -LiteralPath $project
+    try { return (Invoke-Tool 'xcross' @('flutter','doctor')) }
+    finally { Pop-Location }
+}
+
+function Test-XcmEnvironment {
+    Show-Environment
+    $ok = Check-Swift
+    foreach ($tool in @('git','xcross')) {
+        if (-not (Test-Tool $tool)) { Write-Fail "$tool missing / no encontrado"; $ok = $false }
+    }
+    try {
+        $python = Get-IpaPython
+        if (-not (Invoke-Tool $python.Tool (@($python.Prefix) + @('--version')))) { $ok = $false }
+    }
+    catch { Write-Fail $_.Exception.Message; $ok = $false }
+    if (Test-Tool 'xcross') {
+        $configPaths = @((Join-Path $env:APPDATA 'xcross\config.yaml'), (Join-Path $env:APPDATA 'xcross\config.yml'))
+        $hasConfig = $env:XCROSS_CONFIG -or @($configPaths | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }).Count
+        if ($hasConfig) {
+            if (-not (Invoke-Tool 'xcross' @('config','validate'))) { $ok = $false }
+        }
+        else { Write-Ok (Msg 'No optional XCross config; using PATH discovery.' 'Sin configuracion opcional XCross; se usa PATH.') }
+    }
+    Write-Warn (Msg 'Host checks only. Run doctor in a Flutter project to check the Darwin SDK, signing and device requirements.' 'Solo se revisa el host. Ejecuta doctor en un proyecto Flutter para comprobar SDK Darwin, firma y requisitos del dispositivo.')
+    return $ok
+}
+
+function Get-ReleaseIpa {
+    param([string[]]$Arguments)
+    $stage = $null
+    try {
+        $options = @{}
+        for ($i=0; $i -lt $Arguments.Count; $i++) {
+            $key = $Arguments[$i]
+            if ($key -notin @('--repo','--asset','--output') -or $options.ContainsKey($key) -or $i+1 -ge $Arguments.Count) { throw 'Uso: xcm download ipa --repo OWNER/REPO --asset NAME.ipa --output PATH.ipa' }
+            $i++; $options[$key] = $Arguments[$i]
+        }
+        $repo = $options['--repo']; $assetName = $options['--asset']; $output = $options['--output']
+        if ($repo -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$' -or -not $assetName -or -not $output) { throw 'Requiere --repo OWNER/REPO, --asset NAME.ipa y --output PATH.ipa.' }
+        if ([IO.Path]::GetExtension($assetName) -ine '.ipa' -or [IO.Path]::GetExtension($output) -ine '.ipa') { throw 'Usa archivos .ipa.' }
+        $destination = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($output)
+        if (Test-Path -LiteralPath $destination) { throw "Ya existe: $destination" }
+        $headers = @{ 'User-Agent'='XCrossCLI'; Accept='application/vnd.github+json' }
+        $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/latest" -Headers $headers
+        $assets = @($release.assets | Where-Object { $_.name -ceq $assetName })
+        if ($assets.Count -ne 1) { throw "Asset no encontrado: $assetName. Disponibles: $($release.assets.name -join ', ')" }
+        $asset = $assets[0]
+        if ($asset.browser_download_url -notlike 'https://github.com/*') { throw 'URL de descarga inesperada.' }
+        $stage = $destination + '.' + [Guid]::NewGuid().ToString('N') + '.partial'
+        Write-Host "$repo / $($release.tag_name) / $assetName"
+        Invoke-WebRequest -UseBasicParsing -Uri $asset.browser_download_url -Headers $headers -OutFile $stage
+        if ((Get-Item -LiteralPath $stage).Length -ne $asset.size) { throw 'Descarga incompleta (size).' }
+        $hash = (Get-FileHash -LiteralPath $stage -Algorithm SHA256).Hash
+        if ($asset.digest -match '^sha256:([a-fA-F0-9]{64})$') {
+            if ($hash -ine $Matches[1]) { throw 'SHA256 no coincide.' }
+        }
+        else { Write-Warn 'GitHub no publica un SHA256 para este asset; solo se verifico el tamano.' }
+        $report = Get-IpaInspection $stage
+        if ($report.issues -contains 'invalid_package') { throw 'IPA invalida.' }
+        # File.Move refuses an existing destination, including one created mid-download.
+        [IO.File]::Move($stage, $destination)
+        Write-Ok "Descargado: $destination"
+        Write-Host "SHA256: $hash"
+        Show-IpaInspection $report
+        if ($report.signature -eq 'adhoc') {
+            Write-Warn (Msg 'Re-sign for your device before installing. The automatic install flow preserves existing signatures, including ad-hoc signatures. Apps with extensions need matching profiles for each bundle.' 'Firma de nuevo para tu dispositivo antes de instalar. El instalador automatico conserva las firmas existentes, incluidas las ad hoc. Las extensiones necesitan sus perfiles correspondientes.')
+        }
+        else { Write-Host "xcm install `"$destination`"" }
+        return $true
+    }
+    catch { Write-Fail $_.Exception.Message; return $false }
+    finally { if ($stage -and (Test-Path -LiteralPath $stage)) { Remove-Item -LiteralPath $stage -Force } }
 }
 
 function Resolve-IpaFile([string]$Path) {
@@ -754,22 +926,15 @@ function Show-IpaMenu {
 }
 
 function Flutter-Doctor {
-    Write-Title 'Flutter doctor'
-    if (-not (Test-Tool 'xcross')) { Write-Fail 'Instala xcross primero.'; return }
-    $project = Select-FlutterProject
-    if (-not $project) { return }
-    Write-Host "  Proyecto: $project" -ForegroundColor DarkGray
-    Push-Location -LiteralPath $project
-    try { [void](Invoke-Tool 'xcross' @('flutter', 'doctor')) }
-    finally { Pop-Location }
+    [void](Test-ProjectEnvironment)
 }
 
 function Flutter-Run {
     param([ValidateSet('usb','wifi')][string]$Transport = 'usb', [string]$Target = '', [switch]$VerboseRun)
-    Write-Title "Ejecutar Flutter ($Transport)"
-    if (-not (Test-Tool 'xcross')) { Write-Fail 'Instala xcross primero.'; return }
+    Write-Title "Ejecutar proyecto ($Transport)"
+    if (-not (Test-Tool 'xcross')) { Write-Fail 'Instala xcross primero.'; return $false }
     $project = Select-FlutterProject
-    if (-not $project) { return }
+    if (-not $project) { return $false }
     Write-Host "  Proyecto: $project" -ForegroundColor DarkGray
     Write-Host (Msg '  Tip: if there is no RSD tunnel, open another terminal with xcm tunnel usb.' '  Consejo: si no hay tunel RSD, abre otro terminal con xcm tunnel usb.') -ForegroundColor DarkGray
     Write-Host '  Hot Reload: r   |   Hot Restart: R   |   salir: q' -ForegroundColor Cyan
@@ -778,7 +943,7 @@ function Flutter-Run {
         $targetFile = Join-Path $project $Target
         if (-not (Test-Path -LiteralPath $targetFile -PathType Leaf)) {
             Write-Fail "No existe el entrypoint: $targetFile"
-            return
+            return $false
         }
         $toolArgs += @('-t', $Target)
     }
@@ -793,7 +958,7 @@ function Flutter-Run {
         Write-Host '  App ID: usar la seleccion / configuracion predeterminada de xcross.' -ForegroundColor DarkGray
     }
     Push-Location -LiteralPath $project
-    try { [void](Invoke-Tool 'xcross' $toolArgs) }
+    try { return (Invoke-Tool 'xcross' $toolArgs) }
     finally {
         Pop-Location
         if ($null -eq $previousBundleMode) { Remove-Item -Path Env:XCROSS_BUNDLE_ID -ErrorAction SilentlyContinue }
@@ -963,11 +1128,22 @@ function Signing-Menu {
 }
 
 function Upgrade-Xcross {
-    if (-not (Test-Tool 'xcross')) { Write-Fail 'Instala xcross primero.'; return }
-    [void](Invoke-Tool 'xcross' @('update', '--check'))
-    if (Confirm-Yes 'Actualizar xcross a la ultima version publicada?') {
-        [void](Invoke-Tool 'xcross' @('update'))
+    param([string[]]$Arguments = @())
+    if (-not (Test-Tool 'xcross')) { Write-Fail 'Usa xcm xcross para instalar XCross.'; return $false }
+    for ($i=0; $i -lt $Arguments.Count; $i++) {
+        if ($Arguments[$i] -in @('--check','--force')) { continue }
+        if ($Arguments[$i] -eq '--ref' -and $i+1 -lt $Arguments.Count -and -not $Arguments[$i+1].StartsWith('-')) { $i++; continue }
+        Write-Fail 'Uso: xcm update [--check] [--force] [--ref REF]'; return $false
     }
+    $checkArgs = @('update','--check') + @($Arguments | Where-Object { $_ -ne '--check' -and $_ -ne '--force' })
+    if (-not (Invoke-Tool 'xcross' $checkArgs)) { return $false }
+    if ($Arguments -contains '--check') { return $true }
+    if (Confirm-Yes 'Actualizar xcross a la ultima version publicada?') {
+        if (-not (Invoke-Tool 'xcross' (@('update') + $Arguments))) { return $false }
+        Refresh-Path
+        return (Invoke-Tool 'xcross' @('--version'))
+    }
+    return $false
 }
 
 function Guided-Setup {
@@ -976,26 +1152,29 @@ function Guided-Setup {
     Write-Host '4) SDK desde Xcode.xip  5) Conexion USB  6) Modo desarrollador'
     if (-not (Install-Swift)) {
         Write-Warn 'Detenido en Swift. Si acabas de instalarlo, reinicia PowerShell y reintenta.'
-        return
+        return $false
     }
-    if (-not (Install-Xcross)) { return }
-    if (-not (Install-Dependencies)) { return }
+    if (-not (Install-Xcross)) { return $false }
+    if (-not (Install-Dependencies)) { return $false }
     if (Confirm-Yes 'Quieres importar ahora el SDK desde un archivo Xcode.xip local?') {
         Install-DarwinSdk
     }
-    if (Confirm-Yes 'Quieres descargar los artefactos iOS debug de Flutter con xcross?') {
+    $project = Select-Project -Optional
+    if ($project -and (Get-ProjectKind $project) -eq 'flutter' -and (Confirm-Yes 'Quieres descargar los artefactos iOS debug de Flutter con xcross?')) {
         Precache-FlutterIos -PreselectedMode 'debug'
     }
     if (Confirm-Yes 'Quieres comprobar la conexion USB del iPhone?') {
         [void](Show-UsbDevices)
     }
     Write-Host 'Despues usa las opciones del menu para Modo desarrollador, Autenticacion y Tunel.'
+    if ($project) { return (Test-ProjectEnvironment -Path $project) }
+    return (Test-XcmEnvironment)
 }
 
 function Get-MenuItems {
     if ($script:Language -eq 'es') {
         return @(
-            @{ Key='1'; Label='Ejecutar Flutter en iPhone'; Description='compilar, firmar, instalar, hot reload'; Command='run' },
+            @{ Key='1'; Label='Ejecutar proyecto en iPhone'; Description='compilar, firmar, instalar, hot reload'; Command='run' },
             @{ Key='2'; Label='Diagnostico de Flutter'; Description='xcross flutter doctor'; Command='doctor' },
             @{ Key='3'; Label='Detectar iPhone'; Description='USB y version de iOS'; Command='device' },
             @{ Key='4'; Label='Modo desarrollador'; Description='estado y activacion'; Command='devmode' },
@@ -1004,7 +1183,7 @@ function Get-MenuItems {
             @{ Key='7'; Label='Instalar IPA existente'; Description='revisa y firma solo si falta'; Command='install-ipa' },
             @{ Key='D'; Label='Descargas y SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
             @{ Key='F'; Label='Firma y App ID'; Description='autorizacion Apple Development'; Command='signing' },
-            @{ Key='P'; Label='Proyectos Flutter'; Description='cambiar proyecto, VS Code, ejecutar'; Command='projects' },
+            @{ Key='P'; Label='Proyectos Flutter / Swift'; Description='cambiar proyecto, VS Code, ejecutar'; Command='projects' },
             @{ Key='A'; Label='Compilar / firmar / instalar IPA'; Description='IPA nueva o existente'; Command='ipa' },
             @{ Key='G'; Label='Actualizar proyecto actual'; Description='Git pull --ff-only en esta carpeta'; Command='update-project' },
             @{ Key='I'; Label='Instalar comando xcm'; Description='disponible desde cualquier carpeta'; Command='install-cli' },
@@ -1015,7 +1194,7 @@ function Get-MenuItems {
         )
     }
     return @(
-        @{ Key='1'; Label='Run Flutter on iPhone'; Description='build, sign, install, hot reload'; Command='run' },
+        @{ Key='1'; Label='Run project on iPhone'; Description='build, sign, install, hot reload'; Command='run' },
         @{ Key='2'; Label='Flutter diagnostics'; Description='xcross flutter doctor'; Command='doctor' },
         @{ Key='3'; Label='Detect iPhone'; Description='USB and iOS version'; Command='device' },
         @{ Key='4'; Label='Developer mode'; Description='status and activation'; Command='devmode' },
@@ -1024,7 +1203,7 @@ function Get-MenuItems {
         @{ Key='7'; Label='Install existing IPA'; Description='check, sign only if unsigned'; Command='install-ipa' },
         @{ Key='D'; Label='Downloads and SDK'; Description='Swift, xcross, Xcode, precache'; Command='downloads' },
         @{ Key='F'; Label='Signing and App ID'; Description='Apple Development authorization'; Command='signing' },
-        @{ Key='P'; Label='Flutter projects'; Description='change project, VS Code, run'; Command='projects' },
+        @{ Key='P'; Label='Flutter / Swift projects'; Description='change project, VS Code, run'; Command='projects' },
         @{ Key='A'; Label='Build / sign / install IPA'; Description='new or existing IPA'; Command='ipa' },
         @{ Key='G'; Label='Update current project'; Description='Git pull --ff-only in this folder'; Command='update-project' },
         @{ Key='I'; Label='Install xcm command'; Description='available from any folder'; Command='install-cli' },
@@ -1038,11 +1217,11 @@ function Get-MenuItems {
 function Show-Menu {
     $items = Get-MenuItems
     while ($true) {
-        $choice = Show-KeyMenu -Title 'XCROSS CONSOLE' -Subtitle 'Flutter iOS  /  Windows  /  developer toolkit' -Items $items -AllowPalette
+        $choice = Show-KeyMenu -Title 'XCROSS CONSOLE' -Subtitle 'Flutter iOS  /  SwiftPM  /  Windows' -Items $items -AllowPalette
         if ($choice -eq '__back__') { return }
         if ($choice -eq '__palette__') { Show-PaletteThenRun; continue }
         switch ($choice) {
-            'run' { Flutter-Run -Transport 'usb' }
+            'run' { [void](Invoke-ProjectCommand -Operation run) }
             'doctor' { Flutter-Doctor }
             'device' { [void](Show-UsbDevices) }
             'devmode' { Developer-Mode }
@@ -1179,9 +1358,12 @@ function Get-PaletteEntries {
         @{ Name='ipa install'; Detail='Instalar IPA existente por USB' },
         @{ Name='project update'; Detail='Actualizar repositorio de la carpeta actual' },
         @{ Name='update-cli --local'; Detail='Instalar esta copia local de xcm' },
-        @{ Name='run'; Detail='Compilar y abrir Flutter por USB' },
-        @{ Name='run --wifi'; Detail='Ejecutar Flutter por Wi-Fi' },
-        @{ Name='doctor'; Detail='Comprobar herramientas y Flutter' },
+        @{ Name='run'; Detail='Flutter por USB / SwiftPM en Windows' },
+        @{ Name='run --wifi'; Detail='Ejecutar proyecto por Wi-Fi' },
+        @{ Name='doctor'; Detail='Diagnostico segun tipo de proyecto' },
+        @{ Name='doctor --environment'; Detail='Comprobar host sin proyecto' },
+        @{ Name='download all'; Detail='Preparacion guiada del entorno' },
+        @{ Name='update --check'; Detail='Consultar actualizacion de XCross' },
         @{ Name='device'; Detail='Listar iPhone conectados' },
         @{ Name='devmode status'; Detail='Consultar modo desarrollador' },
         @{ Name='devmode reveal'; Detail='Mostrar Developer Mode en Ajustes' },
@@ -1193,7 +1375,7 @@ function Get-PaletteEntries {
         @{ Name='precache debug'; Detail='Descargar Flutter iOS Debug' },
         @{ Name='precache all'; Detail='Descargar Flutter iOS completo' },
         @{ Name='project show'; Detail='Ver proyecto actual' },
-        @{ Name='project set'; Detail='Elegir carpeta Flutter' },
+        @{ Name='project set'; Detail='Elegir carpeta Flutter / Swift / Xcode' },
         @{ Name='bundle original'; Detail='Usar identificador App ID original' },
         @{ Name='bundle prefixed'; Detail='Usar identificador App ID prefijado' },
         @{ Name='sign'; Detail='Diagnosticar firma de Apple' },
@@ -1290,24 +1472,24 @@ function Show-PaletteThenRun {
 
 function Projects-Menu {
     $items=@(
-        @{Key='1'; Label='Cambiar proyecto'; Description='elige ruta a carpeta con pubspec.yaml'; Command='set'},
+        @{Key='1'; Label='Cambiar proyecto'; Description='pubspec.yaml, Package.swift, Xcode'; Command='set'},
         @{Key='2'; Label='Ver proyecto'; Description='muestra ruta guardada'; Command='show'},
-        @{Key='3'; Label='Diagnostico Flutter'; Description='xcross flutter doctor'; Command='doctor'},
-        @{Key='4'; Label='Ejecutar por USB'; Description='xcross flutter run --usb'; Command='usb'},
+        @{Key='3'; Label='Diagnostico del proyecto'; Description='Flutter / Swift / Xcode'; Command='doctor'},
+        @{Key='4'; Label='Ejecutar proyecto'; Description='Flutter USB / Swift en este PC'; Command='usb'},
         @{Key='5'; Label='Ejecutar por Wi-Fi'; Description='xcross flutter run --wifi'; Command='wifi'},
         @{Key='6'; Label='Integrar VS Code'; Description='configurar archivos .vscode'; Command='vscode'}
         @{Key='7'; Label=(Msg 'Update current repository' 'Actualizar repositorio actual'); Description='Git pull --ff-only'; Command='update'}
     )
     while($true){
-        $choice=Show-KeyMenu -Title 'PROYECTOS FLUTTER' -Subtitle 'Trabaja con LUMINA o cualquier proyecto Flutter' -Items $items -AllowPalette
+        $choice=Show-KeyMenu -Title 'PROYECTOS' -Subtitle 'Flutter, SwiftPM, Xcode' -Items $items -AllowPalette
         if($choice -eq '__back__'){return}
         if($choice -eq '__palette__'){Show-PaletteThenRun;continue}
         switch($choice){
-            'set' {[void](Select-FlutterProject -ForcePrompt)}
+            'set' {[void](Select-Project -ForcePrompt)}
             'show' {Show-CurrentProject}
             'doctor' {Flutter-Doctor}
-            'usb' {Flutter-Run -Transport 'usb'}
-            'wifi' {Flutter-Run -Transport 'wifi'}
+            'usb' {[void](Invoke-ProjectCommand -Operation run)}
+            'wifi' {[void](Invoke-ProjectCommand -Operation run -Arguments @('--wifi'))}
             'vscode' {Flutter-Ide}
             'update' {[void](Update-CurrentProject)}
         }
@@ -1316,9 +1498,9 @@ function Projects-Menu {
 }
 
 function Show-CurrentProject {
-    Write-Title 'Proyecto Flutter'
-    $p=Select-FlutterProject
-    if($p){Write-Ok $p}
+    Write-Title 'Project / Proyecto'
+    $p=Select-Project
+    if($p){Write-Ok "$p ($(Get-ProjectKind $p))"}
 }
 
 function Install-XcmGlobal {
@@ -1407,12 +1589,19 @@ function Update-XcmGlobal {
 }
 
 function Show-XcmHelp {
+    Write-Host (Msg 'Projects: Flutter iOS, SwiftPM on Windows; native Xcode apps require macOS/Xcode.' 'Proyectos: Flutter iOS, SwiftPM en Windows; apps Xcode nativas requieren macOS/Xcode.')
+    Write-Host '  xcm run|build --project PATH [--product NAME] [--configuration debug|release]'
+    Write-Host '  xcm run --project PATH --product NAME --args ARG1 ARG2'
+    Write-Host '  xcm doctor --project PATH | xcm doctor --environment'
+    Write-Host '  xcm download all'
+    Write-Host '  xcm download ipa --repo Ivorisnoob/iKoda --asset Koda.ipa --output .\Koda.ipa'
+    Write-Host '  xcm update --check | xcm update --force | xcm update --ref REF'
     if ($script:Language -eq 'es') { Write-Title 'Comandos disponibles' } else { Write-Title 'Available commands' }
     if ($script:Language -eq 'es') {
         $helpText = @'
   xcm                       Menu interactivo
   xcm help                  Mostrar esta ayuda
-  xcm doctor                Comprobar dependencias y Flutter
+  xcm doctor                Diagnostico del proyecto
   xcm device                Detectar el iPhone por USB
   xcm devmode               Menu de desarrollador
   xcm tunnel usb|wifi       Abrir tunel RSD
@@ -1425,7 +1614,7 @@ function Show-XcmHelp {
   xcm dependencies          Ejecutar xcross setup
   xcm precache debug|all    Descargar artefactos Flutter iOS
   xcm project show|set       Proyecto activo
-  xcm run [--usb|--wifi]    Ejecutar Flutter
+  xcm run [--usb|--wifi]    Ejecutar proyecto
   xcm ipa                   Menu de compilacion, firma e instalacion
   xcm ipa build [--project ruta] [--mode release|profile|debug]
                 [--target lib/main.dart] [--flavor nombre]
@@ -1452,7 +1641,7 @@ function Show-XcmHelp {
         $helpText = @'
   xcm                       Interactive menu
   xcm help                  Show this help
-  xcm doctor                Check dependencies and Flutter
+  xcm doctor                Project diagnostics
   xcm device                Detect iPhone over USB
   xcm devmode               Developer menu
   xcm tunnel usb|wifi       Open RSD tunnel
@@ -1465,7 +1654,7 @@ function Show-XcmHelp {
   xcm dependencies          Run xcross setup
   xcm precache debug|all    Download Flutter iOS artifacts
   xcm project show|set       Active project
-  xcm run [--usb|--wifi]    Run Flutter
+  xcm run [--usb|--wifi]    Run project
   xcm ipa                   Build, sign and install menu
   xcm ipa build [--project path] [--mode release|profile|debug]
                 [--target lib/main.dart] [--flavor name]
@@ -1509,18 +1698,27 @@ function Invoke-XcmCommand {
     param([string]$Verb, [string[]]$Arguments=@())
     $v=$Verb.TrimStart('/').ToLowerInvariant()
     switch($v){
+        {$_ -in @('version','--version')} {Write-Host "XCross CLI (Windows) v$script:Version"; return $true}
         {$_ -in @('help','--help','-h','ayuda')} {Show-XcmHelp;return $true}
         {$_ -in @('menu','ui')} {Show-Menu;return $true}
         'install' {
             if ($Arguments.Count) { return (Invoke-IpaCommand -Arguments (@('install') + $Arguments)) }
-            Guided-Setup;return $true
+            return (Guided-Setup)
         }
-        'swift' {[void](Install-Swift);return $true}
-        'xcross' {[void](Install-Xcross);return $true}
-        {$_ -in @('dependencies','deps','setup')} {[void](Install-Dependencies);return $true}
-        'update' {Upgrade-Xcross;return $true}
+        'swift' {return (Install-Swift)}
+        'xcross' {return (Install-Xcross)}
+        {$_ -in @('dependencies','deps','setup')} {return (Install-Dependencies)}
+        'update' {return (Upgrade-Xcross -Arguments $Arguments)}
+        'download' {
+            if ($Arguments.Count -and $Arguments[0] -eq 'ipa') {
+                $rest = @(); if ($Arguments.Count -gt 1) { $rest = $Arguments[1..($Arguments.Count-1)] }
+                return (Get-ReleaseIpa -Arguments $rest)
+            }
+            if ($Arguments.Count -eq 1 -and $Arguments[0] -eq 'all') { return (Guided-Setup) }
+            Write-Fail 'Uso: xcm download all | xcm download ipa --repo OWNER/REPO --asset NAME.ipa --output PATH.ipa'; return $false
+        }
         'ipa' {return (Invoke-IpaCommand -Arguments $Arguments)}
-        'build' {return (Invoke-IpaCommand -Arguments (@('build') + $Arguments))}
+        'build' {return (Invoke-ProjectCommand -Operation build -Arguments $Arguments)}
         'install-ipa' {return (Invoke-IpaCommand -Arguments (@('install') + $Arguments))}
         'sign-ipa' {return (Invoke-IpaCommand -Arguments (@('sign') + $Arguments))}
         'update-project' {
@@ -1529,7 +1727,15 @@ function Invoke-XcmCommand {
             return (Update-CurrentProject -Path $path)
         }
         'xcode' {Open-AppleDownloadPage;return $true}
-        {$_ -in @('doctor','check')} {Show-Environment;Flutter-Doctor;return $true}
+        {$_ -in @('doctor','check','verify')} {
+            if ($Arguments.Count -eq 1 -and $Arguments[0] -eq '--environment') { return (Test-XcmEnvironment) }
+            $path = ''
+            if ($Arguments.Count) {
+                if ($Arguments.Count -ne 2 -or $Arguments[0] -ne '--project') { Write-Fail 'Uso: xcm doctor [--project PATH | --environment]'; return $false }
+                $path = $Arguments[1]
+            }
+            return (Test-ProjectEnvironment -Path $path)
+        }
         {$_ -in @('device','devices','iphone')} {[void](Show-UsbDevices);return $true}
         'sdk' {
             if($Arguments.Count -eq 0 -or $Arguments[0] -ne 'install'){
@@ -1564,16 +1770,17 @@ function Invoke-XcmCommand {
                     if($Arguments.Count -gt 1){
                         $p=$Arguments[1..($Arguments.Count-1)] -join ' '
                         $script:ProjectOverride=$p
-                        [void](Select-FlutterProject -ExplicitPath $p)
+                        $selected = Select-Project -ExplicitPath $p
                         $script:ProjectOverride=''
+                        return [bool]$selected
                     }
-                    else {[void](Select-FlutterProject -ForcePrompt)}
-                    return $true
+                    else {return [bool](Select-Project -ForcePrompt)}
                 }
                 default {Write-Warn 'Uso: xcm project show|set|update [ruta]';return $false}
             }
         }
-        'run' {
+        'run' {return (Invoke-ProjectCommand -Operation run -Arguments $Arguments)}
+        'flutter-run' {
             $transport='usb';$target='';$override='';$verbose=$false
             for($i=0;$i -lt $Arguments.Count;$i++){
                 $arg=$Arguments[$i]
@@ -1593,10 +1800,9 @@ function Invoke-XcmCommand {
             $prev=$script:ProjectOverride
             try{
                 if($override){$script:ProjectOverride=$override}
-                Flutter-Run -Transport $transport -Target $target -VerboseRun:$verbose
+                return (Flutter-Run -Transport $transport -Target $target -VerboseRun:$verbose)
             }
             finally{$script:ProjectOverride=$prev}
-            return $true
         }
         'bundle' {
             if($Arguments.Count -eq 0){Set-BundleIdentity;return $true}

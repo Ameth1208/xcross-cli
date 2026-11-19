@@ -35,6 +35,10 @@ New-Item -ItemType Directory -Path $target -Force | Out-Null
 $stage = Join-Path ([IO.Path]::GetTempPath()) ('xcm-stage-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $stage | Out-Null
 try {
+# Pin every file to one commit, even if main changes during the download.
+$commit = (Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/commits/$branch" -Headers @{ 'User-Agent' = 'XCrossCLI' }).sha
+if ($commit -notmatch '^[a-f0-9]{40}$') { throw 'No se pudo resolver la version del paquete.' }
+$base = "https://raw.githubusercontent.com/$repo/$commit"
 foreach ($item in $files) {
     $src  = $item.Source
     $destName = $item.Dest
@@ -48,10 +52,36 @@ foreach ($item in $files) {
         throw "No se pudo descargar $destName. Se conserva la instalacion anterior: $($_.Exception.Message)"
     }
 }
-$tokens = $null; $parseErrors = $null
-[void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $stage 'windows-cli.ps1'), [ref]$tokens, [ref]$parseErrors)
-if ($parseErrors.Count) { throw 'El CLI descargado contiene errores de sintaxis; no se instalara.' }
-foreach ($item in $files) { Copy-Item -LiteralPath (Join-Path $stage $item.Dest) -Destination (Join-Path $target $item.Dest) -Force }
+foreach ($item in $files) {
+    $file = Join-Path $stage $item.Dest
+    if ((Get-Item -LiteralPath $file).Length -eq 0) { throw "Archivo vacio: $($item.Dest)" }
+    if ([IO.Path]::GetExtension($file) -eq '.ps1') {
+        $tokens = $null; $parseErrors = $null
+        [void][System.Management.Automation.Language.Parser]::ParseFile($file, [ref]$tokens, [ref]$parseErrors)
+        if ($parseErrors.Count) { throw "Errores de sintaxis: $($item.Dest)" }
+    }
+}
+$backup = Join-Path $stage 'backup'
+New-Item -ItemType Directory -Path $backup | Out-Null
+$applied = @()
+try {
+    foreach ($item in $files) {
+        $destination = Join-Path $target $item.Dest
+        if (Test-Path -LiteralPath $destination) { Copy-Item -LiteralPath $destination -Destination (Join-Path $backup $item.Dest) }
+        $applied += $item.Dest
+        Copy-Item -LiteralPath (Join-Path $stage $item.Dest) -Destination $destination -Force
+    }
+}
+catch {
+    foreach ($name in $applied) {
+        $old = Join-Path $backup $name
+        $destination = Join-Path $target $name
+        if (Test-Path -LiteralPath $old) { Copy-Item -LiteralPath $old -Destination $destination -Force }
+        elseif (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Force }
+    }
+    throw
+}
+Write-Host "Version de origen: $commit" -ForegroundColor DarkGray
 }
 finally {
     $resolvedStage = [IO.Path]::GetFullPath($stage)

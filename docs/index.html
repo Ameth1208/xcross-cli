@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>XCross CLI — Easiest Flutter iOS setup for Windows & Linux</title>
-<meta name="description" content="XCross CLI makes installing, running, and hot reloading Flutter iOS apps effortless on Windows and Linux without a Mac. One-line install, interactive TUI, RSD tunnels, and xcross integration.">
+<title>XCross CLI — Flutter iOS, Swift packages & environment setup</title>
+<meta name="description" content="Run Flutter iOS apps, build Swift packages on Windows, verify your environment and update XCross. Download published IPAs with checksum checks. Native Xcode app builds require macOS.">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/animejs@4.0.2/lib/anime.iife.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
 
 <script>
   tailwind.config = {
@@ -435,7 +435,7 @@
       <a href="#features" class="hover:text-white transition-colors duration-200">Features</a>
       <a href="#demo" class="hover:text-white transition-colors duration-200">Hot Reload</a>
       <a href="#preview" class="hover:text-white transition-colors duration-200">Interactive TUI</a>
-      <a href="#workflow" class="hover:text-white transition-colors duration-200">Workflow</a>
+      <a href="#swift-maintenance" class="hover:text-white transition-colors duration-200">Swift &amp; Updates</a>
       <a href="#ipa" class="hover:text-white transition-colors duration-200">Install IPA</a>
       <a href="#commands" class="hover:text-white transition-colors duration-200">Commands</a>
       <a href="#faq" class="hover:text-white transition-colors duration-200">FAQ</a>
@@ -458,7 +458,7 @@
     <!-- Shimmering Pill Badge -->
     <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium hero-badge text-dark-accentSoft mb-3 cursor-default">
       <span class="inline-block w-2 h-2 rounded-full bg-dark-accent animate-ping"></span>
-      <span>XCross CLI v1.4.0 • The Easiest Flutter iOS Companion</span>
+      <span>XCross CLI v1.5.0 • The Easiest Flutter iOS Companion</span>
     </div>
 
     <!-- Acknowledgement to xcross.sh & Creator -->
@@ -683,7 +683,7 @@
           <span class="w-3 h-3 rounded-full bg-red-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
           <span class="w-3 h-3 rounded-full bg-yellow-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
           <span class="w-3 h-3 rounded-full bg-green-500/80 cursor-pointer hover:opacity-100 transition-opacity"></span>
-          <span class="ml-3 text-xs text-dark-muted font-mono">xcm — XCross CLI v1.4.0</span>
+          <span class="ml-3 text-xs text-dark-muted font-mono">xcm — XCross CLI v1.5.0</span>
         </div>
 
         <!-- Language toggle button -->
@@ -976,12 +976,54 @@
     </div>
   </section>
 
+  <section id="swift-maintenance" class="my-28 scroll-mt-28 max-w-[960px] mx-auto" aria-labelledby="swift-maintenance-title">
+    <div class="mb-8">
+      <p class="text-xs font-mono tracking-[0.2em] text-dark-accent uppercase mb-3">New in Windows v1.5.0</p>
+      <h2 id="swift-maintenance-title" class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">Know your project. Check your tools.</h2>
+      <p class="text-dark-muted leading-relaxed max-w-2xl">XCross CLI now detects Flutter, Swift packages and Xcode projects. Use the right build command and see what your environment supports before you start.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-4">
+      <article class="liquid-glass rounded-2xl p-6">
+        <p class="text-xs font-mono text-emerald-300 mb-3">FLUTTER → IPHONE</p>
+        <h3 class="text-lg text-white mb-2">Your iOS workflow</h3>
+        <p class="text-sm text-dark-muted leading-relaxed">Build, sign, install and hot reload through XCross. Existing Flutter commands keep working.</p>
+      </article>
+      <article class="liquid-glass rounded-2xl p-6">
+        <p class="text-xs font-mono text-sky-300 mb-3">SWIFTPM → WINDOWS</p>
+        <h3 class="text-lg text-white mb-2">Native Swift packages</h3>
+        <p class="text-sm text-dark-muted leading-relaxed">Build libraries and run executable products from Package.swift with Windows-compatible dependencies.</p>
+      </article>
+      <article class="liquid-glass rounded-2xl p-6">
+        <p class="text-xs font-mono text-amber-300 mb-3">XCODE → MACOS REQUIRED</p>
+        <h3 class="text-lg text-white mb-2">A clear compatibility check</h3>
+        <p class="text-sm text-dark-muted leading-relaxed">Native SwiftUI/UIKit apps such as iKoda are detected, but this Windows backend cannot build their Xcode projects.</p>
+      </article>
+    </div>
+    <div class="mt-5 liquid-glass rounded-2xl p-6 sm:p-8">
+      <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+        <div><h3 class="text-lg text-white mb-2">Update xcm to try it</h3><p class="text-sm text-dark-muted">Run this in PowerShell, then open a new terminal.</p></div>
+        <button type="button" onclick="copySpecificCmd('xcm update-cli', this)" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm text-white" aria-label="Copy xcm update-cli">Copy update command</button>
+      </div>
+      <pre class="overflow-x-auto text-sm font-mono text-sky-300"><code>xcm update-cli
+xcm version
+xcm doctor --environment
+xcm update --check</code></pre>
+      <p class="text-xs text-dark-muted mt-4 leading-relaxed">Expect xcm 1.5.0 on Windows. <code>update-cli</code> updates this helper; <code>update</code> updates the XCross engine. New here? Use the <a href="#install" class="text-sky-300 underline">one-line installer</a>. <code>download all</code> opens guided setup; obtain Xcode.xip manually from Apple.</p>
+    </div>
+    <aside class="mt-5 rounded-2xl border border-amber-300/20 bg-amber-300/5 p-6">
+      <h3 class="text-white font-medium mb-2">Trying iKoda?</h3>
+      <p class="text-sm text-dark-muted leading-relaxed mb-4">Download its published IPA without compiling the repository. The v0.4 IPA has an ad-hoc signature and extensions: it needs device signing before installation. The automatic xcm install flow preserves existing signatures and rejects ad-hoc signatures. See <a href="https://github.com/Ivorisnoob/iKoda#installing" class="text-sky-300 underline">iKoda's installation instructions</a>.</p>
+      <pre class="overflow-x-auto text-xs sm:text-sm font-mono text-sky-300 pb-2"><code>xcm download ipa --repo Ivorisnoob/iKoda --asset Koda.ipa --output .\Koda.ipa</code></pre>
+      <p class="text-xs text-dark-muted mt-3">Checks size, GitHub SHA256 when available and the main executable. Never overwrites a file or installs on a phone. These additions apply to Windows; Linux retains its separate Flutter helper.</p>
+    </aside>
+  </section>
+
   <!-- Windows CLI command explorer -->
   <section id="commands" class="my-28">
     <div class="text-center max-w-xl mx-auto mb-10">
       <p class="text-xs font-mono font-medium tracking-[0.2em] text-dark-accent uppercase mb-3">Complete CLI Command Matrix</p>
       <h2 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-4">Command Explorer</h2>
-      <p class="text-dark-muted text-sm">Windows CLI commands, including direct IPA installation. Filter by category or search in real time. Linux has a separate Flutter helper.</p>
+      <p class="text-dark-muted text-sm">Windows CLI commands for Flutter, Swift packages, IPAs and maintenance. Filter or search below. Linux has a separate Flutter helper.</p>
     </div>
 
     <!-- Category Filter Tabs -->
@@ -993,6 +1035,7 @@
         Daily Flow
       </button>
       <button onclick="filterCategory('ipa', this)" class="cmd-cat-btn px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/5 bg-white/5 text-dark-muted hover:text-white hover:bg-white/10 transition-all">IPA</button>
+      <button onclick="filterCategory('swift', this)" class="cmd-cat-btn px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/5 bg-white/5 text-dark-muted hover:text-white hover:bg-white/10 transition-all">Swift</button>
       <button onclick="filterCategory('diag', this)" class="cmd-cat-btn px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/5 bg-white/5 text-dark-muted hover:text-white hover:bg-white/10 transition-all">
         Diagnostics & Device
       </button>
@@ -1020,6 +1063,30 @@
     <!-- Commands grid -->
     <div class="liquid-glass rounded-3xl p-6 sm:p-8 max-w-[960px] mx-auto shadow-term">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5" id="commandsGrid">
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between gap-3" data-category="swift daily">
+          <div class="min-w-0"><div class="font-mono text-xs text-sky-400 font-semibold break-words">xcm build --configuration release</div><div class="text-[11px] text-dark-muted mt-1">Build the selected Swift package on Windows</div></div>
+          <button type="button" onclick="copySpecificCmd('xcm build --configuration release',this)" class="p-1.5 rounded-lg bg-white/10 text-xs" aria-label="Copy Swift build command">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between gap-3" data-category="swift daily">
+          <div class="min-w-0"><div class="font-mono text-xs text-sky-400 font-semibold break-words">xcm run --product MyExecutable</div><div class="text-[11px] text-dark-muted mt-1">Run a Swift executable on this PC; replace the product name</div></div>
+          <button type="button" onclick="copySpecificCmd('xcm run --product MyExecutable',this)" class="p-1.5 rounded-lg bg-white/10 text-xs" aria-label="Copy Swift run command">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between gap-3" data-category="swift diag system">
+          <div class="min-w-0"><div class="font-mono text-xs text-sky-400 font-semibold break-words">xcm doctor --environment</div><div class="text-[11px] text-dark-muted mt-1">Check host tools without selecting a project</div></div>
+          <button type="button" onclick="copySpecificCmd('xcm doctor --environment',this)" class="p-1.5 rounded-lg bg-white/10 text-xs" aria-label="Copy environment check command">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between gap-3" data-category="toolchain system">
+          <div class="min-w-0"><div class="font-mono text-xs text-sky-400 font-semibold break-words">xcm download all</div><div class="text-[11px] text-dark-muted mt-1">Guided setup, optional SDK import and final checks</div></div>
+          <button type="button" onclick="copySpecificCmd('xcm download all',this)" class="p-1.5 rounded-lg bg-white/10 text-xs" aria-label="Copy guided setup command">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between gap-3" data-category="diag system">
+          <div class="min-w-0"><div class="font-mono text-xs text-sky-400 font-semibold break-words">xcm update --check</div><div class="text-[11px] text-dark-muted mt-1">Check the XCross engine release without installing</div></div>
+          <button type="button" onclick="copySpecificCmd('xcm update --check',this)" class="p-1.5 rounded-lg bg-white/10 text-xs" aria-label="Copy engine update check">Copy</button>
+        </div>
+        <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between gap-3" data-category="ipa system">
+          <div class="min-w-0"><div class="font-mono text-xs text-sky-400 font-semibold break-words">xcm download ipa --repo Ivorisnoob/iKoda --asset Koda.ipa --output .\Koda.ipa</div><div class="text-[11px] text-dark-muted mt-1">Download and inspect; device signing is still required</div></div>
+          <button type="button" onclick="copySpecificCmd('xcm download ipa --repo Ivorisnoob/iKoda --asset Koda.ipa --output .\\Koda.ipa',this)" class="p-1.5 rounded-lg bg-white/10 text-xs" aria-label="Copy iKoda download command">Copy</button>
+        </div>
         
         <div class="cmd-item p-3 rounded-xl bg-black/40 border border-white/5 hover:border-dark-accent/40 transition-all flex items-center justify-between group" data-category="ipa daily">
           <div class="min-w-0 pr-2">
@@ -1621,7 +1688,7 @@ document.getElementById('commandCount').textContent = document.querySelectorAll(
 // --- TUI Menu Data (English & Spanish) ---
 const EN_MENU = [
   ['1', 'Run Flutter on iPhone', 'build, sign, install, hot reload', 'Building bundle... Signing with Apple Development ID... Deploying to iPhone over RSD tunnel... [OK] App running! Press "r" for hot reload.'],
-  ['2', 'Flutter diagnostics', 'xcross flutter doctor', 'Checking Flutter SDK... Found 3.24.3. Swift toolchain: ready. iTunes USB driver: active. All checks passed.'],
+  ['2', 'Project diagnostics', 'Flutter / SwiftPM / Xcode', 'xcm doctor detects the project. Flutter uses XCross diagnostics; SwiftPM checks Swift and the manifest. Native Xcode app builds require macOS.'],
   ['3', 'Detect iPhone', 'USB and iOS version', 'Scanning bus... Detected iPhone 16 Pro (iOS 18.1, Model A3084). Pairing status: Verified.'],
   ['4', 'Developer mode', 'status and activation', 'Querying iOS security profile... Developer Mode: ENABLED. Ready for debug payload injection.'],
   ['5', 'Open USB tunnel', 'opens PowerShell with permissions', 'Spawning background RSD tunnel over port 58783... [OK] Tunnel operational. Listening for lldb / daps.'],
@@ -1629,9 +1696,9 @@ const EN_MENU = [
   ['7', 'Install existing IPA', 'check, sign only if unsigned', 'Run xcm install \"app.ipa\" to install an IPA already signed for your iPhone. Unsigned packages use the saved XCross identity; existing signatures stay unchanged.'],
   ['A', 'Build / sign / install IPA', 'new or existing IPA', 'xcm ipa opens the IPA menu. Signing is optional for packages already signed for your device.'],
   ['G', 'Update current project', 'git pull --ff-only', 'Run xcm project update from a clean repository with an upstream branch.'],
-  ['D', 'Downloads and SDK', 'Swift, xcross, Xcode, precache', 'Checking cache... Swift 6.0: Cached. Xcode 16.0 SDK: Extracted. Precache engine: Up to date.'],
+  ['D', 'Downloads and SDK', 'setup, SDK, engine updates', 'Use xcm download all for guided preparation, xcm doctor --environment for host checks, and xcm update --check for engine updates. Obtain Xcode.xip manually from Apple.'],
   ['F', 'Signing and App ID', 'Apple Development authorization', 'Reading free Apple Developer profile... Active provisioning profile: 7 days remaining.'],
-  ['P', 'Flutter projects', 'change project, VS Code, run', 'Active project set to: ./lumina-mobile. VS Code configuration verified.'],
+  ['P', 'Flutter / Swift projects', 'detect, select, build, run', 'Use xcm project set PATH. Flutter runs on iPhone; SwiftPM executables run on Windows. iKoda is detected as an Xcode app and cannot be built by this Windows backend.'],
   ['I', 'Install xcm command', 'available from any folder', 'Copying binaries to %LOCALAPPDATA%\\Programs\\XCrossCLI... User PATH updated. Ready globally.'],
   ['U', 'Update xcm', 'download latest version from GitHub', 'Checking github.com/Ameth1208/xcross-cli... Use xcm update-cli to download the latest scripts from GitHub.'],
   ['X', 'Uninstall xcm', 'remove global command', 'Uninstaller ready. Run "powershell -File windows/uninstall.ps1" to remove cleanly.'],
@@ -1641,7 +1708,7 @@ const EN_MENU = [
 
 const ES_MENU = [
   ['1', 'Ejecutar Flutter en iPhone', 'compilar, firmar, instalar, hot reload', 'Compilando paquete... Firmando con Apple Development ID... Instalando en iPhone por túnel RSD... [OK] App en ejecución. Presiona "r" para hot reload.'],
-  ['2', 'Diagnostico de Flutter', 'xcross flutter doctor', 'Verificando Flutter SDK... Detectado 3.24.3. Herramientas Swift: listas. Driver USB: activo. Todo en orden.'],
+  ['2', 'Diagnostico del proyecto', 'Flutter / SwiftPM / Xcode', 'xcm doctor detecta el proyecto: diagnostico XCross para Flutter, version y manifiesto para SwiftPM. Las apps Xcode nativas requieren macOS.'],
   ['3', 'Detectar iPhone', 'USB y version de iOS', 'Escaneando dispositivos... Detectado iPhone 16 Pro (iOS 18.1). Estado de vinculación: Verificado.'],
   ['4', 'Modo desarrollador', 'estado y activacion', 'Consultando perfil de seguridad iOS... Modo Desarrollador: ACTIVADO. Listo para depuración.'],
   ['5', 'Abrir tunel USB', 'abre PowerShell con permisos', 'Iniciando túnel RSD en segundo plano (puerto 58783)... [OK] Túnel establecido con éxito.'],
@@ -1649,9 +1716,9 @@ const ES_MENU = [
   ['7', 'Instalar IPA existente', 'revisa, firma solo si falta', 'Ejecuta xcm install \"app.ipa\" para instalar una IPA ya firmada para tu iPhone. Si falta firma se usa la identidad guardada en XCross; si ya tiene se conserva.'],
   ['A', 'Compilar / firmar / instalar IPA', 'IPA nueva o existente', 'xcm ipa abre el menu. La firma es opcional si el paquete ya esta firmado para tu dispositivo.'],
   ['G', 'Actualizar proyecto actual', 'git pull --ff-only', 'Ejecuta xcm project update desde un repositorio limpio con rama upstream.'],
-  ['D', 'Descargas y SDK', 'Swift, xcross, Xcode, precache', 'Verificando herramientas... Swift 6.0: Descargado. SDK iOS 16: Extraído. Precache listo.'],
+  ['D', 'Descargas y SDK', 'preparacion y actualizaciones', 'Usa xcm download all para preparar el entorno, xcm doctor --environment para revisar el host y xcm update --check para consultar el motor. Xcode.xip se obtiene manualmente de Apple.'],
   ['F', 'Firma y App ID', 'autorizacion Apple Development', 'Leyendo perfil Apple Developer... Perfil de desarrollo personal activo: 7 días restantes.'],
-  ['P', 'Proyectos Flutter', 'cambiar proyecto, VS Code, ejecutar', 'Proyecto activo: ./lumina-mobile. Espacio de trabajo verificado.'],
+  ['P', 'Proyectos Flutter / Swift', 'detectar, compilar, ejecutar', 'Usa xcm project set RUTA. Flutter ejecuta en iPhone; SwiftPM ejecuta en Windows. iKoda se detecta como app Xcode y no se compila con este backend de Windows.'],
   ['I', 'Instalar comando xcm', 'disponible desde cualquier carpeta', 'Instalando en %LOCALAPPDATA%\\Programs\\XCrossCLI... PATH actualizado. Disponible globalmente.'],
   ['U', 'Actualizar xcm', 'descarga la ultima version desde GitHub', 'Verificando GitHub... Usa xcm update-cli para descargar los scripts mas recientes de GitHub.'],
   ['X', 'Desinstalar xcm', 'elimina el comando global', 'Para desinstalar ejecuta: powershell -File windows/uninstall.ps1'],

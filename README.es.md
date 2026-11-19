@@ -1,6 +1,77 @@
-# XCross CLI (xcm) v1.4.0 para Windows
+# XCross CLI (xcm) v1.5.0 para Windows
 
 ![XCross CLI logo](assets/logo.svg)
+
+## Swift y mantenimiento del entorno (Windows)
+
+`project set`, `project show`, `run`, `build` y `doctor` ahora detectan Flutter
+(`pubspec.yaml`), Swift Package Manager (`Package.swift`) y proyectos Xcode
+(`.xcodeproj` / `.xcworkspace` en la carpeta seleccionada). Se mantiene la ruta
+guardada anteriormente. Prioridad: `--project`, carpeta actual y proyecto guardado.
+En un monorepositorio, selecciona la carpeta concreta del proyecto.
+
+Los paquetes Swift se compilan y ejecutan **en Windows**, con sus dependencias
+compatibles con Windows. Una biblioteca se puede compilar, pero `run` requiere
+un producto ejecutable. Esto no compila SwiftUI/UIKit para iPhone:
+
+```powershell
+xcm project set "C:\repos\paquete-swift"
+xcm build --configuration release
+xcm run --product MiEjecutable --args "argumento con espacios"
+xcm doctor
+xcm doctor --environment
+xcm download all
+xcm update --check
+xcm update
+xcm update --force
+xcm update --check --ref main
+xcm update-cli
+xcm update-cli --local
+```
+
+`doctor` usa el diagnostico iOS de XCross para Flutter y comprueba la version de
+Swift y el manifiesto para SwiftPM; no garantiza la compilacion de sus dependencias.
+`doctor --environment` comprueba herramientas del host y la configuracion XCross,
+sin necesitar un proyecto ni garantizar firma, SDK o conexion del iPhone.
+`verify` y `check` son alias de `doctor`. Los fallos devuelven codigo de salida 1.
+
+`download all` abre la preparacion guiada: Swift, XCross, dependencias, importacion
+opcional del SDK y diagnostico final. Solo ofrece artefactos Flutter si el proyecto
+detectado es Flutter. **Xcode.xip se obtiene manualmente de Apple**; el asistente
+no puede descargarlo automaticamente. Las instalaciones conservan sus confirmaciones.
+
+`update` actualiza el motor **XCross**; `--check` solo consulta, `--force` reinstala
+la version publicada y `--ref` selecciona una referencia soportada por el motor.
+Se detiene si falla la consulta y comprueba la version despues de actualizar.
+`update-cli` actualiza **este CLI xcm**. El instalador remoto descarga todos los
+archivos de un mismo commit, valida los scripts PowerShell y restaura los archivos
+anteriores si falla la copia. La instalacion local valida el paquete antes de copiar.
+
+### Caso iKoda: app nativa de Xcode
+
+[iKoda](https://github.com/Ivorisnoob/iKoda) contiene `Koda.xcodeproj`, una app
+SwiftUI y extensiones. El backend actual de XCross no expone un flujo para compilar
+proyectos Xcode nativos desde Windows. `run`, `build` y `doctor` explican esta
+limitacion y devuelven error; no intentan ejecutarlo como Flutter o como su
+biblioteca `KodaCore`. Compilar el repositorio requiere un entorno macOS/Xcode.
+
+Puedes descargar una IPA publicada sin compilar el repositorio:
+
+```powershell
+xcm download ipa --repo Ivorisnoob/iKoda --asset Koda.ipa --output .\Koda.ipa
+xcm ipa inspect .\Koda.ipa
+```
+
+El comando descarga el asset exacto de la ultima release estable, comprueba su
+tamano y el SHA256 de GitHub cuando existe, inspecciona la IPA y nunca sobrescribe
+el destino ni instala en el telefono. Necesita Internet y Python para inspeccionar;
+GitHub aplica limites a su API publica. Si falta SHA256, muestra la limitacion.
+
+La IPA de iKoda v0.4 comprobada contiene firma **ad hoc**. Requiere volver a firmar
+la app y sus extensiones para tu iPhone, por ejemplo con el flujo AltStore/SideStore
+documentado por iKoda. `xcm install` conserva firmas existentes y rechaza firmas
+ad hoc: descargar esta IPA no la hace instalable automaticamente. La inspeccion
+del ejecutable principal tampoco valida todas sus extensiones.
 
 
 Interfaz de terminal inspirada en los CLI modernos usados con asistentes de programación. **No incorpora un modelo de IA**, pero ofrece una experiencia ágil con teclado, paleta de comandos y órdenes reutilizables.

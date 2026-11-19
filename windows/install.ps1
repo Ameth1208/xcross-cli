@@ -9,6 +9,12 @@ if (-not (Test-Path -LiteralPath (Join-Path $source 'windows-cli.ps1'))) {
 $files = @('windows-cli.ps1','ipa_inspect.py','ipa_workflow.py','xcross_ipa_bridge.dart','xcm.cmd','start.cmd','install.ps1','uninstall.ps1')
 foreach ($file in $files) {
     if (-not (Test-Path -LiteralPath (Join-Path $source $file) -PathType Leaf)) { throw "Paquete incompleto: $file" }
+    if ((Get-Item -LiteralPath (Join-Path $source $file)).Length -eq 0) { throw "Archivo vacio: $file" }
+    if ([IO.Path]::GetExtension($file) -eq '.ps1') {
+        $tokens = $null; $parseErrors = $null
+        [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $source $file), [ref]$tokens, [ref]$parseErrors)
+        if ($parseErrors.Count) { throw "Errores de sintaxis: $file" }
+    }
 }
 New-Item -ItemType Directory -Path $target -Force | Out-Null
 foreach($file in $files) {

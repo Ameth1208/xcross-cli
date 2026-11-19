@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.5.0 — Project detection and maintenance on Windows
+
+- Detect Flutter, SwiftPM and Xcode roots while preserving saved project settings.
+- Route `run` and `build` to SwiftPM for Windows packages; support product selection,
+  debug/release configuration and executable arguments with `--args`.
+- Explicitly reject native Xcode app builds on the Windows backend, including iKoda.
+- Diagnose projects by type; add host-only `doctor --environment` and `verify` alias.
+- Add guided `download all` and stable GitHub release IPA downloads with size,
+  available SHA256 and main executable checks, without overwriting or installing.
+- Pass validated engine update options (`--check`, `--force`, `--ref`), stop on failed
+  checks and report the installed version after updating.
+- Pin remote CLI downloads to one commit, validate all downloaded PowerShell scripts
+  and restore prior files after copy failures. Validate local packages before copying.
+
 ## 1.4.0 — Check, sign only if unsigned, install
 
 - Inspect the IPA's main Mach-O executable before transferring it to an iPhone; distinguish missing, ad-hoc and present signatures.

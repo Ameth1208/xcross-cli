@@ -1,6 +1,71 @@
-# XCross CLI (xcm) v1.4.0
+# XCross CLI (xcm) v1.5.0
 
 ![XCross CLI logo](assets/logo.svg)
+
+## Swift projects and maintenance (Windows)
+
+Project selection and `run`, `build`, and `doctor` detect Flutter (`pubspec.yaml`),
+SwiftPM (`Package.swift`), and native Xcode projects (`.xcodeproj` / `.xcworkspace`
+at the selected root). Selection prefers `--project`, then the current directory,
+then the saved project; existing settings remain compatible. Select the actual
+project directory inside a monorepo.
+
+SwiftPM builds and runs **on Windows**, requiring Windows-compatible dependencies.
+Libraries can be built; running requires an executable product. This does not add
+an iPhone SwiftUI/UIKit compiler:
+
+```powershell
+xcm build --project "C:\repos\swift-package" --configuration release
+xcm run --project "C:\repos\swift-package" --product MyExecutable --args "hello world"
+xcm doctor --project "C:\repos\swift-package"
+xcm doctor --environment
+xcm download all
+xcm update --check
+xcm update
+xcm update --force
+xcm update --check --ref main
+xcm update-cli
+xcm update-cli --local
+```
+
+`doctor` runs XCross's iOS diagnostics for Flutter or checks Swift and the package
+manifest for SwiftPM; the latter does not prove dependencies build. `--environment`
+checks host tools and XCross configuration without requiring a project or verifying
+the Darwin SDK, signing, or devices. `verify` and `check` alias `doctor`. Failed
+checks return exit code 1.
+
+`download all` opens guided setup for Swift, XCross, dependencies, optional SDK
+import and final diagnostics. Flutter artifacts are offered only for Flutter
+projects. Obtain **Xcode.xip manually from Apple**; setup cannot download it.
+Installer confirmations remain interactive.
+
+`update` updates the **XCross engine**, with read-only `--check`, release reinstall
+via `--force`, and engine-supported `--ref` selection. Failed checks stop the update;
+successful updates print the installed version. `update-cli` updates **xcm**.
+The remote xcm installer pins all downloads to one commit, validates PowerShell
+scripts before copying, and restores previous files if copying fails. Local
+installation validates package completeness and PowerShell syntax before copying.
+
+[iKoda](https://github.com/Ivorisnoob/iKoda) is a native Xcode app with SwiftUI and
+extensions. The current Windows XCross backend has no native Xcode project build
+command. The CLI detects that limitation and returns an error instead of treating
+the app or its core library as Flutter. Source builds require macOS/Xcode. To
+download an already published IPA:
+
+```powershell
+xcm download ipa --repo Ivorisnoob/iKoda --asset Koda.ipa --output .\Koda.ipa
+xcm ipa inspect .\Koda.ipa
+```
+
+This downloads the exact asset from the latest stable release, checks its size and
+GitHub SHA256 when available, inspects the IPA, and refuses existing output paths.
+It requires Internet and Python, respects public GitHub API limits, warns when no
+checksum is published, and does not install on a device. iKoda v0.4 was verified
+to have an **ad-hoc signature**: it needs device signing, including its extensions,
+using a compatible signing workflow such as the AltStore/SideStore flow documented
+by iKoda. `xcm install` preserves existing signatures and rejects ad-hoc signatures;
+downloading alone does not make this IPA installable. Inspection covers the main
+executable, not all extensions.
 
 ![XCross CLI demo](docs/cli-demo.gif)
 
