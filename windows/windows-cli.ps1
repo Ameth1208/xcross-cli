@@ -20,10 +20,10 @@ try {
 } catch { }
 
 $ErrorActionPreference = 'Stop'
-$script:Version = '1.5.1'
+$script:Version = '1.5.2'
 $script:SettingsDir = Join-Path $env:APPDATA 'XCrossMenu'
 $script:SettingsFile = Join-Path $script:SettingsDir 'settings.json'
-$script:Settings = @{ XcodeXip = ''; FlutterProject = ''; BundleIdMode = 'default'; Language = 'en' }
+$script:Settings = @{ XcodeXip = ''; FlutterProject = ''; BundleIdMode = 'default'; Language = 'en'; SetupWorkflow = '' }
 $script:Language = 'en'
 $script:ProjectOverride = ''
 
@@ -113,12 +113,40 @@ function Invoke-Tool([string]$Tool, [string[]]$Arguments = @(), [switch]$HideArg
     finally { $ErrorActionPreference = $previousErrorPreference }
 }
 
+function Invoke-InteractiveTool([string]$Tool, [string[]]$Arguments = @()) {
+    if (-not (Test-Tool $Tool)) { Write-Fail "No encuentro $Tool en PATH."; return $false }
+    try {
+        $info = New-Object Diagnostics.ProcessStartInfo
+        $info.FileName = (Get-Command $Tool).Source
+        # Windows argument quoting; no shell, output pipe or transcript is used.
+        $quoted = foreach ($argument in $Arguments) {
+            $escaped = [regex]::Replace([string]$argument, '(\\*)"', '$1$1\"')
+            $escaped = [regex]::Replace($escaped, '(\\+)$', '$1$1')
+            '"' + $escaped + '"'
+        }
+        $info.Arguments = $quoted -join ' '
+        $info.UseShellExecute = $false
+        $info.RedirectStandardInput = $false
+        $info.RedirectStandardOutput = $false
+        $info.RedirectStandardError = $false
+        $process = [Diagnostics.Process]::Start($info)
+        try {
+            $process.WaitForExit()
+            if ($process.ExitCode -ne 0) { Write-Fail "$Tool termino con codigo $($process.ExitCode)."; return $false }
+            return $true
+        }
+        finally { $process.Dispose() }
+    }
+    catch { Write-Fail $_.Exception.Message; return $false }
+}
+
 function Load-Settings {
     if (-not (Test-Path -LiteralPath $script:SettingsFile)) { return }
     try {
         $data = Get-Content -LiteralPath $script:SettingsFile -Raw | ConvertFrom-Json
         if ($data.XcodeXip) { $script:Settings.XcodeXip = [string]$data.XcodeXip }
         if ($data.FlutterProject) { $script:Settings.FlutterProject = [string]$data.FlutterProject }
+        if ($data.SetupWorkflow -in @('ipa','flutter','swift')) { $script:Settings.SetupWorkflow = [string]$data.SetupWorkflow }
         if ($data.BundleIdMode -in @('default', 'original', 'prefixed')) {
             $script:Settings.BundleIdMode = [string]$data.BundleIdMode
         }
@@ -414,17 +442,24 @@ function Tunnel-Command([string]$Transport) {
 }
 
 function Connect-AppleId {
-    Write-Title 'Autenticacion para firma iOS'
-    if (-not (Test-Tool 'xcross')) { Write-Fail 'Instala xcross primero.'; return }
+    Write-Title 'Apple ID / Flutter (XCross)'
+    if (-not (Test-Tool 'xcross')) { Write-Fail 'Instala xcross primero.'; return $false }
     Write-Warn 'xcross recomienda NO usar tu Apple ID principal: su autenticacion no es estandar.'
     Write-Host 'Usa preferiblemente una cuenta Apple de pruebas.'
-    $email = (Read-Host 'Correo de la cuenta Apple de pruebas').Trim()
+    Write-Host 'Escribe cada respuesta cuando aparezca su pregunta y pulsa Enter.' -ForegroundColor Cyan
+    $email = (Read-Host '[1/3] Correo Apple ID (escribelo y pulsa Enter)').Trim()
     if (-not $email -or $email -notmatch '^\S+@\S+\.\S+$') {
         Write-Warn (Msg 'No valid email provided.' 'No se proporciono un correo valido.')
-        return
+        return $false
     }
-    Write-Host 'xcross pedira las credenciales y el codigo 2FA de forma interactiva.'
-    if (Confirm-Yes "Conectar $email ?") { [void](Invoke-Tool 'xcross' @('auth', '--apple-id', $email)) }
+    Write-Host ''
+    Write-Host '[2/3] Cuando aparezca Password: escribe tu contrasena y pulsa Enter.' -ForegroundColor Cyan
+    Write-Host '      No veras letras ni asteriscos mientras escribes: es normal.' -ForegroundColor DarkGray
+    Write-Host '[3/3] Cuando aparezca verification code: escribe el codigo 2FA y pulsa Enter.' -ForegroundColor Cyan
+    Write-Host '      Revisa tu dispositivo de confianza. Durante Signing in / Fetching solo espera.' -ForegroundColor DarkGray
+    Write-Host 'Las respuestas se introducen aqui; xcm no las guarda ni las registra.' -ForegroundColor DarkGray
+    Write-Host ''
+    return (Invoke-InteractiveTool 'xcross' @('auth','--apple-id',$email))
 }
 
 function Get-ProjectKind([string]$Path) {
@@ -773,7 +808,9 @@ function Invoke-XtoolCommand {
         $toolArgs = @($python.Prefix) + @($helper) + $Arguments
         # Display stdout via Out-Host rather than swallowing it into the boolean
         # return value. stdin stays interactive; authentication is never logged.
-        $ok = Invoke-Tool $python.Tool $toolArgs
+        $interactive = ($Arguments -contains 'auth') -or
+            (($Arguments -contains 'init' -or $Arguments -contains 'setup') -and $Arguments -notcontains '--check')
+        $ok = if ($interactive) { Invoke-InteractiveTool $python.Tool $toolArgs } else { Invoke-Tool $python.Tool $toolArgs }
         if ($Arguments.Count -and $Arguments[0] -in @('install','build','run')) {
             $latest = Get-ChildItem -LiteralPath (Join-Path $script:SettingsDir 'logs') -Filter 'ipa-*-xtool-*.log' -ErrorAction SilentlyContinue |
                 Sort-Object LastWriteTime -Descending | Select-Object -First 1
@@ -960,15 +997,14 @@ function Show-IpaMenu {
         @{ Key='4'; Label=(Msg 'Sign + install (xtool)' 'Firmar + instalar (xtool)'); Description='WSL + Apple ID / no P12'; Command='install-xtool' },
         @{ Key='5'; Label=(Msg 'Last IPA log' 'Ultimo registro IPA'); Description=(Msg 'Details of the last operation' 'Detalles de la ultima operacion'); Command='logs' },
         @{ Key='6'; Label=(Msg 'Manual signing (optional)' 'Firma manual (opcional)'); Description='zsign + P12 + mobileprovision'; Command='sign' },
-        @{ Key='7'; Label=(Msg 'Install xtool in WSL' 'Instalar xtool en WSL'); Description='AppImage + SHA256'; Command='xtool-setup' },
-        @{ Key='8'; Label=(Msg 'Apple login (xtool)' 'Autenticar Apple (xtool)'); Description='Apple ID / 2FA'; Command='xtool-auth' },
-        @{ Key='9'; Label=(Msg 'Check xtool / devices' 'Revisar xtool / dispositivos'); Description='WSL / signing / iPhone'; Command='xtool-doctor' }
+        @{ Key='7'; Label=(Msg 'Prepare IPA installation' 'Preparar instalacion de IPA'); Description='xcm init ipa'; Command='init-ipa' }
     )
     while ($true) {
         $choice = Show-KeyMenu -Title 'IPA' -Subtitle (Get-Location).Path -Items $items -AllowPalette
         if ($choice -eq '__back__') { return }
         if ($choice -eq '__palette__') { Show-PaletteThenRun; continue }
-        if ($choice -like 'xtool-*') { [void](Invoke-XtoolCommand -Arguments @($choice.Substring(6))) }
+        if ($choice -eq 'init-ipa') { [void](Initialize-Xcm -Arguments @('ipa')) }
+        elseif ($choice -like 'xtool-*') { [void](Invoke-XtoolCommand -Arguments @($choice.Substring(6))) }
         else { [void](Invoke-IpaCommand -Arguments @($choice)) }
         Pause-Menu
     }
@@ -1220,7 +1256,66 @@ function Guided-Setup {
     return (Test-XcmEnvironment)
 }
 
+function Initialize-Xcm {
+    param([string[]]$Arguments = @())
+    $mode = ''; $check = $false
+    foreach ($argument in $Arguments) {
+        if ($argument -eq '--check') { $check = $true }
+        elseif ($argument -in @('ipa','flutter','swift') -and -not $mode) { $mode = $argument }
+        else { Write-Fail 'Uso: xcm init [ipa|flutter|swift] [--check]'; return $false }
+    }
+    if (-not $mode) {
+        $kind = Get-ProjectKind (Get-Location).Path
+        $mode = switch ($kind) {
+            'flutter' { 'flutter' }
+            'swift' { 'swift' }
+            {$_ -in @('xtool','xcode')} { 'ipa' }
+            default { $script:Settings.SetupWorkflow }
+        }
+    }
+    if (-not $mode) {
+        if ($check) { Write-Fail 'Selecciona el flujo: xcm init ipa|flutter|swift --check'; return $false }
+        $mode = Show-KeyMenu -Title 'INIT' -Subtitle (Msg 'What do you want to prepare?' 'Que quieres preparar?') -Items @(
+            @{Key='1'; Label=(Msg 'Install an IPA on iPhone' 'Instalar una IPA en iPhone'); Description='Apple login + USB'; Command='ipa'},
+            @{Key='2'; Label=(Msg 'Flutter iOS project' 'Proyecto Flutter iOS'); Description='Swift + XCross + SDK'; Command='flutter'},
+            @{Key='3'; Label=(Msg 'Swift package on Windows' 'Paquete Swift en Windows'); Description='Swift toolchain'; Command='swift'}
+        )
+        if ($mode -eq '__back__') { return $false }
+    }
+    Write-Title "Init / $mode"
+    if (-not $check) { $script:Settings.SetupWorkflow = $mode; Save-Settings }
+    switch ($mode) {
+        'ipa' {
+            $toolArgs = @('init')
+            if ($check) { $toolArgs += '--check' }
+            return (Invoke-XtoolCommand -Arguments $toolArgs)
+        }
+        'flutter' {
+            if ($check) { return (Test-ProjectEnvironment) }
+            return (Guided-Setup)
+        }
+        'swift' {
+            if ($check) { return (Invoke-Tool 'swift' @('--version')) }
+            return (Install-Swift)
+        }
+    }
+}
+
 function Get-MenuItems {
+    return @(
+        @{Key='N'; Label=(Msg 'Prepare environment' 'Preparar entorno'); Description='xcm init'; Command='init'},
+        @{Key='1'; Label=(Msg 'Run project' 'Ejecutar proyecto'); Description='xcm run'; Command='run'},
+        @{Key='7'; Label=(Msg 'Install IPA' 'Instalar IPA'); Description='xcm install app.ipa'; Command='install-ipa'},
+        @{Key='2'; Label=(Msg 'Check environment' 'Comprobar entorno'); Description='xcm doctor'; Command='doctor'},
+        @{Key='P'; Label=(Msg 'Projects' 'Proyectos'); Description='xcm project'; Command='projects'},
+        @{Key='U'; Label=(Msg 'Update xcm' 'Actualizar xcm'); Description='xcm update-cli'; Command='update-cli'},
+        @{Key='A'; Label=(Msg 'Advanced tools' 'Herramientas avanzadas'); Description='SDK / tunnels / signing'; Command='advanced'},
+        @{Key='L'; Label=(Msg 'Language' 'Idioma'); Description='en / es'; Command='language'},
+        @{Key='?'; Label=(Msg 'Help' 'Ayuda'); Description='xcm help'; Command='help'}
+    )
+}
+
+function Get-AdvancedMenuItems {
     if ($script:Language -eq 'es') {
         return @(
             @{ Key='1'; Label='Ejecutar proyecto en iPhone'; Description='compilar, firmar, instalar, hot reload'; Command='run' },
@@ -1264,14 +1359,17 @@ function Get-MenuItems {
 }
 
 function Show-Menu {
-    $items = Get-MenuItems
+    param([switch]$Advanced)
+    $items = if ($Advanced) { Get-AdvancedMenuItems } else { Get-MenuItems }
     while ($true) {
         $choice = Show-KeyMenu -Title 'XCROSS CONSOLE' -Subtitle 'Flutter iOS  /  SwiftPM  /  Windows' -Items $items -AllowPalette
         if ($choice -eq '__back__') { return }
         if ($choice -eq '__palette__') { Show-PaletteThenRun; continue }
         switch ($choice) {
+            'init' { [void](Initialize-Xcm) }
+            'advanced' { Show-Menu -Advanced; continue }
             'run' { [void](Invoke-ProjectCommand -Operation run) }
-            'doctor' { Flutter-Doctor }
+            'doctor' { [void](Invoke-XcmCommand -Verb 'doctor') }
             'device' { [void](Show-UsbDevices) }
             'devmode' { Developer-Mode }
             'tunnel-usb' { Start-TunnelWindow 'usb' }
@@ -1350,7 +1448,7 @@ function Show-KeyMenu {
             if ([Console]::WindowHeight -gt 0) { $height = [Console]::WindowHeight }
         } catch {}
         $compact = $height -lt 35 -or $width -lt 80
-        $pageSize = if ($compact) { [Math]::Max(3, $height - 9) } else { [Math]::Max(3, $height - 26) }
+        $pageSize = if ($compact) { [Math]::Max(3, $height - 10) } else { [Math]::Max(3, $height - 27) }
         $pageStart = [int]([Math]::Floor($index / $pageSize) * $pageSize)
         $pageEnd = [Math]::Min($Items.Count, $pageStart + $pageSize)
         $rowWidth = [Math]::Max(12, $width - 6)
@@ -1371,6 +1469,8 @@ function Show-KeyMenu {
         }
         Write-Host ''
         Write-Host (Format-MenuText ('  ' + [string]$Items[$index].Description) ([Math]::Max(12,$width - 2))) -ForegroundColor DarkCyan
+        $keys = (@($Items[$pageStart..($pageEnd - 1)] | ForEach-Object { [string]$_.Key }) -join '/')
+        Write-Host (Format-MenuText (Msg "  Keys: $keys (no Enter needed)" "  Teclas: $keys (sin pulsar Enter)") ([Math]::Max(12,$width - 2))) -ForegroundColor DarkGray
         Write-Host (Format-MenuText (Msg "  $($pageStart + 1)-$pageEnd / $($Items.Count) | Up/Down: move | Enter: select" "  $($pageStart + 1)-$pageEnd / $($Items.Count) | Flechas: mover | Enter: elegir") ([Math]::Max(12,$width - 2))) -ForegroundColor DarkGray
         if ($AllowPalette) { Write-Host (Msg '  / commands   ESC/0 back or exit' '  / comandos   ESC/0 atras o salir') -ForegroundColor DarkGray }
         else { Write-Host (Msg '  ESC/0 back' '  ESC/0 atras') -ForegroundColor DarkGray }
@@ -1399,6 +1499,11 @@ function Show-KeyMenu {
 
 function Get-PaletteEntries {
     return @(
+        @{ Name='init'; Detail='Preparar el entorno sin repetir pasos completados' },
+        @{ Name='install'; Detail='Instalar una IPA existente' },
+        @{ Name='build'; Detail='Compilar el proyecto seleccionado' },
+        @{ Name='update-cli'; Detail='Actualizar xcm' },
+        @{ Name='help --all'; Detail='Ver herramientas avanzadas y alias' },
         @{ Name='ipa'; Detail='Compilar, firmar e instalar IPA' },
         @{ Name='install-ipa'; Detail='Revisar IPA, firmar si falta e instalar' },
         @{ Name='ipa inspect'; Detail='Revisar firma de una IPA sin instalar' },
@@ -1429,7 +1534,7 @@ function Get-PaletteEntries {
         @{ Name='bundle prefixed'; Detail='Usar identificador App ID prefijado' },
         @{ Name='sign'; Detail='Diagnosticar firma de Apple' },
         @{ Name='trust'; Detail='Ayuda de desarrollador no confiable' },
-        @{ Name='auth'; Detail='Autenticacion Apple ID' },
+        @{ Name='auth'; Detail='Apple ID para Flutter (XCross)' },
         @{ Name='vscode'; Detail='Configurar VS Code' },
         @{ Name='install-cli'; Detail='Instalar comando xcm en PATH' },
         @{ Name='update'; Detail='Actualizar xcross' },
@@ -1441,6 +1546,7 @@ function Show-CommandPalette {
     $buffer=''
     $selected=0
     $commands=Get-PaletteEntries
+    $everyday = @('init','install','run','build','doctor','project show','project set','project update','update-cli','help','help --all')
     while ($true) {
         $q=$buffer.Trim()
         if ($q) {
@@ -1448,7 +1554,7 @@ function Show-CommandPalette {
                 $_.Name -match [regex]::Escape($q) -or $_.Detail -match [regex]::Escape($q)
             })
         }
-        else { $matches=@($commands) }
+        else { $matches=@($commands | Where-Object { $_.Name -in $everyday }) }
         if ($selected -ge $matches.Count) { $selected=0 }
         Clear-Host
         if ($script:Language -eq 'es') { Show-Banner -Title 'PALETA DE COMANDOS' -Subtitle 'Escribe para filtrar; sin Enter para seleccionar' } else { Show-Banner -Title 'COMMAND PALETTE' -Subtitle 'Type to filter commands; no Enter to select' }
@@ -1638,7 +1744,23 @@ function Update-XcmGlobal {
 }
 
 function Show-XcmHelp {
-    Write-Host '  xcm xtool install-tool | auth | connect-usb | devices | doctor'
+    param([switch]$All)
+    if (-not $All) {
+        Write-Title (Msg 'Everyday commands' 'Comandos habituales')
+        Write-Host '  xcm init [ipa|flutter|swift] [--check]'
+        Write-Host (Msg '      Prepare tools, login and USB for the selected workflow.' '      Preparar herramientas, sesion y USB segun el flujo elegido.')
+        Write-Host '  xcm install "app.ipa"'
+        Write-Host '  xcm run | build'
+        Write-Host '  xcm doctor'
+        Write-Host '  xcm project show|set|update [PATH]'
+        Write-Host '  xcm update-cli'
+        Write-Host '  xcm language en|es'
+        Write-Host '  xcm version'
+        Write-Host (Msg '  Advanced commands and compatibility aliases: xcm help --all' '  Comandos avanzados y alias compatibles: xcm help --all')
+        return
+    }
+    Write-Host '  xcm init [ipa|flutter|swift] [--check]'
+    Write-Host '  xcm xtool install-tool | auth [--refresh] | connect-usb | devices | doctor'
     Write-Host '  xcm install PATH.ipa --backend xtool [--udid UDID]'
     Write-Host '  xcm xtool build|run --project PATH [--configuration debug|release]'
     Write-Host '  xcm xtool sdk PATH-TO-Xcode.xip'
@@ -1752,24 +1874,28 @@ function Invoke-XcmCommand {
     param([string]$Verb, [string[]]$Arguments=@())
     $v=$Verb.TrimStart('/').ToLowerInvariant()
     switch($v){
+        {$_ -in @('init','setup')} {return (Initialize-Xcm -Arguments $Arguments)}
         'xtool' {return (Invoke-XtoolCommand -Arguments $Arguments)}
         {$_ -in @('version','--version')} {Write-Host "XCross CLI (Windows) v$script:Version"; return $true}
-        {$_ -in @('help','--help','-h','ayuda')} {Show-XcmHelp;return $true}
+        {$_ -in @('help','--help','-h','ayuda')} {
+            if ($Arguments.Count -gt 1 -or ($Arguments.Count -eq 1 -and $Arguments[0] -ne '--all')) { Write-Fail 'Uso: xcm help [--all]'; return $false }
+            Show-XcmHelp -All:($Arguments -contains '--all');return $true
+        }
         {$_ -in @('menu','ui')} {Show-Menu;return $true}
         'install' {
             if ($Arguments.Count) { return (Invoke-IpaCommand -Arguments (@('install') + $Arguments)) }
-            return (Guided-Setup)
+            return (Initialize-Xcm)
         }
         'swift' {return (Install-Swift)}
         'xcross' {return (Install-Xcross)}
-        {$_ -in @('dependencies','deps','setup')} {return (Install-Dependencies)}
+        {$_ -in @('dependencies','deps')} {return (Install-Dependencies)}
         'update' {return (Upgrade-Xcross -Arguments $Arguments)}
         'download' {
             if ($Arguments.Count -and $Arguments[0] -eq 'ipa') {
                 $rest = @(); if ($Arguments.Count -gt 1) { $rest = $Arguments[1..($Arguments.Count-1)] }
                 return (Get-ReleaseIpa -Arguments $rest)
             }
-            if ($Arguments.Count -eq 1 -and $Arguments[0] -eq 'all') { return (Guided-Setup) }
+            if ($Arguments.Count -eq 1 -and $Arguments[0] -eq 'all') { return (Initialize-Xcm) }
             Write-Fail 'Uso: xcm download all | xcm download ipa --repo OWNER/REPO --asset NAME.ipa --output PATH.ipa'; return $false
         }
         'ipa' {return (Invoke-IpaCommand -Arguments $Arguments)}
@@ -1783,6 +1909,10 @@ function Invoke-XcmCommand {
         }
         'xcode' {Open-AppleDownloadPage;return $true}
         {$_ -in @('doctor','check','verify')} {
+            if ($Arguments.Count -eq 0 -and (Get-ProjectKind (Get-Location).Path) -eq 'unknown') {
+                if ($script:Settings.SetupWorkflow -eq 'ipa') { return (Invoke-XtoolCommand -Arguments @('doctor')) }
+                if ($script:Settings.SetupWorkflow -eq 'swift') { return (Invoke-Tool 'swift' @('--version')) }
+            }
             if ($Arguments.Count -eq 1 -and $Arguments[0] -eq '--environment') { return (Test-XcmEnvironment) }
             $path = ''
             if ($Arguments.Count) {
@@ -1874,7 +2004,7 @@ function Invoke-XcmCommand {
             return $true
         }
         'trust' {Show-DeveloperTrustGuide;return $true}
-        'auth' {Connect-AppleId;return $true}
+        'auth' {return (Connect-AppleId)}
         'vscode' {Flutter-Ide;return $true}
         'devmode' {
             if($Arguments.Count -eq 0){Developer-Mode;return $true}

@@ -154,7 +154,7 @@ def install_tool(wsl):
         result = subprocess.run(wsl.prefix + ["bash", "-c", INSTALL, "xcm-install", wsl.path(archive)])
         if result.returncode:
             raise XtoolError("El AppImage no pudo ejecutarse en WSL; se conserva xtool anterior.")
-    print("Para IPA: xcm xtool auth, luego xcm xtool devices y xcm install Koda.ipa --backend xtool", flush=True)
+    print('Siguiente paso: xcm init ipa. Despues: xcm install "Koda.ipa"', flush=True)
 
 
 def doctor(wsl):
@@ -162,7 +162,7 @@ def doctor(wsl):
     wsl.xtool_capture(["--help"])
     print("[OK] xtool ejecutable (sin necesitar FUSE)", flush=True)
     authenticated = "Logged in" in wsl.xtool_capture(["auth", "status"])
-    print("[OK] Sesion xtool guardada" if authenticated else "[!] Falta sesion: xcm xtool auth", flush=True)
+    print("[OK] Sesion xtool guardada" if authenticated else "[!] Falta sesion: ejecuta xcm init ipa para completar la preparacion.", flush=True)
     # An empty list is not a healthy device connection, even though xtool returns 0.
     devices = wsl.xtool_capture(["devices", "--no-wait"], timeout=30).strip()
     print(devices or "[!] Sin iPhone visible en WSL. Conecta/desbloquea/acepta Confiar y configura USBIPD o el relay usbmuxd.", flush=True)
@@ -180,7 +180,78 @@ def doctor(wsl):
 
 def require_auth(wsl):
     if "Logged in" not in wsl.xtool_capture(["auth", "status"]):
-        raise XtoolError("Falta iniciar sesion en xtool: ejecuta xcm xtool auth. La sesion XCross no se copia a WSL.")
+        raise XtoolError("Falta preparar la sesion de IPA: ejecuta xcm init ipa. La sesion XCross no se copia a WSL.")
+
+
+def login(wsl, mode="password", refresh=False):
+    if not refresh and "Logged in" in wsl.xtool_capture(["auth", "status"]):
+        print("[OK] Ya hay sesion xtool guardada. Para renovarla: xcm xtool auth --refresh", flush=True)
+        return 0
+    print("\nACCESO APPLE / INSTALACION DE IPA", flush=True)
+    print("Escribe cada respuesta en esta terminal y pulsa Enter. No la envies al chat.", flush=True)
+    if mode == "password":
+        print("[1/3] Apple ID: escribe el correo de tu cuenta y pulsa Enter.", flush=True)
+        print("[2/3] Password: escribe la contrasena y pulsa Enter. No veras caracteres; es normal.", flush=True)
+        print("[3/3] Cuando se pida verification code, escribe el codigo 2FA y pulsa Enter.", flush=True)
+        print("      Revisa tu dispositivo de confianza. Durante las etapas de progreso solo espera.", flush=True)
+    else:
+        print("xtool pedira Key ID, Issuer ID y ruta de la clave .p8 dentro de WSL. Confirma cada dato con Enter.", flush=True)
+    print("xcm no registra esta conversacion de acceso. xtool conserva su propia sesion.\n", flush=True)
+    return wsl.run(["auth", "login", "--mode", mode])
+
+
+def configure_usb(wsl, remove=False):
+    routes = json.loads(wsl.capture(["ip", "-j", "route", "get", "1.1.1.1"]))
+    route = routes[0]
+    gateway, client = route.get("gateway"), route.get("prefsrc")
+    import ipaddress
+    if not gateway or not client:
+        raise XtoolError("WSL no usa una ruta NAT reconocida. Configura USBIPD o USBMUXD_SOCKET_ADDRESS manualmente.")
+    gateway = str(ipaddress.IPv4Address(gateway))
+    client = str(ipaddress.IPv4Address(client))
+    helper = Path(__file__).with_name("xtool-usb.ps1")
+    print("Windows pedira elevacion UAC para un relay limitado al IP de esta distribucion WSL.", flush=True)
+    command = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(helper),
+               "-Gateway", gateway, "-ClientIP", client]
+    if remove:
+        command += ["-Remove"]
+    return subprocess.run(command).returncode
+
+
+def initialize(wsl, check=False):
+    if check:
+        return doctor(wsl)
+    try:
+        wsl.xtool_capture(["--help"])
+        print("[OK] xtool ya instalado; no se vuelve a descargar.", flush=True)
+    except XtoolError as error:
+        # A broken existing executable needs diagnosis rather than a silent reinstall.
+        if "Falta xtool en WSL" not in str(error):
+            raise
+        install_tool(wsl)
+    if "Logged in" in wsl.xtool_capture(["auth", "status"]):
+        print("[OK] Sesion guardada; no se vuelve a pedir Apple ID/2FA.", flush=True)
+    else:
+        print("[1/2] Inicia sesion en xtool dentro de esta terminal.", flush=True)
+        code = login(wsl)
+        if code:
+            return code
+        require_auth(wsl)
+    try:
+        require_device(wsl)
+        print("[OK] iPhone visible; no se cambia el enlace USB.", flush=True)
+    except XtoolError as error:
+        if "No hay iPhone visible" not in str(error):
+            raise
+        print("[2/2] Preparando enlace USB Windows/WSL...", flush=True)
+        code = configure_usb(wsl)
+        if code:
+            return code
+    code = doctor(wsl)
+    if not code:
+        print('Listo para instalar IPA: xcm install "Koda.ipa"', flush=True)
+        print("Este asistente prepara instalacion de IPA; las compilaciones iOS necesitan ademas Swift Linux y SDK.", flush=True)
+    return code
 
 
 def require_device(wsl, udid=None):
@@ -196,8 +267,13 @@ def parser():
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("--distro", help="Distribucion WSL; predeterminado: XCM_WSL_DISTRO o la predeterminada de WSL")
     actions = result.add_subparsers(dest="action", required=True)
-    for name in ("install-tool", "setup", "doctor", "auth", "devices", "help", "connect-usb", "disconnect-usb"):
+    for name in ("install-tool", "setup", "doctor", "devices", "help", "connect-usb", "disconnect-usb"):
         actions.add_parser(name)
+    auth = actions.add_parser("auth")
+    auth.add_argument("--mode", choices=("password", "key"), default="password")
+    auth.add_argument("--refresh", action="store_true", help="Renovar una sesion guardada explicitamente")
+    init = actions.add_parser("init", help="Preparar instalacion de IPA sin repetir pasos ya completados")
+    init.add_argument("--check", action="store_true", help="Solo diagnosticar, sin instalar ni iniciar sesion")
     install = actions.add_parser("install", help="Volver a firmar e instalar una IPA con la identidad xtool")
     install.add_argument("ipa", type=Path)
     install.add_argument("--udid")
@@ -227,31 +303,19 @@ def main(argv=None):
             if not (args.project / "Package.swift").is_file() or not (args.project / "xtool.yml").is_file():
                 raise XtoolError("Se requieren Package.swift y xtool.yml. Un .xcodeproj como iKoda necesita adaptacion; no se convierte automaticamente.")
         wsl = Wsl(args.distro)
-        if args.action in ("install-tool", "setup"):
+        if args.action in ("init", "setup"):
+            return initialize(wsl, check=getattr(args, "check", False))
+        if args.action == "install-tool":
             install_tool(wsl)
             return 0
         if args.action in ("connect-usb", "disconnect-usb"):
-            routes = json.loads(wsl.capture(["ip", "-j", "route", "get", "1.1.1.1"]))
-            route = routes[0]
-            gateway, client = route.get("gateway"), route.get("prefsrc")
-            import ipaddress
-            if not gateway or not client:
-                raise XtoolError("WSL no usa una ruta NAT reconocida. Configura USBIPD o USBMUXD_SOCKET_ADDRESS manualmente.")
-            gateway = str(ipaddress.IPv4Address(gateway))
-            client = str(ipaddress.IPv4Address(client))
-            helper = Path(__file__).with_name("xtool-usb.ps1")
-            print("Windows pedira elevacion UAC para un relay limitado al IP de esta distribucion WSL.", flush=True)
-            command = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(helper),
-                       "-Gateway", gateway, "-ClientIP", client]
-            if args.action == "disconnect-usb":
-                command += ["-Remove"]
-            return subprocess.run(command).returncode
+            return configure_usb(wsl, remove=args.action == "disconnect-usb")
         if args.action == "doctor":
             return doctor(wsl)
         if args.action == "help":
             return wsl.run(["--help"])
         if args.action == "auth":
-            return wsl.run(["auth", "login"])
+            return login(wsl, mode=args.mode, refresh=args.refresh)
         if args.action == "devices":
             return wsl.run(["devices", "--no-wait"])
         if args.action == "sdk":

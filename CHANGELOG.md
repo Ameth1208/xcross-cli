@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.5.2 — One preparation command and clearer Apple login
+
+- Add `xcm init` with IPA, Flutter and local Swift workflows. Remember the chosen
+  workflow and offer `--check` for diagnosis without installing or logging in.
+- IPA initialization reuses an installed xtool, cached login and working device
+  connection; only missing steps are run. No IPA is installed by initialization.
+- Consolidate `setup`, argument-free `install`, and `download all` behind `init`.
+  Keep detailed tools available through `help --all` and Advanced tools in the menu.
+- Shorten default help and the main menu, and show actual shortcut keys.
+- Add numbered Apple login guidance with explicit Enter instructions, hidden
+  password behavior, 2FA and progress states. Run login in the attached console,
+  without redirecting or logging authentication input/output.
+- Reuse xtool's saved login unless `xtool auth --refresh` is explicitly selected.
+  XCross and xtool sessions remain independent.
+
 ## 1.5.1 — Install compiled ad-hoc IPAs with xtool
 
 - Add an official xtool AppImage backend through WSL, with release size/SHA256

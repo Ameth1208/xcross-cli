@@ -1,6 +1,34 @@
-# XCross CLI (xcm) v1.5.1 para Windows
+# XCross CLI (xcm) v1.5.2 para Windows
 
 ![XCross CLI logo](assets/logo.svg)
+
+## Uso habitual: preparar una vez y trabajar
+
+```powershell
+xcm init
+xcm install ".\Koda.ipa"
+```
+
+`init` detecta el proyecto actual o recuerda el flujo elegido; si falta contexto,
+muestra tres opciones: instalar IPA, preparar Flutter iOS o usar Swift en Windows.
+Para Koda puedes ir directamente a `xcm init ipa`. El asistente instala xtool solo
+si falta, solicita acceso Apple solo si no hay sesion guardada, prepara el enlace
+USB solo si el iPhone aun no es visible y comprueba el resultado. No instala la
+app ni descarga Swift Linux/SDK para una IPA ya compilada.
+
+`xcm init ipa --check` solo comprueba. `xcm init flutter` abre la preparacion Flutter
+y `xcm init swift` prepara el compilador local. `setup`, `install` sin archivo y
+`download all` conservan compatibilidad como accesos al mismo asistente. Los pasos
+tecnicos siguen disponibles en **Herramientas avanzadas** y `xcm help --all`; la
+ayuda normal muestra los comandos de uso habitual. `doctor` recuerda el flujo IPA
+cuando no se ejecuta dentro de un proyecto reconocido.
+
+El acceso Apple muestra instrucciones numeradas: correo + Enter, contrasena + Enter
+(sin caracteres visibles) y codigo 2FA + Enter cuando se solicite. Durante las
+etapas de progreso solo hay que esperar. La autenticacion usa la consola directamente
+y no se registra. Las sesiones de XCross (Flutter) y xtool (IPA) son distintas;
+un acceso correcto a una no inicia la otra. Para renovar xtool explicitamente usa
+`xcm xtool auth --refresh`.
 
 ## Instalar Koda ya compilada (1.5.1)
 
